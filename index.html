@@ -2,26 +2,23 @@
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8"/>
-    <!-- 核心：手机端适配（禁止缩放、适配视网膜屏） -->
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
     <meta name="apple-mobile-web-app-capable" content="yes"/>
     <meta name="apple-mobile-web-app-status-bar-style" content="default"/>
     <title>另一个我</title>
     <style>
-        /* 全局重置（手机端专属） */
+        /* 全局重置 */
         * { 
             margin: 0; padding: 0; box-sizing: border-box; 
-            /* 禁止文字选中，优化触摸体验 */
-            -webkit-user-select: none;
-            user-select: none;
+            -webkit-user-select: none; user-select: none;
         }
         body { 
             background: #F2F2F7; 
-            padding-bottom: 90px; /* 给底部+号留更多空间 */
-            font-size: 16px; /* 手机默认字体大小 */
+            padding-bottom: 90px; 
+            font-size: 16px; 
         }
 
-        /* 密码锁（手机端居中优化） */
+        /* 密码锁 */
         .lock-screen {
             position: fixed; top:0; left:0; right:0; bottom:0;
             background: #F2F2F7; display: flex; flex-direction: column;
@@ -33,41 +30,107 @@
         }
         .password-inputs { 
             display: flex; gap: 15px; margin-bottom: 20px;
-            width: 100%; max-width: 300px; /* 限制宽度，适配小屏手机 */
+            width: 100%; max-width: 300px;
         }
         .password-input {
             width: 20%; height: 50px; 
             border: 2px solid #E5E5EA; border-radius: 12px;
             text-align: center; font-size: 28px;
             background: #fff;
-            /* 去掉输入框默认样式 */
-            -webkit-appearance: none;
-            appearance: none;
+            -webkit-appearance: none; appearance: none;
         }
-        .password-input:focus {
-            border-color: #1C1C1E; outline: none;
-        }
+        .password-input:focus { border-color: #1C1C1E; outline: none; }
 
-        /* 主页面标题（手机端padding优化） */
+        /* 主页面 */
         .main-title {
             padding: 20px 16px;
             font-size: 24px; font-weight: 600;
             color: #1C1C1E;
         }
 
-        /* 底部+号按钮（手机触摸优化） */
+        /* 收支统计卡片（新增） */
+        .stats-card {
+            background: #fff;
+            border-radius: 16px;
+            margin: 0 16px 16px;
+            padding: 16px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+        }
+        .stats-row {
+            display: flex; justify-content: space-between;
+            padding: 10px 0;
+            border-bottom: 1px solid #F2F2F7;
+        }
+        .stats-row:last-child { border-bottom: none; }
+        .stats-label {
+            font-size: 16px; color: #8E8E93;
+        }
+        .stats-value {
+            font-size: 18px; font-weight: 600;
+        }
+        .stats-value.expense { color: #FF3B30; } /* 支出红色 */
+        .stats-value.income { color: #34C759; } /* 收入绿色 */
+
+        /* 最近账单区域（新增） */
+        .bills-section {
+            padding: 0 16px;
+        }
+        .bills-title {
+            font-size: 16px; font-weight: 600;
+            margin-bottom: 10px;
+        }
+        .bills-empty {
+            text-align: center;
+            padding: 30px 0;
+            color: #8E8E93;
+            font-size: 14px;
+        }
+        .bill-item {
+            background: #fff;
+            border-radius: 12px;
+            padding: 12px 16px;
+            margin-bottom: 10px;
+            display: flex; justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.03);
+        }
+        .bill-left {
+            display: flex; align-items: center;
+        }
+        .bill-icon {
+            width: 36px; height: 36px;
+            background: #F2F2F7; border-radius: 8px;
+            display: flex; align-items: center; justify-content: center;
+            margin-right: 10px;
+            font-size: 16px;
+        }
+        .bill-info {
+            display: flex; flex-direction: column;
+        }
+        .bill-category {
+            font-size: 14px; font-weight: 500;
+        }
+        .bill-date {
+            font-size: 12px; color: #8E8E93;
+        }
+        .bill-amount {
+            font-size: 15px; font-weight: 500;
+        }
+        .bill-amount.expense { color: #FF3B30; }
+        .bill-amount.income { color: #34C759; }
+
+        /* 底部+号按钮 */
         .add-btn {
             position: fixed; bottom: 20px; right: 20px;
             width: 60px; height: 60px; border-radius: 50%;
             background: #1C1C1E; color: #fff; font-size: 36px;
             border: none; cursor: pointer;
-            /* 触摸反馈 */
             -webkit-tap-highlight-color: transparent;
             box-shadow: 0 4px 12px rgba(0,0,0,0.15);
             display: flex; align-items: center; justify-content: center;
         }
 
-        /* 记账弹窗（手机端全屏底部弹窗） */
+        /* 记账弹窗 */
         .modal {
             position: fixed; top:0; left:0; right:0; bottom:0;
             background: rgba(0,0,0,0.5); display: none;
@@ -79,26 +142,19 @@
             background: #fff; border-top-left-radius: 24px;
             border-top-right-radius: 24px;
             padding: 24px 16px;
-            /* 适配键盘弹出 */
             max-height: 90vh; overflow-y: auto;
         }
         .modal-title {
             font-size: 20px; font-weight: 600;
             margin-bottom: 20px; text-align: center;
         }
-
-        /* 金额输入框（手机端触摸优化） */
         .amount-input {
             width: 100%; font-size: 32px; text-align: center;
             margin: 10px 0 20px; padding: 10px 0;
             border: none; border-bottom: 1px solid #E5E5EA;
-            /* 去掉默认样式 */
-            -webkit-appearance: none;
-            appearance: none;
+            -webkit-appearance: none; appearance: none;
         }
         .amount-input:focus { outline: none; border-bottom-color: #1C1C1E; }
-
-        /* 收支类型按钮（手机端平分宽度） */
         .type-toggle {
             display: flex; gap: 10px; margin: 10px 0 20px;
         }
@@ -111,21 +167,22 @@
         .type-btn.active {
             border-color: #1C1C1E; background: #1C1C1E; color: #fff;
         }
-
-        /* 分类区域（手机端4列适配） */
         .category-label {
             font-size: 14px; color: #8E8E93;
             margin-bottom: 10px;
         }
+        .longpress-tip {
+            font-size: 12px; color: #8E8E93;
+            text-align: center; margin-bottom: 10px;
+        }
         .category-grid {
             display: grid; 
-            grid-template-columns: repeat(4, 1fr); /* 固定4列，适配手机 */
+            grid-template-columns: repeat(4, 1fr);
             gap: 12px; margin: 10px 0 20px;
         }
         .category-item {
             display: flex; flex-direction: column;
             align-items: center;
-            /* 手机触摸优化 */
             -webkit-tap-highlight-color: transparent;
         }
         .category-icon {
@@ -143,8 +200,6 @@
         .category-item.active .category-name {
             color: #1C1C1E; font-weight: 500;
         }
-
-        /* 新增分类按钮（手机端适配） */
         .add-cate-btn {
             width: 100%; padding: 12px;
             border: 1px dashed #E5E5EA; border-radius: 12px;
@@ -152,8 +207,6 @@
             color: #8E8E93; margin: 10px 0 20px;
             -webkit-tap-highlight-color: transparent;
         }
-
-        /* 保存/关闭按钮（手机端全屏宽度） */
         .modal-btn {
             width: 100%; padding: 14px 0;
             border-radius: 12px; border: none;
@@ -164,7 +217,7 @@
         .save-btn { background: #1C1C1E; color: #fff; }
         .close-btn { background: #F2F2F7; color: #1C1C1E; }
 
-        /* 新增分类弹窗（手机端居中） */
+        /* 新增分类弹窗 */
         .add-cate-modal {
             position: fixed; top:0; left:0; right:0; bottom:0;
             background: rgba(0,0,0,0.5); display: none;
@@ -185,8 +238,7 @@
             width: 100%; padding: 12px;
             border: 1px solid #E5E5EA; border-radius: 12px;
             font-size: 16px; margin-bottom: 15px;
-            -webkit-appearance: none;
-            appearance: none;
+            -webkit-appearance: none; appearance: none;
         }
         .add-cate-input:focus { outline: none; border-color: #1C1C1E; }
         .add-cate-btn-group {
@@ -203,16 +255,10 @@
             border-radius: 12px; border: 1px solid #E5E5EA;
             background: transparent; font-size: 16px;
         }
-
-        /* 长按提示（可选，提示用户长按删除） */
-        .longpress-tip {
-            font-size: 12px; color: #8E8E93;
-            text-align: center; margin-bottom: 10px;
-        }
     </style>
 </head>
 <body>
-    <!-- 密码锁页面（手机端适配） -->
+    <!-- 密码锁页面 -->
     <div class="lock-screen" id="lockScreen">
         <div class="lock-title">请输入密码（1234）</div>
         <div class="password-inputs">
@@ -223,9 +269,30 @@
         </div>
     </div>
 
-    <!-- 主页面（手机端适配） -->
+    <!-- 主页面（新增收支统计+最近账单） -->
     <div id="mainPage" style="display: none;">
         <div class="main-title">另一个我</div>
+
+        <!-- 新增：本月收支统计卡片 -->
+        <div class="stats-card">
+            <div class="stats-row">
+                <div class="stats-label">本月支出</div>
+                <div class="stats-value expense" id="monthExpense">¥0.00</div>
+            </div>
+            <div class="stats-row">
+                <div class="stats-label">本月收入</div>
+                <div class="stats-value income" id="monthIncome">¥0.00</div>
+            </div>
+        </div>
+
+        <!-- 新增：最近账单区域 -->
+        <div class="bills-section">
+            <div class="bills-title">最近账单</div>
+            <div id="recentBillsList">
+                <div class="bills-empty">暂无账单，点击+开始记录</div>
+            </div>
+        </div>
+
         <button class="add-btn" onclick="openBillModal()">+</button>
 
         <!-- 记账弹窗 -->
@@ -238,7 +305,6 @@
                     <button class="type-btn" onclick="setType('income')">收入</button>
                 </div>
                 
-                <!-- 分类区域（新增长按提示） -->
                 <div class="category-label">分类（长按删除）</div>
                 <div class="longpress-tip">长按分类可删除</div>
                 <div class="category-grid" id="categoryGrid"></div>
@@ -264,18 +330,20 @@
     </div>
 
     <script>
-        // 全局变量（适配手机端）
-        let password = '1234'; // 默认密码
-        let currentType = 'expense'; // 默认支出
-        let selectedCate = ''; // 选中的分类
-        let longPressTimer = null; // 长按计时器
-        // 分类数据（本地存储，永久保存）
+        // 全局变量
+        let password = '1234';
+        let currentType = 'expense';
+        let selectedCate = '';
+        let longPressTimer = null;
+        // 分类数据
         let categories = JSON.parse(localStorage.getItem('phoneCates')) || [
             '餐饮🍜', '交通🚌', '娱乐🎬', '学习📚',
             '购物🛍️', '房租🏠', '工资💼', '其他🔧'
         ];
+        // 新增：账单数据（本地存储）
+        let bills = JSON.parse(localStorage.getItem('phoneBills')) || [];
 
-        // ========== 密码锁功能（手机端适配） ==========
+        // ========== 密码锁功能 ==========
         function nextInput(input) {
             const inputs = document.querySelectorAll('.password-input');
             const index = Array.from(inputs).indexOf(input);
@@ -291,6 +359,7 @@
                 if (inputPwd === password) {
                     document.getElementById('lockScreen').style.display = 'none';
                     document.getElementById('mainPage').style.display = 'block';
+                    renderHomePage(); // 页面加载后渲染首页
                 } else {
                     alert('密码错误！请输入1234');
                     inputs.forEach(i => i.value = '');
@@ -299,92 +368,136 @@
             }
         }
 
-        // ========== 记账弹窗功能（手机端适配） ==========
+        // ========== 首页渲染功能（新增） ==========
+        function renderHomePage() {
+            const today = new Date();
+            const currentMonth = today.getMonth() + 1;
+            const currentYear = today.getFullYear();
+            
+            // 1. 计算本月收支
+            let monthExpense = 0;
+            let monthIncome = 0;
+            bills.forEach(bill => {
+                const billDate = new Date(bill.date);
+                if (billDate.getFullYear() === currentYear && billDate.getMonth() + 1 === currentMonth) {
+                    if (bill.type === 'expense') {
+                        monthExpense += parseFloat(bill.amount);
+                    } else {
+                        monthIncome += parseFloat(bill.amount);
+                    }
+                }
+            });
+            // 更新收支显示
+            document.getElementById('monthExpense').textContent = `¥${monthExpense.toFixed(2)}`;
+            document.getElementById('monthIncome').textContent = `¥${monthIncome.toFixed(2)}`;
+
+            // 2. 渲染最近账单（取前5条）
+            const recentBills = bills.slice(0, 5); // 最新的5条
+            const billsListEl = document.getElementById('recentBillsList');
+            
+            if (recentBills.length === 0) {
+                billsListEl.innerHTML = '<div class="bills-empty">暂无账单，点击+开始记录</div>';
+                return;
+            }
+
+            // 生成账单条目
+            billsListEl.innerHTML = '';
+            recentBills.forEach(bill => {
+                // 找到分类对应的emoji
+                const cate = categories.find(c => c.includes(bill.category.replace(/[^\u4e00-\u9fa5]/g, ''))) || '其他🔧';
+                const cateEmoji = cate.replace(/[\u4e00-\u9fa5]/g, '');
+                
+                // 格式化日期
+                const dateStr = bill.date.replace(/-/g, '月') + '日';
+
+                const billItem = document.createElement('div');
+                billItem.className = 'bill-item';
+                billItem.innerHTML = `
+                    <div class="bill-left">
+                        <div class="bill-icon">${cateEmoji}</div>
+                        <div class="bill-info">
+                            <div class="bill-category">${bill.category}</div>
+                            <div class="bill-date">${dateStr}</div>
+                        </div>
+                    </div>
+                    <div class="bill-amount ${bill.type}">
+                        ${bill.type === 'expense' ? '-' : '+'}¥${bill.amount}
+                    </div>
+                `;
+                billsListEl.appendChild(billItem);
+            });
+        }
+
+        // ========== 记账弹窗功能 ==========
         function openBillModal() {
-            renderCategories(); // 渲染分类
+            renderCategories();
             document.getElementById('billModal').classList.add('show');
-            // 手机端自动聚焦金额输入框
             setTimeout(() => {
                 document.getElementById('billAmount').focus();
             }, 300);
         }
         function closeBillModal() {
             document.getElementById('billModal').classList.remove('show');
-            document.getElementById('billAmount').value = ''; // 清空金额
+            document.getElementById('billAmount').value = '';
         }
 
-        // ========== 分类核心功能（长按删除+手机适配） ==========
-        // 渲染分类（添加长按事件）
+        // ========== 分类功能 ==========
         function renderCategories() {
             const grid = document.getElementById('categoryGrid');
-            grid.innerHTML = ''; // 清空原有分类
+            grid.innerHTML = '';
             
             categories.forEach((cate, index) => {
                 const cateItem = document.createElement('div');
                 cateItem.className = 'category-item';
-                // 默认选中第一个分类
                 if (index === 0) cateItem.classList.add('active');
                 
-                // 分类HTML结构（拆分名称和emoji，优化显示）
                 cateItem.innerHTML = `
                     <div class="category-icon">${cate}</div>
                     <div class="category-name">${cate.replace(/[^\u4e00-\u9fa5]/g, '')}</div>
                 `;
 
-                // ========== 核心：长按删除（手机端专属） ==========
-                // 触摸开始（长按计时）
+                // 长按删除
                 cateItem.addEventListener('touchstart', () => {
                     longPressTimer = setTimeout(() => {
-                        // 长按500ms触发删除确认
                         if (confirm(`确定删除「${cate}」分类吗？`)) {
                             if (categories.length <= 1) {
                                 alert('至少保留1个分类哦～');
                                 return;
                             }
-                            // 删除分类并重新渲染
                             categories.splice(index, 1);
                             renderCategories();
-                            // 保存到本地存储
                             localStorage.setItem('phoneCates', JSON.stringify(categories));
                             alert(`已删除「${cate}」分类`);
                         }
-                    }, 500); // 长按500ms触发，可调整
+                    }, 500);
                 });
+                cateItem.addEventListener('touchend', () => clearTimeout(longPressTimer));
+                cateItem.addEventListener('touchmove', () => clearTimeout(longPressTimer));
 
-                // 触摸结束/离开（取消长按计时）
-                cateItem.addEventListener('touchend', () => {
-                    clearTimeout(longPressTimer);
-                });
-                cateItem.addEventListener('touchmove', () => {
-                    clearTimeout(longPressTimer);
-                });
-
-                // 点击分类选中（手机端触摸）
+                // 点击选中
                 cateItem.addEventListener('click', () => {
                     document.querySelectorAll('.category-item').forEach(item => {
                         item.classList.remove('active');
                     });
                     cateItem.classList.add('active');
-                    selectedCate = cate;
+                    selectedCate = cate.replace(/[^\u4e00-\u9fa5]/g, ''); // 只存分类名称
                 });
 
                 grid.appendChild(cateItem);
             });
 
-            // 默认选中第一个分类
-            selectedCate = categories[0];
-            // 保存分类到本地存储
+            selectedCate = categories[0].replace(/[^\u4e00-\u9fa5]/g, '');
             localStorage.setItem('phoneCates', JSON.stringify(categories));
         }
 
-        // ========== 新增分类功能（手机端适配） ==========
+        // ========== 新增分类功能 ==========
         function openAddCateModal() {
             document.getElementById('addCateModal').classList.add('show');
             document.getElementById('newCateInput').focus();
         }
         function closeAddCateModal() {
             document.getElementById('addCateModal').classList.remove('show');
-            document.getElementById('newCateInput').value = ''; // 清空输入
+            document.getElementById('newCateInput').value = '';
         }
         function saveNewCate() {
             const newCateName = document.getElementById('newCateInput').value.trim();
@@ -392,47 +505,65 @@
                 alert('请输入分类名称～');
                 return;
             }
-            // 去重判断
             const cateNames = categories.map(c => c.replace(/[^\u4e00-\u9fa5]/g, ''));
             if (cateNames.includes(newCateName)) {
                 alert('这个分类已经存在啦～');
                 return;
             }
-            // 随机emoji（适配手机端显示）
             const emojis = ['🥤', '📱', '☕', '🎁', '🚗', '💄', '📦', '🎮', '🍔', '🎵'];
             const randomEmoji = emojis[Math.floor(Math.random() * emojis.length)];
             const newCate = newCateName + randomEmoji;
             
-            // 添加分类并重新渲染
             categories.push(newCate);
             renderCategories();
             closeAddCateModal();
             alert(`新增分类成功：${newCate}`);
         }
 
-        // ========== 收支类型切换（手机端适配） ==========
+        // ========== 收支类型切换 ==========
         function setType(type) {
             currentType = type;
-            // 更新按钮选中状态
             document.querySelectorAll('.type-btn').forEach(btn => {
                 btn.classList.remove('active');
             });
             event.target.classList.add('active');
         }
 
-        // ========== 保存账单（手机端适配） ==========
+        // ========== 保存账单功能（新增：存储账单） ==========
         function saveBill() {
             const amount = document.getElementById('billAmount').value.trim();
             if (!amount || parseFloat(amount) <= 0) {
                 alert('请输入有效的金额（大于0）～');
                 return;
             }
-            // 提示记账成功（手机端友好提示）
+            if (!selectedCate) {
+                alert('请选择分类～');
+                return;
+            }
+
+            // 生成账单数据
+            const today = new Date();
+            const billDate = today.toISOString().split('T')[0]; // 格式：2025-12-22
+            const newBill = {
+                id: Date.now().toString(), // 唯一ID
+                category: selectedCate,
+                amount: parseFloat(amount).toFixed(2),
+                type: currentType,
+                date: billDate
+            };
+
+            // 新增到账单列表（最新的放最前面）
+            bills.unshift(newBill);
+            // 保存到本地存储
+            localStorage.setItem('phoneBills', JSON.stringify(bills));
+
+            // 提示+更新首页
             alert(`✅ 记账成功！\n${currentType === 'expense' ? '支出' : '收入'}：¥${amount}\n分类：${selectedCate}`);
             closeBillModal();
+            renderHomePage(); // 记账后重新渲染首页
         }
 
-        // 手机端优化：禁止页面缩放
+        // 手机端防缩放
         document.addEventListener('touchmove', (e) => {
             if (e.scale !== 1) e.preventDefault();
         }, { passive: false });
