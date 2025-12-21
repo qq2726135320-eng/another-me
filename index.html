@@ -4,433 +4,174 @@
     <meta charset="UTF-8"/>
     <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
     <title>另一个我</title>
-    <link rel="manifest" href="manifest.json">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="default">
     <style>
-        /* 基础样式 */
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-            font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", sans-serif;
-        }
-        body {
-            background: #F2F2F7;
-            color: #1C1C1E;
-            padding-bottom: 80px;
-            position: relative;
-        }
-        header {
-            padding: 24px 20px 12px;
-            font-size: 24px;
-            font-weight: 600;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
+        /* 只保留核心样式，减少冲突 */
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { background: #F2F2F7; padding-bottom: 80px; }
         .add-btn {
-            position: fixed;
-            bottom: 28px;
-            right: 24px;
-            width: 56px;
-            height: 56px;
-            border-radius: 50%;
-            background: #1C1C1E;
-            color: white;
-            font-size: 32px;
-            border: none;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            box-shadow: 0 4px 16px rgba(0,0,0,0.15);
-            cursor: pointer;
-            z-index: 90;
+            position: fixed; bottom: 28px; right: 24px;
+            width: 56px; height: 56px; border-radius: 50%;
+            background: #000; color: #fff; font-size: 32px;
+            border: none; cursor: pointer;
         }
-        /* 密码锁样式 */
+        /* 密码锁 */
         .lock-screen {
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: #F2F2F7;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            z-index: 200;
+            position: fixed; top:0; left:0; right:0; bottom:0;
+            background: #F2F2F7; display: flex; flex-direction: column;
+            align-items: center; justify-content: center;
         }
-        .lock-title {
-            font-size: 24px;
-            font-weight: 600;
-            margin-bottom: 48px;
-        }
-        .password-inputs {
-            display: flex;
-            gap: 16px;
-            margin-bottom: 48px;
-        }
+        .password-inputs { display: flex; gap: 16px; margin-top: 20px; }
         .password-input {
-            width: 48px;
-            height: 48px;
-            border-radius: 8px;
-            border: 2px solid #E5E5EA;
-            background: transparent;
-            font-size: 24px;
-            text-align: center;
-            outline: none;
+            width: 48px; height: 48px; border: 2px solid #ccc;
+            border-radius: 8px; text-align: center; font-size: 24px;
         }
-        .password-input:focus {
-            border-color: #1C1C1E;
+        /* 弹窗 */
+        .modal {
+            position: fixed; top:0; left:0; right:0; bottom:0;
+            background: rgba(0,0,0,0.5); display: none;
         }
-        /* 卡片样式 */
-        .card {
-            background: #FFFFFF;
-            margin: 16px;
-            padding: 20px;
-            border-radius: 16px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.04);
-        }
-        .summary-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 16px;
-        }
-        .summary-title {
-            font-size: 18px;
-            font-weight: 600;
-        }
-        .amount {
-            font-size: 32px;
-            font-weight: bold;
-            color: #1C1C1E;
-        }
-        .amount.expense {
-            color: #FF3B30;
-        }
-        /* 记账弹窗样式 */
-        .modal-overlay {
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: rgba(0,0,0,0.5);
-            display: flex;
-            align-items: flex-end;
-            z-index: 100;
-            opacity: 0;
-            pointer-events: none;
-            transition: opacity 0.3s ease;
-        }
-        .modal-overlay.show {
-            opacity: 1 !important;
-            pointer-events: auto !important;
-        }
+        .modal.show { display: block; }
         .modal-content {
-            background: #FFFFFF;
-            border-top-left-radius: 24px;
+            position: fixed; bottom:0; left:0; right:0;
+            background: #fff; border-top-left-radius: 24px;
             border-top-right-radius: 24px;
-            padding: 24px;
-            width: 100%;
-            transform: translateY(100%);
-            transition: transform 0.3s ease;
+            padding: 20px;
         }
-        .modal-overlay.show .modal-content {
-            transform: translateY(0) !important;
-        }
-        .modal-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 24px;
-        }
-        .modal-title {
-            font-size: 20px;
-            font-weight: 600;
-        }
-        .close-btn {
-            background: transparent;
-            border: none;
-            font-size: 24px;
-            cursor: pointer;
-            color: #8E8E93;
-        }
-        .amount-input {
-            width: 100%;
-            border: none;
-            font-size: 48px;
-            font-weight: bold;
-            text-align: center;
-            margin: 16px 0;
-            background: transparent;
-            outline: none;
-        }
-        .type-toggle {
-            display: flex;
-            justify-content: center;
-            gap: 16px;
-            margin: 24px 0;
-        }
-        .type-btn {
-            padding: 8px 24px;
-            border-radius: 20px;
-            border: 2px solid #E5E5EA;
-            background: transparent;
-            font-size: 16px;
-            font-weight: 500;
-            cursor: pointer;
-        }
-        .type-btn.active {
-            border-color: #1C1C1E;
-            background: #1C1C1E;
-            color: #FFFFFF;
-        }
-        /* 新增：分类样式 */
-        .form-group {
-            margin-bottom: 24px;
-        }
-        .form-label {
-            font-size: 14px;
-            color: #8E8E93;
-            margin-bottom: 8px;
-            display: block;
-        }
+        /* 分类样式（极简） */
         .category-grid {
-            display: grid;
-            grid-template-columns: repeat(4, 1fr);
-            gap: 16px;
-            margin: 24px 0;
+            display: grid; grid-template-columns: repeat(4, 1fr);
+            gap: 10px; margin: 20px 0;
         }
         .category-item {
-            display: flex;
-            flex-direction: column;
+            display: flex; flex-direction: column;
             align-items: center;
-            cursor: pointer;
         }
         .category-icon {
-            width: 48px;
-            height: 48px;
-            border-radius: 12px;
-            background: #F2F2F7;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            margin-bottom: 8px;
+            width: 40px; height: 40px; background: #f2f2f7;
+            border-radius: 8px; display: flex;
+            align-items: center; justify-content: center;
+            margin-bottom: 5px;
         }
         .category-item.active .category-icon {
-            background: #1C1C1E;
-            color: #FFFFFF;
-        }
-        .category-name {
-            font-size: 14px;
-            color: #8E8E93;
-        }
-        .category-item.active .category-name {
-            color: #1C1C1E;
-            font-weight: 500;
-        }
-        .submit-btn {
-            width: 100%;
-            padding: 16px;
-            border-radius: 16px;
-            background: #1C1C1E;
-            color: #FFFFFF;
-            border: none;
-            font-size: 18px;
-            font-weight: 600;
-            cursor: pointer;
-            margin-top: 16px;
+            background: #000; color: #fff;
         }
     </style>
 </head>
 <body>
-    <!-- 密码锁页面 -->
+    <!-- 密码锁 -->
     <div class="lock-screen" id="lockScreen">
-        <div class="lock-title">请输入密码</div>
+        <div>请输入密码（1234）</div>
         <div class="password-inputs">
-            <input type="password" class="password-input" maxlength="1" oninput="moveToNext(this)">
-            <input type="password" class="password-input" maxlength="1" oninput="moveToNext(this)">
-            <input type="password" class="password-input" maxlength="1" oninput="moveToNext(this)">
-            <input type="password" class="password-input" maxlength="1" oninput="checkPassword()">
+            <input type="password" class="pwd" maxlength="1" oninput="next(this)">
+            <input type="password" class="pwd" maxlength="1" oninput="next(this)">
+            <input type="password" class="pwd" maxlength="1" oninput="next(this)">
+            <input type="password" class="pwd" maxlength="1" oninput="check()">
         </div>
     </div>
 
     <!-- 主页面 -->
-    <div id="mainContent" style="display: none;">
-        <header>
-            <div>另一个我</div>
-            <div id="currentDate"></div>
-        </header>
-
-        <div class="card">
-            <div class="summary-header">
-                <div class="summary-title">本月支出</div>
-                <div id="monthExpense" class="amount expense">¥0.00</div>
-            </div>
-        </div>
+    <div id="main" style="display: none;">
+        <h1 style="padding: 20px;">另一个我</h1>
+        <button class="add-btn" onclick="openModal()">+</button>
 
         <!-- 记账弹窗 -->
-        <div class="modal-overlay" id="billModal">
+        <div class="modal" id="billModal">
             <div class="modal-content">
-                <div class="modal-header">
-                    <div class="modal-title">记一笔</div>
-                    <button class="close-btn" onclick="closeModal()">×</button>
+                <h2>记一笔</h2>
+                <input type="number" id="amount" placeholder="输入金额" style="width:100%; font-size:24px; text-align:center; margin:10px 0;">
+                <div style="display:flex; gap:10px; margin:10px 0;">
+                    <button onclick="setType('expense')" style="flex:1; padding:8px; background:#000; color:#fff; border:none; border-radius:20px;">支出</button>
+                    <button onclick="setType('income')" style="flex:1; padding:8px; border:1px solid #ccc; border-radius:20px;">收入</button>
                 </div>
-                <input type="number" class="amount-input" placeholder="0.00" id="billAmount" min="0.01" step="0.01">
-                <div class="type-toggle">
-                    <button class="type-btn active" data-type="expense">支出</button>
-                    <button class="type-btn" data-type="income">收入</button>
-                </div>
-                <!-- 新增：分类选择区域 -->
-                <div class="form-group">
-                    <div class="form-label">分类</div>
+                <!-- 分类区域（核心） -->
+                <div>
+                    <div>分类</div>
                     <div class="category-grid" id="categoryGrid">
-                        <!-- 分类由JS动态生成 -->
+                        <!-- 分类会在这里生成 -->
                     </div>
                 </div>
-                <button class="submit-btn" onclick="saveBill()">保存</button>
+                <button onclick="save()" style="width:100%; padding:10px; background:#000; color:#fff; border:none; border-radius:10px; margin-top:10px;">保存</button>
+                <button onclick="closeModal()" style="width:100%; padding:10px; margin-top:10px; border:none; background:#eee; border-radius:10px;">关闭</button>
             </div>
         </div>
-
-        <!-- +号按钮 -->
-        <button class="add-btn" onclick="openModal()">+</button>
     </div>
 
     <script>
-        // 基础变量
-        let password = '1234';
+        // 全局变量
+        let pwd = '1234';
         let currentType = 'expense';
-        let selectedCategory = ''; // 选中的分类
-
-        // 内置分类列表（名称+图标）
-        const categories = [
-            { name: '餐饮', icon: '🍜' },
-            { name: '交通', icon: '🚌' },
-            { name: '娱乐', icon: '🎬' },
-            { name: '学习', icon: '📚' },
-            { name: '购物', icon: '🛍️' },
-            { name: '房租', icon: '🏠' },
-            { name: '工资', icon: '💼' },
-            { name: '其他', icon: '🔧' }
-        ];
-
-        // 显示日期
-        const today = new Date();
-        const dateStr = today.getFullYear() + '年' + (today.getMonth() + 1) + '月' + today.getDate() + '日';
-        document.getElementById('currentDate').textContent = dateStr;
+        let selectedCate = '';
+        // 分类列表（极简）
+        const cates = ['餐饮🍜','交通🚌','娱乐🎬','学习📚','购物🛍️','房租🏠','工资💼','其他🔧'];
 
         // 密码相关
-        function moveToNext(input) {
-            const inputs = document.querySelectorAll('.password-input');
-            const currentIndex = Array.from(inputs).indexOf(input);
-            if (input.value && currentIndex < inputs.length - 1) {
-                inputs[currentIndex + 1].focus();
-            }
+        function next(input) {
+            const inputs = document.querySelectorAll('.pwd');
+            const idx = Array.from(inputs).indexOf(input);
+            if(input.value && idx < 3) inputs[idx+1].focus();
         }
-        function checkPassword() {
-            const inputs = document.querySelectorAll('.password-input');
-            const enteredPassword = Array.from(inputs).map(input => input.value).join('');
-            if (enteredPassword.length === 4) {
-                if (enteredPassword === password) {
-                    document.getElementById('lockScreen').style.display = 'none';
-                    document.getElementById('mainContent').style.display = 'block';
-                } else {
-                    alert('密码错误，请重试');
-                    inputs.forEach(input => input.value = '');
-                    inputs[0].focus();
-                }
-            }
-        }
-
-        // 新增：渲染分类列表
-        function renderCategories() {
-            const categoryGrid = document.getElementById('categoryGrid');
-            categoryGrid.innerHTML = ''; // 清空原有内容
-
-            // 遍历分类，生成每个分类的HTML
-            categories.forEach(category => {
-                const categoryItem = document.createElement('div');
-                categoryItem.className = 'category-item';
-                categoryItem.setAttribute('data-category', category.name);
-                
-                // 点击分类时选中
-                categoryItem.onclick = function() {
-                    // 移除所有分类的选中状态
-                    document.querySelectorAll('.category-item').forEach(item => {
-                        item.classList.remove('active');
-                    });
-                    // 选中当前分类
-                    this.classList.add('active');
-                    selectedCategory = category.name;
-                };
-
-                // 分类的HTML结构（图标+名称）
-                categoryItem.innerHTML = `
-                    <div class="category-icon">${category.icon}</div>
-                    <div class="category-name">${category.name}</div>
-                `;
-
-                categoryGrid.appendChild(categoryItem);
-            });
-
-            // 默认选中第一个分类
-            if (categories.length > 0) {
-                document.querySelector('.category-item').classList.add('active');
-                selectedCategory = categories[0].name;
-            }
-        }
-
-        // 弹窗相关
-        function openModal() {
-            const modal = document.getElementById('billModal');
-            if (modal) {
-                modal.classList.add('show');
-                document.getElementById('billAmount').focus();
-                renderCategories(); // 打开弹窗时渲染分类
+        function check() {
+            const inputs = document.querySelectorAll('.pwd');
+            const val = Array.from(inputs).map(i=>i.value).join('');
+            if(val === pwd) {
+                document.getElementById('lockScreen').style.display = 'none';
+                document.getElementById('main').style.display = 'block';
             } else {
-                alert('弹窗元素没找到！');
+                alert('密码错！');
+                inputs.forEach(i=>i.value='');
+                inputs[0].focus();
             }
+        }
+
+        // 弹窗+分类核心
+        function openModal() {
+            // 打开弹窗时强制渲染分类
+            renderCates();
+            document.getElementById('billModal').classList.add('show');
         }
         function closeModal() {
-            const modal = document.getElementById('billModal');
-            if (modal) {
-                modal.classList.remove('show');
-                document.getElementById('billAmount').value = '';
-            }
+            document.getElementById('billModal').classList.remove('show');
+            document.getElementById('amount').value = '';
+        }
+        // 渲染分类（极简版，确保能显示）
+        function renderCates() {
+            const grid = document.getElementById('categoryGrid');
+            grid.innerHTML = ''; // 清空
+            // 循环生成分类
+            cates.forEach(cate => {
+                const item = document.createElement('div');
+                item.className = 'category-item';
+                // 默认选中第一个
+                if(cate === cates[0]) item.classList.add('active');
+                // 分类内容
+                item.innerHTML = `<div class="category-icon">${cate}</div>`;
+                // 点击选中
+                item.onclick = function() {
+                    document.querySelectorAll('.category-item').forEach(i=>i.classList.remove('active'));
+                    this.classList.add('active');
+                    selectedCate = cate;
+                };
+                grid.appendChild(item);
+            });
+            // 默认选中第一个分类
+            selectedCate = cates[0];
         }
 
-        // 保存账单（新增分类验证）
-        function saveBill() {
-            const amount = document.getElementById('billAmount').value;
-            
-            // 1. 验证分类是否选中
-            if (!selectedCategory) {
-                alert('请选择一个分类！');
+        // 收支类型
+        function setType(type) {
+            currentType = type;
+        }
+
+        // 保存
+        function save() {
+            const amount = document.getElementById('amount').value;
+            if(!amount || amount <=0) {
+                alert('金额要大于0！');
                 return;
             }
-            // 2. 验证金额是否有效
-            if (!amount || parseFloat(amount) <= 0) {
-                alert('请输入有效的金额（大于0）');
-                return;
-            }
-            // 3. 提示记账成功（包含分类）
-            alert(`成功记录${currentType === 'expense' ? '支出' : '收入'}：¥${amount}（${selectedCategory}）`);
+            alert(`成功：${currentType==='expense'?'支出':'收入'}${amount}元（${selectedCate}）`);
             closeModal();
         }
-
-        // 切换收支类型
-        window.onload = function() {
-            document.querySelectorAll('.type-btn').forEach(btn => {
-                btn.addEventListener('click', function() {
-                    document.querySelectorAll('.type-btn').forEach(b => b.classList.remove('active'));
-                    this.classList.add('active');
-                    currentType = this.getAttribute('data-type');
-                });
-            });
-        };
     </script>
 </body>
 </html>
