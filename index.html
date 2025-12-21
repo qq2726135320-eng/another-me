@@ -7,29 +7,6 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="default"/>
     <title>另一个我</title>
     <style>
-        /* 自定义提示框样式（居中显示） */
-.custom-alert {
-    position: fixed; top:0; left:0; right:0; bottom:0;
-    background: rgba(0,0,0,0.5);
-    display: flex; align-items: center; justify-content: center;
-    z-index: 300;
-    display: none; /* 默认隐藏 */
-}
-.alert-content {
-    background: #000; color: #fff;
-    padding: 24px; border-radius: 12px;
-    width: 80%; max-width: 300px;
-    text-align: center; /* 文字居中 */
-}
-.alert-text {
-    font-size: 16px; margin-bottom: 15px;
-}
-.alert-close {
-    background: transparent;
-    border: 1px solid #fff; color: #fff;
-    padding: 8px 20px; border-radius: 8px;
-    font-size: 14px;
-}
         /* 全局重置 */
         * { 
             margin: 0; padding: 0; box-sizing: border-box; 
@@ -71,7 +48,7 @@
             color: #1C1C1E;
         }
 
-        /* 收支统计卡片（新增） */
+        /* 收支统计卡片 */
         .stats-card {
             background: #fff;
             border-radius: 16px;
@@ -91,10 +68,10 @@
         .stats-value {
             font-size: 18px; font-weight: 600;
         }
-        .stats-value.expense { color: #FF3B30; } /* 支出红色 */
-        .stats-value.income { color: #34C759; } /* 收入绿色 */
+        .stats-value.expense { color: #FF3B30; }
+        .stats-value.income { color: #34C759; }
 
-        /* 最近账单区域（新增） */
+        /* 最近账单区域 */
         .bills-section {
             padding: 0 16px;
         }
@@ -108,14 +85,38 @@
             color: #8E8E93;
             font-size: 14px;
         }
+
+        /* ========== 新增：账单滑动删除样式 ========== */
+        .bill-swipe-container {
+            position: relative;
+            width: 100%;
+            margin-bottom: 10px;
+            overflow: hidden;
+            border-radius: 12px;
+        }
         .bill-item {
             background: #fff;
-            border-radius: 12px;
             padding: 12px 16px;
-            margin-bottom: 10px;
             display: flex; justify-content: space-between;
             align-items: center;
             box-shadow: 0 2px 6px rgba(0,0,0,0.03);
+            position: relative;
+            left: 0;
+            transition: left 0.2s ease; /* 滑动动画 */
+            z-index: 2;
+        }
+        .bill-delete-btn {
+            position: absolute;
+            top: 0; right: 0; bottom: 0;
+            width: 80px;
+            background: #FF3B30;
+            color: #fff;
+            border: none;
+            font-size: 16px;
+            z-index: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
         .bill-left {
             display: flex; align-items: center;
@@ -278,19 +279,36 @@
             border-radius: 12px; border: 1px solid #E5E5EA;
             background: transparent; font-size: 16px;
         }
+
+        /* 自定义提示框 */
+        .custom-alert {
+            position: fixed; top:0; left:0; right:0; bottom:0;
+            background: rgba(0,0,0,0.5);
+            display: flex; align-items: center; justify-content: center;
+            z-index: 300;
+            display: none;
+        }
+        .alert-content {
+            background: #000; color: #fff;
+            padding: 24px; border-radius: 12px;
+            width: 80%; max-width: 300px;
+            text-align: center;
+        }
+        .alert-text {
+            font-size: 16px; margin-bottom: 15px;
+        }
+        .alert-close {
+            background: transparent;
+            border: 1px solid #fff; color: #fff;
+            padding: 8px 20px; border-radius: 8px;
+            font-size: 14px;
+        }
     </style>
 </head>
 <body>
     <!-- 密码锁页面 -->
     <div class="lock-screen" id="lockScreen">
-        <!-- 新增：自定义提示框（居中显示） -->
-<div class="custom-alert" id="customAlert">
-    <div class="alert-content">
-        <div class="alert-text" id="alertText"></div>
-        <button class="alert-close" onclick="closeAlert()">关闭</button>
-    </div>
-</div>
-        <div class="lock-title">请输入数字密码</div>
+        <div class="lock-title">请输入4位数字密码</div>
         <div class="password-inputs">
             <input type="password" class="password-input" maxlength="1" oninput="nextInput(this)">
             <input type="password" class="password-input" maxlength="1" oninput="nextInput(this)">
@@ -299,11 +317,19 @@
         </div>
     </div>
 
-    <!-- 主页面（新增收支统计+最近账单） -->
+    <!-- 自定义提示框 -->
+    <div class="custom-alert" id="customAlert">
+        <div class="alert-content">
+            <div class="alert-text" id="alertText"></div>
+            <button class="alert-close" onclick="closeAlert()">关闭</button>
+        </div>
+    </div>
+
+    <!-- 主页面 -->
     <div id="mainPage" style="display: none;">
         <div class="main-title">另一个我</div>
 
-        <!-- 新增：本月收支统计卡片 -->
+        <!-- 本月收支统计卡片 -->
         <div class="stats-card">
             <div class="stats-row">
                 <div class="stats-label">本月支出</div>
@@ -315,7 +341,7 @@
             </div>
         </div>
 
-        <!-- 新增：最近账单区域 -->
+        <!-- 最近账单区域 -->
         <div class="bills-section">
             <div class="bills-title">最近账单</div>
             <div id="recentBillsList">
@@ -361,7 +387,7 @@
 
     <script>
         // 全局变量
-        let password = '0517';
+        let password = '0517'; // 初始密码0517
         let currentType = 'expense';
         let selectedCate = '';
         let longPressTimer = null;
@@ -370,8 +396,11 @@
             '餐饮🍜', '交通🚌', '娱乐🎬', '学习📚',
             '购物🛍️', '房租🏠', '工资💼', '其他🔧'
         ];
-        // 新增：账单数据（本地存储）
+        // 账单数据
         let bills = JSON.parse(localStorage.getItem('phoneBills')) || [];
+        // 滑动相关变量
+        let startX = 0; // 触摸起始X坐标
+        let currentBillId = ''; // 当前滑动的账单ID
 
         // ========== 密码锁功能 ==========
         function nextInput(input) {
@@ -381,33 +410,29 @@
                 inputs[index + 1].focus();
             }
         }
-       function checkPassword() {
-    const inputs = document.querySelectorAll('.password-input');
-    const inputPwd = Array.from(inputs).map(i => i.value).join('');
-    
-    if (inputPwd.length === 4) {
-        if (inputPwd === password) {
-            document.getElementById('lockScreen').style.display = 'none';
-            document.getElementById('mainPage').style.display = 'block';
-            renderHomePage();
-        } else {
-            // 替换原来的alert，显示自定义提示框
-            document.getElementById('alertText').textContent = '数字密码错误';
-            document.getElementById('customAlert').style.display = 'flex';
+        function checkPassword() {
+            const inputs = document.querySelectorAll('.password-input');
+            const inputPwd = Array.from(inputs).map(i => i.value).join('');
+            
+            if (inputPwd.length === 4) {
+                if (inputPwd === password) {
+                    document.getElementById('lockScreen').style.display = 'none';
+                    document.getElementById('mainPage').style.display = 'block';
+                    renderHomePage();
+                } else {
+                    document.getElementById('alertText').textContent = '数字密码错误';
+                    document.getElementById('customAlert').style.display = 'flex';
+                }
+            }
         }
-    }
-}
+        function closeAlert() {
+            document.getElementById('customAlert').style.display = 'none';
+            const inputs = document.querySelectorAll('.password-input');
+            inputs.forEach(input => input.value = '');
+            inputs[0].focus();
+        }
 
-// 新增：关闭提示框的函数
-function closeAlert() {
-    document.getElementById('customAlert').style.display = 'none';
-    // 清空密码输入框并聚焦第一个
-    const inputs = document.querySelectorAll('.password-input');
-    inputs.forEach(input => input.value = '');
-    inputs[0].focus();
-}
-
-        // ========== 首页渲染功能（新增） ==========
+        // ========== 首页渲染功能 ==========
         function renderHomePage() {
             const today = new Date();
             const currentMonth = today.getMonth() + 1;
@@ -430,8 +455,8 @@ function closeAlert() {
             document.getElementById('monthExpense').textContent = `¥${monthExpense.toFixed(2)}`;
             document.getElementById('monthIncome').textContent = `¥${monthIncome.toFixed(2)}`;
 
-            // 2. 渲染最近账单（取前5条）
-            const recentBills = bills.slice(0, 5); // 最新的5条
+            // 2. 渲染最近账单
+            const recentBills = bills.slice(0, 5);
             const billsListEl = document.getElementById('recentBillsList');
             
             if (recentBills.length === 0) {
@@ -439,16 +464,19 @@ function closeAlert() {
                 return;
             }
 
-            // 生成账单条目
+            // 生成账单条目（带滑动删除）
             billsListEl.innerHTML = '';
             recentBills.forEach(bill => {
-                // 找到分类对应的emoji
                 const cate = categories.find(c => c.includes(bill.category.replace(/[^\u4e00-\u9fa5]/g, ''))) || '其他🔧';
                 const cateEmoji = cate.replace(/[\u4e00-\u9fa5]/g, '');
-                
-                // 格式化日期
                 const dateStr = bill.date.replace(/-/g, '月') + '日';
 
+                // 包裹滑动容器 + 账单条目 + 删除按钮
+                const swipeContainer = document.createElement('div');
+                swipeContainer.className = 'bill-swipe-container';
+                swipeContainer.setAttribute('data-bill-id', bill.id);
+
+                // 账单条目
                 const billItem = document.createElement('div');
                 billItem.className = 'bill-item';
                 billItem.innerHTML = `
@@ -463,8 +491,84 @@ function closeAlert() {
                         ${bill.type === 'expense' ? '-' : '+'}¥${bill.amount}
                     </div>
                 `;
-                billsListEl.appendChild(billItem);
+
+                // 删除按钮
+                const deleteBtn = document.createElement('button');
+                deleteBtn.className = 'bill-delete-btn';
+                deleteBtn.innerHTML = '删除';
+                deleteBtn.onclick = () => deleteBill(bill.id);
+
+                // 绑定滑动事件
+                billItem.addEventListener('touchstart', (e) => handleTouchStart(e, bill.id));
+                billItem.addEventListener('touchmove', handleTouchMove);
+                billItem.addEventListener('touchend', handleTouchEnd);
+
+                // 组装DOM
+                swipeContainer.appendChild(billItem);
+                swipeContainer.appendChild(deleteBtn);
+                billsListEl.appendChild(swipeContainer);
             });
+        }
+
+        // ========== 新增：账单滑动事件处理 ==========
+        // 触摸开始
+        function handleTouchStart(e, billId) {
+            startX = e.touches[0].clientX; // 记录起始X坐标
+            currentBillId = billId; // 记录当前滑动的账单ID
+            // 重置所有账单的位置
+            document.querySelectorAll('.bill-item').forEach(item => {
+                item.style.left = '0px';
+            });
+        }
+
+        // 触摸移动
+        function handleTouchMove(e) {
+            if (!currentBillId) return;
+            const moveX = e.touches[0].clientX;
+            const diffX = startX - moveX; // 右滑为正数（手指从左往右滑）
+            
+            // 只处理右滑，且限制滑动距离（最大80px）
+            if (diffX > 0 && diffX <= 80) {
+                const billItem = document.querySelector(`.bill-swipe-container[data-bill-id="${currentBillId}"] .bill-item`);
+                if (billItem) {
+                    billItem.style.left = `-${diffX}px`;
+                }
+            }
+        }
+
+        // 触摸结束
+        function handleTouchEnd() {
+            if (!currentBillId) return;
+            const billItem = document.querySelector(`.bill-swipe-container[data-bill-id="${currentBillId}"] .bill-item`);
+            const currentLeft = parseInt(billItem.style.left) || 0;
+            
+            // 滑动距离超过30px则展开删除按钮，否则重置
+            if (Math.abs(currentLeft) >= 30) {
+                billItem.style.left = '-80px'; // 完全展开删除按钮
+            } else {
+                billItem.style.left = '0px'; // 重置位置
+            }
+            currentBillId = ''; // 清空当前账单ID
+        }
+
+        // ========== 新增：删除账单功能 ==========
+        function deleteBill(billId) {
+            if (confirm('确定删除这条账单吗？')) {
+                // 过滤掉要删除的账单
+                bills = bills.filter(bill => bill.id !== billId);
+                // 保存到本地存储
+                localStorage.setItem('phoneBills', JSON.stringify(bills));
+                // 重新渲染首页
+                renderHomePage();
+                alert('账单删除成功！');
+            } else {
+                // 取消删除，重置账单位置
+                const billItem = document.querySelector(`.bill-swipe-container[data-bill-id="${billId}"] .bill-item`);
+                if (billItem) {
+                    billItem.style.left = '0px';
+                }
+            }
+            currentBillId = '';
         }
 
         // ========== 记账弹窗功能 ==========
@@ -519,7 +623,7 @@ function closeAlert() {
                         item.classList.remove('active');
                     });
                     cateItem.classList.add('active');
-                    selectedCate = cate.replace(/[^\u4e00-\u9fa5]/g, ''); // 只存分类名称
+                    selectedCate = cate.replace(/[^\u4e00-\u9fa5]/g, '');
                 });
 
                 grid.appendChild(cateItem);
@@ -568,7 +672,7 @@ function closeAlert() {
             event.target.classList.add('active');
         }
 
-        // ========== 保存账单功能（新增：存储账单） ==========
+        // ========== 保存账单功能 ==========
         function saveBill() {
             const amount = document.getElementById('billAmount').value.trim();
             if (!amount || parseFloat(amount) <= 0) {
@@ -580,26 +684,22 @@ function closeAlert() {
                 return;
             }
 
-            // 生成账单数据
             const today = new Date();
-            const billDate = today.toISOString().split('T')[0]; // 格式：2025-12-22
+            const billDate = today.toISOString().split('T')[0];
             const newBill = {
-                id: Date.now().toString(), // 唯一ID
+                id: Date.now().toString(),
                 category: selectedCate,
                 amount: parseFloat(amount).toFixed(2),
                 type: currentType,
                 date: billDate
             };
 
-            // 新增到账单列表（最新的放最前面）
             bills.unshift(newBill);
-            // 保存到本地存储
             localStorage.setItem('phoneBills', JSON.stringify(bills));
 
-            // 提示+更新首页
             alert(`✅ 记账成功！\n${currentType === 'expense' ? '支出' : '收入'}：¥${amount}\n分类：${selectedCate}`);
             closeBillModal();
-            renderHomePage(); // 记账后重新渲染首页
+            renderHomePage();
         }
 
         // 手机端防缩放
@@ -609,5 +709,3 @@ function closeAlert() {
     </script>
 </body>
 </html>
-
-
