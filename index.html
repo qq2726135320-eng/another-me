@@ -22,15 +22,16 @@
         .stats-value.expense { color: #ff3b30; }
         .stats-value.income { color: #34c759; }
 
-        /* 账单滑动删除核心样式（必看） */
+        /* ========== 苹果信息同款删除按钮核心样式 ========== */
         .bill-item-wrap {
             position: relative;
             width: 100%;
             height: 70px;
             margin: 0 16px 10px;
-            overflow: hidden !important; /* 强制隐藏溢出 */
+            overflow: hidden; /* 必须隐藏溢出 */
             border-radius: 12px;
         }
+        /* 账单主体（右滑时左移） */
         .bill-item {
             position: absolute;
             top: 0; left: 0;
@@ -38,22 +39,30 @@
             background: #fff;
             display: flex; align-items: center;
             padding: 0 16px;
-            transition: left 0.15s ease; /* 快速滑动动画 */
+            transition: left 0.2s cubic-bezier(0.34, 1.56, 0.64, 1); /* 苹果同款弹性动画 */
             z-index: 2;
         }
-        .bill-delete {
+        /* 苹果信息同款：右侧圆形红色垃圾桶按钮 */
+        .bill-delete-btn {
             position: absolute;
-            top: 0; right: 0;
-            width: 80px; height: 100%;
-            background: #ff3b30; color: #fff;
-            border: none; font-size: 16px;
+            top: 50%; right: 10px;
+            transform: translateY(-50%);
+            width: 44px; height: 44px;
+            background: #ff3b30;
+            border: none; border-radius: 50%; /* 圆形 */
+            color: #fff;
+            font-size: 20px;
+            display: flex; align-items: center; justify-content: center;
             z-index: 1;
         }
+
+        /* 账单内容样式 */
         .bill-icon { width: 36px; height: 36px; background: #eee; border-radius: 8px; display: flex; align-items: center; justify-content: center; margin-right: 10px; }
         .bill-info { flex: 1; }
         .bill-amount { font-weight: 500; }
         .bill-amount.expense { color: #ff3b30; }
 
+        /* 其他基础样式 */
         .add-btn { position: fixed; bottom: 20px; right: 20px; width: 60px; height: 60px; border-radius: 50%; background: #000; color: #fff; font-size: 36px; border: none; display: flex; align-items: center; justify-content: center; }
         .modal { position: fixed; top:0; left:0; right:0; bottom:0; background: rgba(0,0,0,0.5); display: none; z-index: 100; }
         .modal.show { display: block; }
@@ -86,7 +95,7 @@
                 <div class="stats-value income" id="income">¥0.00</div>
             </div>
         </div>
-        <!-- 账单列表 -->
+        <!-- 账单列表（苹果信息同款删除） -->
         <div style="padding: 0 16px;">
             <div style="font-size: 16px; font-weight: 600; margin-bottom: 10px;">最近账单</div>
             <div id="billList">
@@ -134,7 +143,7 @@
         let selectedCate = '';
         let cates = JSON.parse(localStorage.getItem('cates')) || ['餐饮🍜','交通🚌','娱乐🎬','学习📚'];
         let bills = JSON.parse(localStorage.getItem('bills')) || [];
-        // 滑动变量（极简版）
+        // 滑动变量（匹配苹果信息交互）
         let startX = 0;
         let currentBill = null;
 
@@ -156,7 +165,7 @@
             }
         }
 
-        // 渲染账单（核心：滑动删除）
+        // ========== 苹果信息同款右滑删除逻辑 ==========
         function renderBill() {
             // 计算收支
             let exp = 0, inc = 0;
@@ -179,11 +188,11 @@
             }
             list.innerHTML = '';
             bills.forEach((b, idx) => {
-                // 滑动容器（必加overflow:hidden）
+                // 滑动容器
                 const wrap = document.createElement('div');
                 wrap.className = 'bill-item-wrap';
                 
-                // 账单主体
+                // 账单主体（右滑时左移）
                 const item = document.createElement('div');
                 item.className = 'bill-item';
                 item.innerHTML = `
@@ -195,12 +204,12 @@
                     <div class="bill-amount ${b.type}">${b.type==='expense'?'-':'+'}¥${b.amount}</div>
                 `;
 
-                // 删除按钮
-                const delBtn = document.createElement('button');
-                delBtn.className = 'bill-delete';
-                delBtn.innerText = '删除';
-                delBtn.onclick = () => {
-                    if(confirm('确定删除？')) {
+                // ========== 苹果信息同款：圆形红色垃圾桶按钮 ==========
+                const deleteBtn = document.createElement('button');
+                deleteBtn.className = 'bill-delete-btn';
+                deleteBtn.innerText = '🗑️'; // 垃圾桶图标
+                deleteBtn.onclick = () => {
+                    if(confirm('确定删除这条账单吗？')) {
                         bills.splice(idx, 1);
                         localStorage.setItem('bills', JSON.stringify(bills));
                         renderBill();
@@ -209,40 +218,37 @@
                     }
                 };
 
-                // ========== 极简滑动事件（手机端100%触发） ==========
-                // 触摸开始
+                // 苹果信息同款滑动交互
                 item.ontouchstart = (e) => {
                     startX = e.touches[0].clientX;
                     currentBill = item;
-                    // 重置所有账单位置
+                    // 重置所有账单位置（避免多个按钮展开）
                     document.querySelectorAll('.bill-item').forEach(i => i.style.left = '0');
                 };
-                // 触摸移动
                 item.ontouchmove = (e) => {
                     if(!currentBill) return;
                     const moveX = e.touches[0].clientX;
-                    const diff = startX - moveX; // 右滑diff为正
-                    // 只允许右滑，最大滑80px
-                    if(diff > 0 && diff <= 80) {
+                    const diff = startX - moveX; // 右滑时diff为正
+                    // 只允许右滑，最大滑动距离=按钮宽度+边距（44+20=64px）
+                    if(diff > 0 && diff <= 64) {
                         currentBill.style.left = `-${diff}px`;
                     }
                 };
-                // 触摸结束
                 item.ontouchend = () => {
                     if(!currentBill) return;
                     const left = parseInt(currentBill.style.left) || 0;
-                    // 滑超过20px就展开删除按钮（阈值降低，更容易触发）
+                    // 滑动超过20px则完全展开按钮（苹果信息的触发阈值）
                     if(Math.abs(left) >= 20) {
-                        currentBill.style.left = '-80px';
+                        currentBill.style.left = '-64px'; // 刚好露出圆形按钮
                     } else {
-                        currentBill.style.left = '0';
+                        currentBill.style.left = '0'; // 重置位置
                     }
                     currentBill = null;
                 };
 
                 // 组装DOM
                 wrap.appendChild(item);
-                wrap.appendChild(delBtn);
+                wrap.appendChild(deleteBtn);
                 list.appendChild(wrap);
             });
         }
