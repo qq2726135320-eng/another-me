@@ -16,6 +16,7 @@
             background: #F2F2F7; 
             padding-bottom: 90px; 
             font-size: 16px; 
+            font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", sans-serif; /* iOS原生字体 */
         }
 
         /* 密码锁 */
@@ -70,6 +71,113 @@
         }
         .stats-value.expense { color: #FF3B30; }
         .stats-value.income { color: #34C759; }
+
+        /* ========== iOS原生日历1:1复刻样式 ========== */
+        .calendar-section {
+            background: #fff;
+            border-radius: 16px;
+            margin: 0 16px 16px;
+            padding: 16px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+        }
+        /* iOS日历头部（月份切换+标题） */
+        .calendar-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
+        }
+        .calendar-nav {
+            display: flex;
+            gap: 8px;
+        }
+        /* iOS风格箭头按钮（极简无背景，点击有高亮） */
+        .calendar-nav-btn {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            border: none;
+            background: transparent;
+            color: #007AFF; /* iOS系统蓝色 */
+            font-size: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            -webkit-tap-highlight-color: rgba(0, 122, 255, 0.1);
+        }
+        .calendar-month-text {
+            font-size: 17px;
+            font-weight: 500;
+            color: #1C1C1E;
+        }
+        /* iOS日历星期栏（周日红色） */
+        .calendar-week {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            text-align: center;
+            margin-bottom: 8px;
+        }
+        .calendar-week-item {
+            font-size: 12px;
+            padding: 4px 0;
+            color: #8E8E93;
+        }
+        .calendar-week-item:first-child {
+            color: #FF3B30; /* iOS日历周日红色 */
+        }
+        /* iOS日历日期网格 */
+        .calendar-days {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 2px;
+        }
+        /* iOS日期样式（圆形点击态、今日圈线、选中蓝底） */
+        .calendar-day {
+            aspect-ratio: 1/1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%; /* iOS圆形日期 */
+            font-size: 14px;
+            color: #1C1C1E;
+            background: transparent;
+            -webkit-tap-highlight-color: rgba(0, 122, 255, 0.1);
+        }
+        /* 空日期（上月/下月） */
+        .calendar-day.empty {
+            color: #C7C7CC;
+        }
+        /* iOS今日样式：灰色边框圈 */
+        .calendar-day.today {
+            border: 1px solid #8E8E93;
+            font-weight: 500;
+        }
+        /* 有账单的日期：底部小红点（iOS同款） */
+        .calendar-day.has-bill {
+            position: relative;
+        }
+        .calendar-day.has-bill::after {
+            content: '';
+            position: absolute;
+            bottom: 2px;
+            width: 4px;
+            height: 4px;
+            border-radius: 50%;
+            background: #FF3B30;
+        }
+        /* iOS选中日期：蓝色背景+白色文字 */
+        .calendar-day.active {
+            background: #007AFF;
+            color: #fff;
+            font-weight: 500;
+        }
+        /* 选中日期提示 */
+        .selected-date-tip {
+            text-align: center;
+            padding: 8px 0 0;
+            font-size: 14px;
+            color: #8E8E93;
+        }
 
         /* 最近账单区域 */
         .bills-section {
@@ -254,7 +362,7 @@
         }
         .category-name {
             font-size: 12px; color: #8E8E93;
-            text-align: center; /* 核心修改：分类文字居中 */
+            text-align: center; /* 分类文字居中 */
         }
         .category-item.active .category-name {
             color: #1C1C1E; font-weight: 500;
@@ -376,9 +484,31 @@
             </div>
         </div>
 
+        <!-- ========== iOS原生风格日历组件 ========== -->
+        <div class="calendar-section">
+            <div class="calendar-header">
+                <div class="calendar-nav">
+                    <button class="calendar-nav-btn" onclick="changeMonth(-1)">◀</button>
+                    <div class="calendar-month-text" id="calendarMonthText">2025年12月</div>
+                    <button class="calendar-nav-btn" onclick="changeMonth(1)">▶</button>
+                </div>
+            </div>
+            <div class="calendar-week">
+                <div class="calendar-week-item">日</div>
+                <div class="calendar-week-item">一</div>
+                <div class="calendar-week-item">二</div>
+                <div class="calendar-week-item">三</div>
+                <div class="calendar-week-item">四</div>
+                <div class="calendar-week-item">五</div>
+                <div class="calendar-week-item">六</div>
+            </div>
+            <div class="calendar-days" id="calendarDays"></div>
+            <div class="selected-date-tip" id="selectedDateTip">当前选中：2025年12月22日（今日）</div>
+        </div>
+
         <!-- 最近账单区域 -->
         <div class="bills-section">
-            <div class="bills-title">最近账单</div>
+            <div class="bills-title">当日账单</div>
             <div id="recentBillsList">
                 <div class="bills-empty">暂无账单，点击+开始记录</div>
             </div>
@@ -431,7 +561,7 @@
             '餐饮🍜', '交通🚌', '娱乐🎬', '学习📚',
             '购物🛍️', '房租🏠', '工资💼', '其他🔧'
         ];
-        // 核心新增：分类与图标一一对应映射表（解决图标不匹配）
+        // 分类与图标一一对应映射表
         const cateIcons = {
             '餐饮': '🍜',
             '交通': '🚌',
@@ -454,8 +584,11 @@
         // 账单数据
         let bills = JSON.parse(localStorage.getItem('phoneBills')) || [];
         // 滑动相关变量（适配iOS删除按钮）
-        let startX = 0; // 触摸起始X坐标
-        let currentBillId = ''; // 当前滑动的账单ID
+        let startX = 0; 
+        let currentBillId = ''; 
+        // 日历相关变量（iOS风格）
+        let currentCalendarDate = new Date(); // 当前显示的月份
+        let selectedDate = new Date(); // 选中的日期
 
         // ========== 密码锁功能 ==========
         function nextInput(input) {
@@ -473,7 +606,8 @@
                 if (inputPwd === password) {
                     document.getElementById('lockScreen').style.display = 'none';
                     document.getElementById('mainPage').style.display = 'block';
-                    renderHomePage();
+                    renderCalendar(); // 初始化日历
+                    renderHomePage(); // 初始化账单
                 } else {
                     document.getElementById('alertText').textContent = '数字密码错误';
                     document.getElementById('customAlert').style.display = 'flex';
@@ -487,41 +621,146 @@
             inputs[0].focus();
         }
 
-        // ========== 首页渲染功能 ==========
-        function renderHomePage() {
-            const today = new Date();
-            const currentMonth = today.getMonth() + 1;
-            const currentYear = today.getFullYear();
+        // ========== iOS风格日历核心功能 ==========
+        // 渲染日历
+        function renderCalendar() {
+            const year = currentCalendarDate.getFullYear();
+            const month = currentCalendarDate.getMonth();
+            // 更新月份标题
+            document.getElementById('calendarMonthText').textContent = `${year}年${month + 1}月`;
             
-            // 1. 计算本月收支
-            let monthExpense = 0;
-            let monthIncome = 0;
+            // 获取当月第一天是星期几（0=周日）
+            const firstDay = new Date(year, month, 1).getDay();
+            // 获取当月总天数
+            const totalDays = new Date(year, month + 1, 0).getDate();
+            // 获取上月最后几天的天数
+            const lastMonthDays = new Date(year, month, 0).getDate();
+
+            const calendarDaysEl = document.getElementById('calendarDays');
+            calendarDaysEl.innerHTML = '';
+
+            // 1. 渲染上月剩余天数（空占位）
+            for (let i = 0; i < firstDay; i++) {
+                const dayEl = document.createElement('div');
+                dayEl.className = 'calendar-day empty';
+                dayEl.textContent = lastMonthDays - firstDay + i + 1;
+                calendarDaysEl.appendChild(dayEl);
+            }
+
+            // 2. 渲染当月天数（iOS风格）
+            const today = new Date();
+            const todayYear = today.getFullYear();
+            const todayMonth = today.getMonth();
+            const todayDay = today.getDate();
+            // 获取有账单的日期列表
+            const billDates = getBillDates();
+
+            for (let day = 1; day <= totalDays; day++) {
+                const dayEl = document.createElement('div');
+                dayEl.className = 'calendar-day';
+                dayEl.textContent = day;
+
+                // 标记今日（iOS风格：灰色边框圈）
+                if (year === todayYear && month === todayMonth && day === todayDay) {
+                    dayEl.classList.add('today');
+                }
+                // 标记有账单的日期（底部小红点）
+                const dateKey = `${year}-${month + 1}-${day}`;
+                if (billDates.includes(dateKey)) {
+                    dayEl.classList.add('has-bill');
+                }
+                // 标记选中日期（iOS蓝色背景）
+                if (year === selectedDate.getFullYear() && month === selectedDate.getMonth() && day === selectedDate.getDate()) {
+                    dayEl.classList.add('active');
+                }
+
+                // 点击日期选中
+                dayEl.onclick = () => {
+                    selectedDate = new Date(year, month, day);
+                    // 更新选中提示
+                    document.getElementById('selectedDateTip').textContent = `当前选中：${year}年${month + 1}月${day}日`;
+                    // 重新渲染日历（更新选中态）
+                    renderCalendar();
+                    // 渲染选中日期的账单
+                    renderHomePage();
+                };
+
+                calendarDaysEl.appendChild(dayEl);
+            }
+
+            // 3. 渲染下月开头天数（空占位）
+            const totalCells = firstDay + totalDays;
+            const emptyCells = 42 - totalCells; // 日历固定6行42格
+            for (let i = 0; i < emptyCells; i++) {
+                const dayEl = document.createElement('div');
+                dayEl.className = 'calendar-day empty';
+                dayEl.textContent = i + 1;
+                calendarDaysEl.appendChild(dayEl);
+            }
+        }
+
+        // 切换月份
+        function changeMonth(diff) {
+            currentCalendarDate.setMonth(currentCalendarDate.getMonth() + diff);
+            renderCalendar();
+        }
+
+        // 获取有账单的日期列表
+        function getBillDates() {
+            const dates = [];
             bills.forEach(bill => {
-                const billDate = new Date(bill.date);
-                if (billDate.getFullYear() === currentYear && billDate.getMonth() + 1 === currentMonth) {
-                    if (bill.type === 'expense') {
-                        monthExpense += parseFloat(bill.amount);
-                    } else {
-                        monthIncome += parseFloat(bill.amount);
-                    }
+                const date = new Date(bill.date);
+                const dateKey = `${date.getFullYear()}-${date.getMonth() + 1}-${date.getDate()}`;
+                if (!dates.includes(dateKey)) {
+                    dates.push(dateKey);
                 }
             });
-            // 更新收支显示
-            document.getElementById('monthExpense').textContent = `¥${monthExpense.toFixed(2)}`;
-            document.getElementById('monthIncome').textContent = `¥${monthIncome.toFixed(2)}`;
+            return dates;
+        }
 
-            // 2. 渲染最近账单
-            const recentBills = bills.slice(0, 5);
-            const billsListEl = document.getElementById('recentBillsList');
+        // ========== 首页/账单渲染功能（适配日历筛选） ==========
+        function renderHomePage() {
+            // 1. 计算选中日期的收支（如果选中的是当月，同步更新月度统计）
+            const selectedYear = selectedDate.getFullYear();
+            const selectedMonth = selectedDate.getMonth() + 1;
+            const selectedDay = selectedDate.getDate();
             
-            if (recentBills.length === 0) {
+            // 月度收支统计（仅当月）
+            const today = new Date();
+            if (selectedYear === today.getFullYear() && selectedMonth === today.getMonth() + 1) {
+                let monthExpense = 0;
+                let monthIncome = 0;
+                bills.forEach(bill => {
+                    const billDate = new Date(bill.date);
+                    if (billDate.getFullYear() === selectedYear && billDate.getMonth() + 1 === selectedMonth) {
+                        if (bill.type === 'expense') {
+                            monthExpense += parseFloat(bill.amount);
+                        } else {
+                            monthIncome += parseFloat(bill.amount);
+                        }
+                    }
+                });
+                document.getElementById('monthExpense').textContent = `¥${monthExpense.toFixed(2)}`;
+                document.getElementById('monthIncome').textContent = `¥${monthIncome.toFixed(2)}`;
+            }
+
+            // 2. 筛选选中日期的账单
+            const filteredBills = bills.filter(bill => {
+                const billDate = new Date(bill.date);
+                return billDate.getFullYear() === selectedYear && 
+                       billDate.getMonth() + 1 === selectedMonth && 
+                       billDate.getDate() === selectedDay;
+            });
+
+            const billsListEl = document.getElementById('recentBillsList');
+            if (filteredBills.length === 0) {
                 billsListEl.innerHTML = '<div class="bills-empty">暂无账单，点击+开始记录</div>';
                 return;
             }
 
-            // 生成账单条目（带iOS同款滑动删除）
+            // 渲染选中日期的账单
             billsListEl.innerHTML = '';
-            recentBills.forEach(bill => {
+            filteredBills.forEach(bill => {
                 const cate = categories.find(c => c.includes(bill.category.replace(/[^\u4e00-\u9fa5]/g, ''))) || '其他🔧';
                 const cateEmoji = cate.replace(/[\u4e00-\u9fa5]/g, '');
                 const dateStr = bill.date.replace(/-/g, '月') + '日';
@@ -565,23 +804,17 @@
         }
 
         // ========== iOS同款账单滑动事件处理 ==========
-        // 触摸开始
         function handleTouchStart(e, billId) {
-            startX = e.touches[0].clientX; // 记录起始X坐标
-            currentBillId = billId; // 记录当前滑动的账单ID
-            // 重置所有账单的位置
+            startX = e.touches[0].clientX; 
+            currentBillId = billId; 
             document.querySelectorAll('.bill-item').forEach(item => {
                 item.style.left = '0px';
             });
         }
-
-        // 触摸移动
         function handleTouchMove(e) {
             if (!currentBillId) return;
             const moveX = e.touches[0].clientX;
-            const diffX = startX - moveX; // 右滑为正数
-            
-            // 适配iOS圆形按钮：最大滑动距离64px
+            const diffX = startX - moveX; 
             if (diffX > 0 && diffX <= 64) {
                 const billItem = document.querySelector(`.bill-swipe-container[data-bill-id="${currentBillId}"] .bill-item`);
                 if (billItem) {
@@ -589,34 +822,27 @@
                 }
             }
         }
-
-        // 触摸结束
         function handleTouchEnd() {
             if (!currentBillId) return;
             const billItem = document.querySelector(`.bill-swipe-container[data-bill-id="${currentBillId}"] .bill-item`);
             const currentLeft = parseInt(billItem.style.left) || 0;
-            
-            // 滑动超过20px则展开删除按钮（iOS触发阈值）
             if (Math.abs(currentLeft) >= 20) {
-                billItem.style.left = '-64px'; // 刚好露出iOS垃圾桶
+                billItem.style.left = '-64px'; 
             } else {
-                billItem.style.left = '0px'; // 重置位置
+                billItem.style.left = '0px'; 
             }
-            currentBillId = ''; // 清空当前账单ID
+            currentBillId = ''; 
         }
 
         // ========== 删除账单功能 ==========
         function deleteBill(billId) {
             if (confirm('确定删除这条账单吗？')) {
-                // 过滤掉要删除的账单
                 bills = bills.filter(bill => bill.id !== billId);
-                // 保存到本地存储
                 localStorage.setItem('phoneBills', JSON.stringify(bills));
-                // 重新渲染首页
+                renderCalendar(); // 更新日历红点
                 renderHomePage();
                 alert('账单删除成功！');
             } else {
-                // 取消删除，重置账单位置
                 const billItem = document.querySelector(`.bill-swipe-container[data-bill-id="${billId}"] .bill-item`);
                 if (billItem) {
                     billItem.style.left = '0px';
@@ -638,7 +864,7 @@
             document.getElementById('billAmount').value = '';
         }
 
-        // ========== 分类功能（核心修改：图标匹配+文字居中） ==========
+        // ========== 分类功能（图标匹配+文字居中） ==========
         function renderCategories() {
             const grid = document.getElementById('categoryGrid');
             grid.innerHTML = '';
@@ -648,18 +874,15 @@
                 cateItem.className = 'category-item';
                 if (index === 0) cateItem.classList.add('active');
                 
-                // 提取纯分类名称（去掉原有emoji）
                 const catePureName = cate.replace(/[^\u4e00-\u9fa5]/g, '');
-                // 根据分类名匹配对应图标（解决不匹配问题）
                 const matchIcon = cateIcons[catePureName] || '🔧';
                 
-                // 渲染：匹配的图标 + 居中文字
                 cateItem.innerHTML = `
                     <div class="category-icon">${matchIcon}</div>
                     <div class="category-name">${catePureName}</div>
                 `;
 
-                // 长按删除逻辑（完全不变）
+                // 长按删除
                 cateItem.addEventListener('touchstart', () => {
                     longPressTimer = setTimeout(() => {
                         if (confirm(`确定删除「${cate}」分类吗？`)) {
@@ -677,7 +900,7 @@
                 cateItem.addEventListener('touchend', () => clearTimeout(longPressTimer));
                 cateItem.addEventListener('touchmove', () => clearTimeout(longPressTimer));
 
-                // 点击选中逻辑（仅修改选中值为纯名称）
+                // 点击选中
                 cateItem.addEventListener('click', () => {
                     document.querySelectorAll('.category-item').forEach(item => {
                         item.classList.remove('active');
@@ -689,7 +912,6 @@
                 grid.appendChild(cateItem);
             });
 
-            // 默认选中第一个分类的纯名称
             if (categories.length > 0) {
                 const firstCateName = categories[0].replace(/[^\u4e00-\u9fa5]/g, '');
                 selectedCate = firstCateName;
@@ -697,7 +919,7 @@
             localStorage.setItem('phoneCates', JSON.stringify(categories));
         }
 
-        // ========== 新增分类功能（核心修改：图标匹配） ==========
+        // ========== 新增分类功能（图标匹配） ==========
         function openAddCateModal() {
             document.getElementById('addCateModal').classList.add('show');
             document.getElementById('newCateInput').focus();
@@ -718,7 +940,6 @@
                 return;
             }
             
-            // 核心修改：根据分类名匹配对应图标
             const newCateIcon = cateIcons[newCateName] || '🔧';
             const newCate = newCateName + newCateIcon;
             
@@ -749,8 +970,7 @@
                 return;
             }
 
-            const today = new Date();
-            const billDate = today.toISOString().split('T')[0];
+            const billDate = selectedDate.toISOString().split('T')[0]; // 保存选中日期的账单
             const newBill = {
                 id: Date.now().toString(),
                 category: selectedCate,
@@ -762,8 +982,9 @@
             bills.unshift(newBill);
             localStorage.setItem('phoneBills', JSON.stringify(bills));
 
-            alert(`✅ 记账成功！\n${currentType === 'expense' ? '支出' : '收入'}：¥${amount}\n分类：${selectedCate}`);
+            alert(`✅ 记账成功！\n${currentType === 'expense' ? '支出' : '收入'}：¥${amount}\n分类：${selectedCate}\n日期：${billDate.replace(/-/g, '年')}月${selectedDate.getDate()}日`);
             closeBillModal();
+            renderCalendar(); // 更新日历红点
             renderHomePage();
         }
 
