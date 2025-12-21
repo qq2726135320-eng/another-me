@@ -86,7 +86,7 @@
             font-size: 14px;
         }
 
-        /* 账单滑动删除容器（核心修改：适配苹果圆形删除按钮） */
+        /* 账单滑动删除容器（核心修改：iOS原生垃圾桶） */
         .bill-swipe-container {
             position: relative;
             width: 100%;
@@ -102,10 +102,10 @@
             box-shadow: 0 2px 6px rgba(0,0,0,0.03);
             position: relative;
             left: 0;
-            transition: left 0.2s cubic-bezier(0.34, 1.56, 0.64, 1); /* 苹果弹性动画 */
+            transition: left 0.2s cubic-bezier(0.34, 1.56, 0.64, 1); /* iOS弹性动画 */
             z-index: 2;
         }
-        /* 苹果信息同款：圆形红色垃圾桶删除按钮 */
+        /* iOS原生同款：圆形红色垃圾桶按钮（CSS绘制原生图标） */
         .bill-delete-btn {
             position: absolute;
             top: 50%; right: 10px;
@@ -120,7 +120,38 @@
             display: flex;
             align-items: center;
             justify-content: center;
+            /* 清除默认样式 */
+            padding: 0;
+            outline: none;
         }
+        /* CSS绘制iOS原生垃圾桶图标（极简线条） */
+        .bill-delete-btn::before,
+        .bill-delete-btn::after {
+            content: '';
+            position: absolute;
+            background: #fff;
+            border-radius: 1px; /* iOS原生圆角 */
+        }
+        /* 垃圾桶主体 */
+        .bill-delete-btn::before {
+            width: 14px;
+            height: 10px;
+            border: 2px solid #fff;
+            border-bottom: none;
+            border-radius: 2px 2px 0 0;
+            top: 10px;
+            left: 50%;
+            transform: translateX(-50%);
+        }
+        /* 垃圾桶底部 */
+        .bill-delete-btn::after {
+            width: 18px;
+            height: 2px;
+            bottom: 12px;
+            left: 50%;
+            transform: translateX(-50%);
+        }
+
         .bill-left {
             display: flex; align-items: center;
         }
@@ -401,7 +432,7 @@
         ];
         // 账单数据
         let bills = JSON.parse(localStorage.getItem('phoneBills')) || [];
-        // 滑动相关变量（适配苹果删除按钮）
+        // 滑动相关变量（适配iOS删除按钮）
         let startX = 0; // 触摸起始X坐标
         let currentBillId = ''; // 当前滑动的账单ID
 
@@ -467,7 +498,7 @@
                 return;
             }
 
-            // 生成账单条目（带苹果同款滑动删除）
+            // 生成账单条目（带iOS同款滑动删除）
             billsListEl.innerHTML = '';
             recentBills.forEach(bill => {
                 const cate = categories.find(c => c.includes(bill.category.replace(/[^\u4e00-\u9fa5]/g, ''))) || '其他🔧';
@@ -495,10 +526,9 @@
                     </div>
                 `;
 
-                // 苹果同款删除按钮（圆形垃圾桶）
+                // iOS同款删除按钮（无文字，纯CSS图标）
                 const deleteBtn = document.createElement('button');
                 deleteBtn.className = 'bill-delete-btn';
-                deleteBtn.innerHTML = '🗑️'; // 垃圾桶图标
                 deleteBtn.onclick = () => deleteBill(bill.id);
 
                 // 绑定滑动事件
@@ -513,7 +543,7 @@
             });
         }
 
-        // ========== 苹果同款账单滑动事件处理 ==========
+        // ========== iOS同款账单滑动事件处理 ==========
         // 触摸开始
         function handleTouchStart(e, billId) {
             startX = e.touches[0].clientX; // 记录起始X坐标
@@ -530,7 +560,7 @@
             const moveX = e.touches[0].clientX;
             const diffX = startX - moveX; // 右滑为正数
             
-            // 适配圆形按钮：最大滑动距离64px
+            // 适配iOS圆形按钮：最大滑动距离64px
             if (diffX > 0 && diffX <= 64) {
                 const billItem = document.querySelector(`.bill-swipe-container[data-bill-id="${currentBillId}"] .bill-item`);
                 if (billItem) {
@@ -545,9 +575,9 @@
             const billItem = document.querySelector(`.bill-swipe-container[data-bill-id="${currentBillId}"] .bill-item`);
             const currentLeft = parseInt(billItem.style.left) || 0;
             
-            // 滑动超过20px则展开删除按钮（苹果触发阈值）
+            // 滑动超过20px则展开删除按钮（iOS触发阈值）
             if (Math.abs(currentLeft) >= 20) {
-                billItem.style.left = '-64px'; // 刚好露出圆形垃圾桶
+                billItem.style.left = '-64px'; // 刚好露出iOS垃圾桶
             } else {
                 billItem.style.left = '0px'; // 重置位置
             }
