@@ -2,333 +2,707 @@
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8"/>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
+    <meta name="apple-mobile-web-app-capable" content="yes"/>
+    <meta name="apple-mobile-web-app-status-bar-style" content="default"/>
     <title>另一个我</title>
     <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; -webkit-user-select: none; }
-        body { background: #F2F2F7; padding-bottom: 90px; }
+        /* 全局重置 */
+        * { 
+            margin: 0; padding: 0; box-sizing: border-box; 
+            -webkit-user-select: none; user-select: none;
+        }
+        body { 
+            background: #F2F2F7; 
+            padding-bottom: 90px; 
+            font-size: 16px; 
+        }
 
         /* 密码锁 */
-        .lock-screen { position: fixed; top:0; left:0; right:0; bottom:0; background: #F2F2F7; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 0 20px; }
-        .lock-title { font-size: 20px; margin-bottom: 30px; }
-        .password-inputs { display: flex; gap: 15px; width: 100%; max-width: 300px; }
-        .password-input { width: 20%; height: 50px; border: 2px solid #ccc; border-radius: 12px; text-align: center; font-size: 28px; }
+        .lock-screen {
+            position: fixed; top:0; left:0; right:0; bottom:0;
+            background: #F2F2F7; display: flex; flex-direction: column;
+            align-items: center; justify-content: center;
+            padding: 0 20px;
+        }
+        .lock-title {
+            font-size: 20px; color: #1C1C1E; margin-bottom: 30px;
+        }
+        .password-inputs { 
+            display: flex; gap: 15px; margin-bottom: 20px;
+            width: 100%; max-width: 300px;
+        }
+        .password-input {
+            width: 20%; height: 50px; 
+            border: 2px solid #E5E5EA; border-radius: 12px;
+            text-align: center; font-size: 28px;
+            background: #fff;
+            -webkit-appearance: none; appearance: none;
+        }
+        .password-input:focus { border-color: #1C1C1E; outline: none; }
 
         /* 主页面 */
-        .main-title { padding: 20px 16px; font-size: 24px; font-weight: 600; }
-        .stats-card { background: #fff; border-radius: 16px; margin: 0 16px 16px; padding: 16px; }
-        .stats-row { display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid #eee; }
-        .stats-label { color: #888; }
-        .stats-value.expense { color: #ff3b30; }
-        .stats-value.income { color: #34c759; }
+        .main-title {
+            padding: 20px 16px;
+            font-size: 24px; font-weight: 600;
+            color: #1C1C1E;
+        }
 
-        /* ========== 苹果信息同款删除按钮核心样式 ========== */
-        .bill-item-wrap {
+        /* 收支统计卡片 */
+        .stats-card {
+            background: #fff;
+            border-radius: 16px;
+            margin: 0 16px 16px;
+            padding: 16px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+        }
+        .stats-row {
+            display: flex; justify-content: space-between;
+            padding: 10px 0;
+            border-bottom: 1px solid #F2F2F7;
+        }
+        .stats-row:last-child { border-bottom: none; }
+        .stats-label {
+            font-size: 16px; color: #8E8E93;
+        }
+        .stats-value {
+            font-size: 18px; font-weight: 600;
+        }
+        .stats-value.expense { color: #FF3B30; }
+        .stats-value.income { color: #34C759; }
+
+        /* 最近账单区域 */
+        .bills-section {
+            padding: 0 16px;
+        }
+        .bills-title {
+            font-size: 16px; font-weight: 600;
+            margin-bottom: 10px;
+        }
+        .bills-empty {
+            text-align: center;
+            padding: 30px 0;
+            color: #8E8E93;
+            font-size: 14px;
+        }
+
+        /* 账单滑动删除容器（核心修改：适配苹果圆形删除按钮） */
+        .bill-swipe-container {
             position: relative;
             width: 100%;
-            height: 70px;
-            margin: 0 16px 10px;
-            overflow: hidden; /* 必须隐藏溢出 */
+            margin-bottom: 10px;
+            overflow: hidden;
             border-radius: 12px;
         }
-        /* 账单主体（右滑时左移） */
         .bill-item {
-            position: absolute;
-            top: 0; left: 0;
-            width: 100%; height: 100%;
             background: #fff;
-            display: flex; align-items: center;
-            padding: 0 16px;
-            transition: left 0.2s cubic-bezier(0.34, 1.56, 0.64, 1); /* 苹果同款弹性动画 */
+            padding: 12px 16px;
+            display: flex; justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.03);
+            position: relative;
+            left: 0;
+            transition: left 0.2s cubic-bezier(0.34, 1.56, 0.64, 1); /* 苹果弹性动画 */
             z-index: 2;
         }
-        /* 苹果信息同款：右侧圆形红色垃圾桶按钮 */
+        /* 苹果信息同款：圆形红色垃圾桶删除按钮 */
         .bill-delete-btn {
             position: absolute;
             top: 50%; right: 10px;
             transform: translateY(-50%);
             width: 44px; height: 44px;
-            background: #ff3b30;
-            border: none; border-radius: 50%; /* 圆形 */
+            background: #FF3B30;
             color: #fff;
+            border: none;
+            border-radius: 50%; /* 圆形 */
             font-size: 20px;
-            display: flex; align-items: center; justify-content: center;
             z-index: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .bill-left {
+            display: flex; align-items: center;
+        }
+        .bill-icon {
+            width: 36px; height: 36px;
+            background: #F2F2F7; border-radius: 8px;
+            display: flex; align-items: center; justify-content: center;
+            margin-right: 10px;
+            font-size: 16px;
+        }
+        .bill-info {
+            display: flex; flex-direction: column;
+        }
+        .bill-category {
+            font-size: 14px; font-weight: 500;
+        }
+        .bill-date {
+            font-size: 12px; color: #8E8E93;
+        }
+        .bill-amount {
+            font-size: 15px; font-weight: 500;
+        }
+        .bill-amount.expense { color: #FF3B30; }
+        .bill-amount.income { color: #34C759; }
+
+        /* 底部+号按钮 */
+        .add-btn {
+            position: fixed; bottom: 20px; right: 20px;
+            width: 60px; height: 60px; border-radius: 50%;
+            background: #1C1C1E; color: #fff; font-size: 36px;
+            border: none; cursor: pointer;
+            -webkit-tap-highlight-color: transparent;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            display: flex; align-items: center; justify-content: center;
         }
 
-        /* 账单内容样式 */
-        .bill-icon { width: 36px; height: 36px; background: #eee; border-radius: 8px; display: flex; align-items: center; justify-content: center; margin-right: 10px; }
-        .bill-info { flex: 1; }
-        .bill-amount { font-weight: 500; }
-        .bill-amount.expense { color: #ff3b30; }
-
-        /* 其他基础样式 */
-        .add-btn { position: fixed; bottom: 20px; right: 20px; width: 60px; height: 60px; border-radius: 50%; background: #000; color: #fff; font-size: 36px; border: none; display: flex; align-items: center; justify-content: center; }
-        .modal { position: fixed; top:0; left:0; right:0; bottom:0; background: rgba(0,0,0,0.5); display: none; z-index: 100; }
+        /* 记账弹窗 */
+        .modal {
+            position: fixed; top:0; left:0; right:0; bottom:0;
+            background: rgba(0,0,0,0.5); display: none;
+            z-index: 100;
+        }
         .modal.show { display: block; }
-        .modal-content { position: fixed; bottom:0; left:0; right:0; background: #fff; border-top-left-radius: 24px; border-top-right-radius: 24px; padding: 24px 16px; }
+        .modal-content {
+            position: fixed; bottom:0; left:0; right:0;
+            background: #fff; border-top-left-radius: 24px;
+            border-top-right-radius: 24px;
+            padding: 24px 16px;
+            max-height: 90vh; overflow-y: auto;
+        }
+        .modal-title {
+            font-size: 20px; font-weight: 600;
+            margin-bottom: 20px; text-align: center;
+        }
+        .amount-input {
+            width: 100%; font-size: 32px; text-align: center;
+            margin: 10px 0 20px; padding: 10px 0;
+            border: none; border-bottom: 1px solid #E5E5EA;
+            -webkit-appearance: none; appearance: none;
+        }
+        .amount-input:focus { outline: none; border-bottom-color: #1C1C1E; }
+        .type-toggle {
+            display: flex; gap: 10px; margin: 10px 0 20px;
+        }
+        .type-btn {
+            flex: 1; padding: 12px 0;
+            border-radius: 20px; border: 2px solid #E5E5EA;
+            background: transparent; font-size: 16px;
+            -webkit-tap-highlight-color: transparent;
+        }
+        .type-btn.active {
+            border-color: #1C1C1E; background: #1C1C1E; color: #fff;
+        }
+        .category-label {
+            font-size: 14px; color: #8E8E93;
+            margin-bottom: 10px;
+        }
+        .longpress-tip {
+            font-size: 12px; color: #8E8E93;
+            text-align: center; margin-bottom: 10px;
+        }
+        .category-grid {
+            display: grid; 
+            grid-template-columns: repeat(4, 1fr);
+            gap: 12px; margin: 10px 0 20px;
+        }
+        .category-item {
+            display: flex; flex-direction: column;
+            align-items: center;
+            -webkit-tap-highlight-color: transparent;
+        }
+        .category-icon {
+            width: 50px; height: 50px; 
+            background: #F2F2F7; border-radius: 12px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 20px; margin-bottom: 6px;
+        }
+        .category-item.active .category-icon {
+            background: #1C1C1E; color: #fff;
+        }
+        .category-name {
+            font-size: 12px; color: #8E8E93;
+        }
+        .category-item.active .category-name {
+            color: #1C1C1E; font-weight: 500;
+        }
+        .add-cate-btn {
+            width: 100%; padding: 12px;
+            border: 1px dashed #E5E5EA; border-radius: 12px;
+            background: #F9F9F9; font-size: 16px;
+            color: #8E8E93; margin: 10px 0 20px;
+            -webkit-tap-highlight-color: transparent;
+        }
+        .modal-btn {
+            width: 100%; padding: 14px 0;
+            border-radius: 12px; border: none;
+            font-size: 16px; font-weight: 500;
+            margin-bottom: 10px;
+            -webkit-tap-highlight-color: transparent;
+        }
+        .save-btn { background: #1C1C1E; color: #fff; }
+        .close-btn { background: #F2F2F7; color: #1C1C1E; }
+
+        /* 新增分类弹窗 */
+        .add-cate-modal {
+            position: fixed; top:0; left:0; right:0; bottom:0;
+            background: rgba(0,0,0,0.5); display: none;
+            align-items: center; justify-content: center;
+            z-index: 200;
+            padding: 0 20px;
+        }
+        .add-cate-modal.show { display: flex; }
+        .add-cate-content {
+            background: #fff; padding: 24px;
+            border-radius: 20px; width: 100%; max-width: 300px;
+        }
+        .add-cate-title {
+            font-size: 18px; font-weight: 600;
+            margin-bottom: 15px; text-align: center;
+        }
+        .add-cate-input {
+            width: 100%; padding: 12px;
+            border: 1px solid #E5E5EA; border-radius: 12px;
+            font-size: 16px; margin-bottom: 15px;
+            -webkit-appearance: none; appearance: none;
+        }
+        .add-cate-input:focus { outline: none; border-color: #1C1C1E; }
+        .add-cate-btn-group {
+            display: flex; gap: 10px;
+        }
+        .add-cate-submit {
+            flex: 1; padding: 12px;
+            border-radius: 12px; border: none;
+            background: #1C1C1E; color: #fff;
+            font-size: 16px;
+        }
+        .add-cate-cancel {
+            flex: 1; padding: 12px;
+            border-radius: 12px; border: 1px solid #E5E5EA;
+            background: transparent; font-size: 16px;
+        }
+
+        /* 自定义提示框（居中显示） */
+        .custom-alert {
+            position: fixed; top:0; left:0; right:0; bottom:0;
+            background: rgba(0,0,0,0.5);
+            display: flex; align-items: center; justify-content: center;
+            z-index: 300;
+            display: none;
+        }
+        .alert-content {
+            background: #000; color: #fff;
+            padding: 24px; border-radius: 12px;
+            width: 80%; max-width: 300px;
+            text-align: center;
+        }
+        .alert-text {
+            font-size: 16px; margin-bottom: 15px;
+        }
+        .alert-close {
+            background: transparent;
+            border: 1px solid #fff; color: #fff;
+            padding: 8px 20px; border-radius: 8px;
+            font-size: 14px;
+        }
     </style>
 </head>
 <body>
-    <!-- 密码锁 -->
+    <!-- 密码锁页面 -->
     <div class="lock-screen" id="lockScreen">
         <div class="lock-title">请输入4位数字密码</div>
         <div class="password-inputs">
-            <input type="password" class="pwd" maxlength="1" oninput="next(this)">
-            <input type="password" class="pwd" maxlength="1" oninput="next(this)">
-            <input type="password" class="pwd" maxlength="1" oninput="next(this)">
-            <input type="password" class="pwd" maxlength="1" oninput="check()">
+            <input type="password" class="password-input" maxlength="1" oninput="nextInput(this)">
+            <input type="password" class="password-input" maxlength="1" oninput="nextInput(this)">
+            <input type="password" class="password-input" maxlength="1" oninput="nextInput(this)">
+            <input type="password" class="password-input" maxlength="1" oninput="checkPassword()">
+        </div>
+    </div>
+
+    <!-- 自定义提示框 -->
+    <div class="custom-alert" id="customAlert">
+        <div class="alert-content">
+            <div class="alert-text" id="alertText"></div>
+            <button class="alert-close" onclick="closeAlert()">关闭</button>
         </div>
     </div>
 
     <!-- 主页面 -->
-    <div id="main" style="display: none;">
+    <div id="mainPage" style="display: none;">
         <div class="main-title">另一个我</div>
-        <!-- 收支统计 -->
+
+        <!-- 本月收支统计卡片 -->
         <div class="stats-card">
             <div class="stats-row">
                 <div class="stats-label">本月支出</div>
-                <div class="stats-value expense" id="expense">¥0.00</div>
+                <div class="stats-value expense" id="monthExpense">¥0.00</div>
             </div>
             <div class="stats-row">
                 <div class="stats-label">本月收入</div>
-                <div class="stats-value income" id="income">¥0.00</div>
+                <div class="stats-value income" id="monthIncome">¥0.00</div>
             </div>
         </div>
-        <!-- 账单列表（苹果信息同款删除） -->
-        <div style="padding: 0 16px;">
-            <div style="font-size: 16px; font-weight: 600; margin-bottom: 10px;">最近账单</div>
-            <div id="billList">
-                <div style="text-align: center; padding: 30px 0; color: #888;">暂无账单，点击+开始记录</div>
+
+        <!-- 最近账单区域 -->
+        <div class="bills-section">
+            <div class="bills-title">最近账单</div>
+            <div id="recentBillsList">
+                <div class="bills-empty">暂无账单，点击+开始记录</div>
             </div>
         </div>
-        <!-- +号按钮 -->
-        <button class="add-btn" onclick="openModal()">+</button>
+
+        <button class="add-btn" onclick="openBillModal()">+</button>
 
         <!-- 记账弹窗 -->
         <div class="modal" id="billModal">
             <div class="modal-content">
-                <h2 style="text-align: center; margin-bottom: 20px;">记一笔</h2>
-                <input type="number" id="amount" placeholder="输入金额" style="width:100%; font-size:24px; text-align:center; margin:10px 0;">
-                <div style="display:flex; gap:10px; margin:10px 0;">
-                    <button onclick="setType('expense')" style="flex:1; padding:8px; background:#000; color:#fff; border:none; border-radius:20px;">支出</button>
-                    <button onclick="setType('income')" style="flex:1; padding:8px; border:1px solid #ccc; border-radius:20px;">收入</button>
+                <div class="modal-title">记一笔</div>
+                <input type="number" class="amount-input" id="billAmount" placeholder="0.00" min="0.01" step="0.01">
+                <div class="type-toggle">
+                    <button class="type-btn active" onclick="setType('expense')">支出</button>
+                    <button class="type-btn" onclick="setType('income')">收入</button>
                 </div>
-                <div style="margin:10px 0;">
-                    <div>分类</div>
-                    <div style="display:grid; grid-template-columns: repeat(4,1fr); gap:10px; margin:10px 0;" id="cateGrid"></div>
-                    <button onclick="addCate()" style="width:100%; padding:8px; border:1px dashed #ccc; border-radius:8px;">+ 新增分类</button>
-                </div>
-                <button onclick="save()" style="width:100%; padding:10px; background:#000; color:#fff; border:none; border-radius:8px; margin-top:10px;">保存</button>
-                <button onclick="closeModal()" style="width:100%; padding:10px; margin-top:10px; border:none; background:#eee; border-radius:8px;">关闭</button>
+                
+                <div class="category-label">分类（长按删除）</div>
+                <div class="longpress-tip">长按分类可删除</div>
+                <div class="category-grid" id="categoryGrid"></div>
+                
+                <button class="add-cate-btn" onclick="openAddCateModal()">+ 新增分类</button>
+                
+                <button class="modal-btn save-btn" onclick="saveBill()">保存</button>
+                <button class="modal-btn close-btn" onclick="closeBillModal()">关闭</button>
             </div>
         </div>
 
         <!-- 新增分类弹窗 -->
-        <div class="modal" id="cateModal" style="align-items: center; justify-content: center; display: none;">
-            <div style="background:#fff; padding:20px; border-radius:16px; width:80%;">
-                <input type="text" id="newCate" placeholder="输入分类名称" style="width:100%; padding:8px; border:1px solid #ccc; border-radius:8px; margin:10px 0;">
-                <div style="display:flex; gap:10px;">
-                    <button onclick="saveCate()" style="flex:1; padding:8px; background:#000; color:#fff; border:none; border-radius:8px;">确认</button>
-                    <button onclick="closeCateModal()" style="flex:1; padding:8px; border:1px solid #ccc; border-radius:8px;">取消</button>
+        <div class="add-cate-modal" id="addCateModal">
+            <div class="add-cate-content">
+                <div class="add-cate-title">新增分类</div>
+                <input type="text" class="add-cate-input" id="newCateInput" placeholder="比如：奶茶、话费">
+                <div class="add-cate-btn-group">
+                    <button class="add-cate-submit" onclick="saveNewCate()">确认</button>
+                    <button class="add-cate-cancel" onclick="closeAddCateModal()">取消</button>
                 </div>
             </div>
         </div>
     </div>
 
     <script>
-        // 基础变量
-        let pwd = '0517';
-        let type = 'expense';
+        // 全局变量
+        let password = '0517'; // 初始密码0517
+        let currentType = 'expense';
         let selectedCate = '';
-        let cates = JSON.parse(localStorage.getItem('cates')) || ['餐饮🍜','交通🚌','娱乐🎬','学习📚'];
-        let bills = JSON.parse(localStorage.getItem('bills')) || [];
-        // 滑动变量（匹配苹果信息交互）
-        let startX = 0;
-        let currentBill = null;
+        let longPressTimer = null;
+        // 分类数据
+        let categories = JSON.parse(localStorage.getItem('phoneCates')) || [
+            '餐饮🍜', '交通🚌', '娱乐🎬', '学习📚',
+            '购物🛍️', '房租🏠', '工资💼', '其他🔧'
+        ];
+        // 账单数据
+        let bills = JSON.parse(localStorage.getItem('phoneBills')) || [];
+        // 滑动相关变量（适配苹果删除按钮）
+        let startX = 0; // 触摸起始X坐标
+        let currentBillId = ''; // 当前滑动的账单ID
 
-        // 密码功能
-        function next(input) {
-            const inputs = document.querySelectorAll('.pwd');
-            const idx = Array.from(inputs).indexOf(input);
-            if(input.value && idx < 3) inputs[idx+1].focus();
-        }
-        function check() {
-            const val = Array.from(document.querySelectorAll('.pwd')).map(i=>i.value).join('');
-            if(val === pwd) {
-                document.getElementById('lockScreen').style.display = 'none';
-                document.getElementById('main').style.display = 'block';
-                renderBill();
-            } else {
-                alert('数字密码错误');
-                document.querySelectorAll('.pwd').forEach(i=>i.value='');
+        // ========== 密码锁功能 ==========
+        function nextInput(input) {
+            const inputs = document.querySelectorAll('.password-input');
+            const index = Array.from(inputs).indexOf(input);
+            if (input.value && index < 3) {
+                inputs[index + 1].focus();
             }
         }
+        function checkPassword() {
+            const inputs = document.querySelectorAll('.password-input');
+            const inputPwd = Array.from(inputs).map(i => i.value).join('');
+            
+            if (inputPwd.length === 4) {
+                if (inputPwd === password) {
+                    document.getElementById('lockScreen').style.display = 'none';
+                    document.getElementById('mainPage').style.display = 'block';
+                    renderHomePage();
+                } else {
+                    document.getElementById('alertText').textContent = '数字密码错误';
+                    document.getElementById('customAlert').style.display = 'flex';
+                }
+            }
+        }
+        function closeAlert() {
+            document.getElementById('customAlert').style.display = 'none';
+            const inputs = document.querySelectorAll('.password-input');
+            inputs.forEach(input => input.value = '');
+            inputs[0].focus();
+        }
 
-        // ========== 苹果信息同款右滑删除逻辑 ==========
-        function renderBill() {
-            // 计算收支
-            let exp = 0, inc = 0;
-            const month = new Date().getMonth()+1;
-            bills.forEach(b => {
-                const bMonth = new Date(b.date).getMonth()+1;
-                if(bMonth === month) {
-                    if(b.type === 'expense') exp += parseFloat(b.amount);
-                    else inc += parseFloat(b.amount);
+        // ========== 首页渲染功能 ==========
+        function renderHomePage() {
+            const today = new Date();
+            const currentMonth = today.getMonth() + 1;
+            const currentYear = today.getFullYear();
+            
+            // 1. 计算本月收支
+            let monthExpense = 0;
+            let monthIncome = 0;
+            bills.forEach(bill => {
+                const billDate = new Date(bill.date);
+                if (billDate.getFullYear() === currentYear && billDate.getMonth() + 1 === currentMonth) {
+                    if (bill.type === 'expense') {
+                        monthExpense += parseFloat(bill.amount);
+                    } else {
+                        monthIncome += parseFloat(bill.amount);
+                    }
                 }
             });
-            document.getElementById('expense').innerText = `¥${exp.toFixed(2)}`;
-            document.getElementById('income').innerText = `¥${inc.toFixed(2)}`;
+            // 更新收支显示
+            document.getElementById('monthExpense').textContent = `¥${monthExpense.toFixed(2)}`;
+            document.getElementById('monthIncome').textContent = `¥${monthIncome.toFixed(2)}`;
 
-            // 渲染账单列表
-            const list = document.getElementById('billList');
-            if(bills.length === 0) {
-                list.innerHTML = '<div style="text-align: center; padding: 30px 0; color: #888;">暂无账单，点击+开始记录</div>';
+            // 2. 渲染最近账单
+            const recentBills = bills.slice(0, 5);
+            const billsListEl = document.getElementById('recentBillsList');
+            
+            if (recentBills.length === 0) {
+                billsListEl.innerHTML = '<div class="bills-empty">暂无账单，点击+开始记录</div>';
                 return;
             }
-            list.innerHTML = '';
-            bills.forEach((b, idx) => {
-                // 滑动容器
-                const wrap = document.createElement('div');
-                wrap.className = 'bill-item-wrap';
-                
-                // 账单主体（右滑时左移）
-                const item = document.createElement('div');
-                item.className = 'bill-item';
-                item.innerHTML = `
-                    <div class="bill-icon">${b.cate.match(/[^\u4e00-\u9fa5]/g).join('')}</div>
-                    <div class="bill-info">
-                        <div>${b.cate.replace(/[^\u4e00-\u9fa5]/g, '')}</div>
-                        <div style="font-size:12px; color:#888;">${b.date}</div>
+
+            // 生成账单条目（带苹果同款滑动删除）
+            billsListEl.innerHTML = '';
+            recentBills.forEach(bill => {
+                const cate = categories.find(c => c.includes(bill.category.replace(/[^\u4e00-\u9fa5]/g, ''))) || '其他🔧';
+                const cateEmoji = cate.replace(/[\u4e00-\u9fa5]/g, '');
+                const dateStr = bill.date.replace(/-/g, '月') + '日';
+
+                // 包裹滑动容器 + 账单条目 + 删除按钮
+                const swipeContainer = document.createElement('div');
+                swipeContainer.className = 'bill-swipe-container';
+                swipeContainer.setAttribute('data-bill-id', bill.id);
+
+                // 账单条目
+                const billItem = document.createElement('div');
+                billItem.className = 'bill-item';
+                billItem.innerHTML = `
+                    <div class="bill-left">
+                        <div class="bill-icon">${cateEmoji}</div>
+                        <div class="bill-info">
+                            <div class="bill-category">${bill.category}</div>
+                            <div class="bill-date">${dateStr}</div>
+                        </div>
                     </div>
-                    <div class="bill-amount ${b.type}">${b.type==='expense'?'-':'+'}¥${b.amount}</div>
+                    <div class="bill-amount ${bill.type}">
+                        ${bill.type === 'expense' ? '-' : '+'}¥${bill.amount}
+                    </div>
                 `;
 
-                // ========== 苹果信息同款：圆形红色垃圾桶按钮 ==========
+                // 苹果同款删除按钮（圆形垃圾桶）
                 const deleteBtn = document.createElement('button');
                 deleteBtn.className = 'bill-delete-btn';
-                deleteBtn.innerText = '🗑️'; // 垃圾桶图标
-                deleteBtn.onclick = () => {
-                    if(confirm('确定删除这条账单吗？')) {
-                        bills.splice(idx, 1);
-                        localStorage.setItem('bills', JSON.stringify(bills));
-                        renderBill();
-                    } else {
-                        item.style.left = '0'; // 取消删除，重置位置
-                    }
-                };
+                deleteBtn.innerHTML = '🗑️'; // 垃圾桶图标
+                deleteBtn.onclick = () => deleteBill(bill.id);
 
-                // 苹果信息同款滑动交互
-                item.ontouchstart = (e) => {
-                    startX = e.touches[0].clientX;
-                    currentBill = item;
-                    // 重置所有账单位置（避免多个按钮展开）
-                    document.querySelectorAll('.bill-item').forEach(i => i.style.left = '0');
-                };
-                item.ontouchmove = (e) => {
-                    if(!currentBill) return;
-                    const moveX = e.touches[0].clientX;
-                    const diff = startX - moveX; // 右滑时diff为正
-                    // 只允许右滑，最大滑动距离=按钮宽度+边距（44+20=64px）
-                    if(diff > 0 && diff <= 64) {
-                        currentBill.style.left = `-${diff}px`;
-                    }
-                };
-                item.ontouchend = () => {
-                    if(!currentBill) return;
-                    const left = parseInt(currentBill.style.left) || 0;
-                    // 滑动超过20px则完全展开按钮（苹果信息的触发阈值）
-                    if(Math.abs(left) >= 20) {
-                        currentBill.style.left = '-64px'; // 刚好露出圆形按钮
-                    } else {
-                        currentBill.style.left = '0'; // 重置位置
-                    }
-                    currentBill = null;
-                };
+                // 绑定滑动事件
+                billItem.addEventListener('touchstart', (e) => handleTouchStart(e, bill.id));
+                billItem.addEventListener('touchmove', handleTouchMove);
+                billItem.addEventListener('touchend', handleTouchEnd);
 
                 // 组装DOM
-                wrap.appendChild(item);
-                wrap.appendChild(deleteBtn);
-                list.appendChild(wrap);
+                swipeContainer.appendChild(billItem);
+                swipeContainer.appendChild(deleteBtn);
+                billsListEl.appendChild(swipeContainer);
             });
         }
 
-        // 记账弹窗
-        function openModal() {
-            renderCate();
-            document.getElementById('billModal').classList.add('show');
-        }
-        function closeModal() {
-            document.getElementById('billModal').classList.remove('show');
-            document.getElementById('amount').value = '';
-        }
-        function setType(t) {
-            type = t;
+        // ========== 苹果同款账单滑动事件处理 ==========
+        // 触摸开始
+        function handleTouchStart(e, billId) {
+            startX = e.touches[0].clientX; // 记录起始X坐标
+            currentBillId = billId; // 记录当前滑动的账单ID
+            // 重置所有账单的位置
+            document.querySelectorAll('.bill-item').forEach(item => {
+                item.style.left = '0px';
+            });
         }
 
-        // 分类功能
-        function renderCate() {
-            const grid = document.getElementById('cateGrid');
-            grid.innerHTML = '';
-            cates.forEach((c, idx) => {
-                const item = document.createElement('div');
-                item.style.textAlign = 'center';
-                item.innerHTML = `<div style="width:40px; height:40px; background:#eee; border-radius:8px; margin:auto; display:flex; align-items:center; justify-content:center;">${c}</div>`;
-                item.onclick = () => {
-                    document.querySelectorAll('#cateGrid>div').forEach(i => i.style.opacity = '0.5');
-                    item.style.opacity = '1';
-                    selectedCate = c;
-                };
-                // 长按删除分类
-                item.ontouchstart = () => {
-                    setTimeout(() => {
-                        if(cates.length>1 && confirm(`删除${c}？`)) {
-                            cates.splice(idx,1);
-                            localStorage.setItem('cates', JSON.stringify(cates));
-                            renderCate();
-                        }
-                    }, 500);
-                };
-                grid.appendChild(item);
-            });
-            // 默认选中第一个
-            if(cates.length>0) {
-                document.querySelector('#cateGrid>div').style.opacity = '1';
-                selectedCate = cates[0];
+        // 触摸移动
+        function handleTouchMove(e) {
+            if (!currentBillId) return;
+            const moveX = e.touches[0].clientX;
+            const diffX = startX - moveX; // 右滑为正数
+            
+            // 适配圆形按钮：最大滑动距离64px
+            if (diffX > 0 && diffX <= 64) {
+                const billItem = document.querySelector(`.bill-swipe-container[data-bill-id="${currentBillId}"] .bill-item`);
+                if (billItem) {
+                    billItem.style.left = `-${diffX}px`;
+                }
             }
         }
-        function addCate() {
-            document.getElementById('cateModal').style.display = 'flex';
-        }
-        function closeCateModal() {
-            document.getElementById('cateModal').style.display = 'none';
-            document.getElementById('newCate').value = '';
-        }
-        function saveCate() {
-            const name = document.getElementById('newCate').value.trim();
-            if(!name) return alert('输入分类名');
-            cates.push(name + ['🥤','📱','☕'][Math.floor(Math.random()*3)]);
-            localStorage.setItem('cates', JSON.stringify(cates));
-            renderCate();
-            closeCateModal();
+
+        // 触摸结束
+        function handleTouchEnd() {
+            if (!currentBillId) return;
+            const billItem = document.querySelector(`.bill-swipe-container[data-bill-id="${currentBillId}"] .bill-item`);
+            const currentLeft = parseInt(billItem.style.left) || 0;
+            
+            // 滑动超过20px则展开删除按钮（苹果触发阈值）
+            if (Math.abs(currentLeft) >= 20) {
+                billItem.style.left = '-64px'; // 刚好露出圆形垃圾桶
+            } else {
+                billItem.style.left = '0px'; // 重置位置
+            }
+            currentBillId = ''; // 清空当前账单ID
         }
 
-        // 保存账单
-        function save() {
-            const amount = document.getElementById('amount').value;
-            if(!amount || amount<=0) return alert('金额大于0');
-            if(!selectedCate) return alert('选分类');
-            bills.unshift({
-                id: Date.now(),
-                cate: selectedCate,
-                amount: amount,
-                type: type,
-                date: new Date().toISOString().split('T')[0]
+        // ========== 删除账单功能 ==========
+        function deleteBill(billId) {
+            if (confirm('确定删除这条账单吗？')) {
+                // 过滤掉要删除的账单
+                bills = bills.filter(bill => bill.id !== billId);
+                // 保存到本地存储
+                localStorage.setItem('phoneBills', JSON.stringify(bills));
+                // 重新渲染首页
+                renderHomePage();
+                alert('账单删除成功！');
+            } else {
+                // 取消删除，重置账单位置
+                const billItem = document.querySelector(`.bill-swipe-container[data-bill-id="${billId}"] .bill-item`);
+                if (billItem) {
+                    billItem.style.left = '0px';
+                }
+            }
+            currentBillId = '';
+        }
+
+        // ========== 记账弹窗功能 ==========
+        function openBillModal() {
+            renderCategories();
+            document.getElementById('billModal').classList.add('show');
+            setTimeout(() => {
+                document.getElementById('billAmount').focus();
+            }, 300);
+        }
+        function closeBillModal() {
+            document.getElementById('billModal').classList.remove('show');
+            document.getElementById('billAmount').value = '';
+        }
+
+        // ========== 分类功能 ==========
+        function renderCategories() {
+            const grid = document.getElementById('categoryGrid');
+            grid.innerHTML = '';
+            
+            categories.forEach((cate, index) => {
+                const cateItem = document.createElement('div');
+                cateItem.className = 'category-item';
+                if (index === 0) cateItem.classList.add('active');
+                
+                cateItem.innerHTML = `
+                    <div class="category-icon">${cate}</div>
+                    <div class="category-name">${cate.replace(/[^\u4e00-\u9fa5]/g, '')}</div>
+                `;
+
+                // 长按删除
+                cateItem.addEventListener('touchstart', () => {
+                    longPressTimer = setTimeout(() => {
+                        if (confirm(`确定删除「${cate}」分类吗？`)) {
+                            if (categories.length <= 1) {
+                                alert('至少保留1个分类哦～');
+                                return;
+                            }
+                            categories.splice(index, 1);
+                            renderCategories();
+                            localStorage.setItem('phoneCates', JSON.stringify(categories));
+                            alert(`已删除「${cate}」分类`);
+                        }
+                    }, 500);
+                });
+                cateItem.addEventListener('touchend', () => clearTimeout(longPressTimer));
+                cateItem.addEventListener('touchmove', () => clearTimeout(longPressTimer));
+
+                // 点击选中
+                cateItem.addEventListener('click', () => {
+                    document.querySelectorAll('.category-item').forEach(item => {
+                        item.classList.remove('active');
+                    });
+                    cateItem.classList.add('active');
+                    selectedCate = cate.replace(/[^\u4e00-\u9fa5]/g, '');
+                });
+
+                grid.appendChild(cateItem);
             });
-            localStorage.setItem('bills', JSON.stringify(bills));
-            alert('记账成功');
-            closeModal();
-            renderBill();
+
+            selectedCate = categories[0].replace(/[^\u4e00-\u9fa5]/g, '');
+            localStorage.setItem('phoneCates', JSON.stringify(categories));
+        }
+
+        // ========== 新增分类功能 ==========
+        function openAddCateModal() {
+            document.getElementById('addCateModal').classList.add('show');
+            document.getElementById('newCateInput').focus();
+        }
+        function closeAddCateModal() {
+            document.getElementById('addCateModal').classList.remove('show');
+            document.getElementById('newCateInput').value = '';
+        }
+        function saveNewCate() {
+            const newCateName = document.getElementById('newCateInput').value.trim();
+            if (!newCateName) {
+                alert('请输入分类名称～');
+                return;
+            }
+            const cateNames = categories.map(c => c.replace(/[^\u4e00-\u9fa5]/g, ''));
+            if (cateNames.includes(newCateName)) {
+                alert('这个分类已经存在啦～');
+                return;
+            }
+            const emojis = ['🥤', '📱', '☕', '🎁', '🚗', '💄', '📦', '🎮', '🍔', '🎵'];
+            const randomEmoji = emojis[Math.floor(Math.random() * emojis.length)];
+            const newCate = newCateName + randomEmoji;
+            
+            categories.push(newCate);
+            renderCategories();
+            closeAddCateModal();
+            alert(`新增分类成功：${newCate}`);
+        }
+
+        // ========== 收支类型切换 ==========
+        function setType(type) {
+            currentType = type;
+            document.querySelectorAll('.type-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            event.target.classList.add('active');
+        }
+
+        // ========== 保存账单功能 ==========
+        function saveBill() {
+            const amount = document.getElementById('billAmount').value.trim();
+            if (!amount || parseFloat(amount) <= 0) {
+                alert('请输入有效的金额（大于0）～');
+                return;
+            }
+            if (!selectedCate) {
+                alert('请选择分类～');
+                return;
+            }
+
+            const today = new Date();
+            const billDate = today.toISOString().split('T')[0];
+            const newBill = {
+                id: Date.now().toString(),
+                category: selectedCate,
+                amount: parseFloat(amount).toFixed(2),
+                type: currentType,
+                date: billDate
+            };
+
+            bills.unshift(newBill);
+            localStorage.setItem('phoneBills', JSON.stringify(bills));
+
+            alert(`✅ 记账成功！\n${currentType === 'expense' ? '支出' : '收入'}：¥${amount}\n分类：${selectedCate}`);
+            closeBillModal();
+            renderHomePage();
         }
 
         // 手机端防缩放
