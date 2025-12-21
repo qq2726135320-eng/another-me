@@ -107,6 +107,96 @@
         .amount.expense {
             color: #FF3B30;
         }
+        /* 新增：记账弹窗样式 */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.5);
+            display: flex;
+            align-items: flex-end;
+            z-index: 100;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.2s;
+        }
+        .modal-overlay.show {
+            opacity: 1;
+            pointer-events: auto;
+        }
+        .modal-content {
+            background: #FFFFFF;
+            border-top-left-radius: 24px;
+            border-top-right-radius: 24px;
+            padding: 24px;
+            width: 100%;
+            transform: translateY(100%);
+            transition: transform 0.2s;
+        }
+        .modal-overlay.show .modal-content {
+            transform: translateY(0);
+        }
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 24px;
+        }
+        .modal-title {
+            font-size: 20px;
+            font-weight: 600;
+        }
+        .close-btn {
+            background: transparent;
+            border: none;
+            font-size: 24px;
+            cursor: pointer;
+            color: #8E8E93;
+        }
+        .amount-input {
+            width: 100%;
+            border: none;
+            font-size: 48px;
+            font-weight: bold;
+            text-align: center;
+            margin: 16px 0;
+            background: transparent;
+            outline: none;
+        }
+        .type-toggle {
+            display: flex;
+            justify-content: center;
+            gap: 16px;
+            margin: 24px 0;
+        }
+        .type-btn {
+            padding: 8px 24px;
+            border-radius: 20px;
+            border: 2px solid #E5E5EA;
+            background: transparent;
+            font-size: 16px;
+            font-weight: 500;
+            cursor: pointer;
+        }
+        .type-btn.active {
+            border-color: #1C1C1E;
+            background: #1C1C1E;
+            color: #FFFFFF;
+        }
+        .submit-btn {
+            width: 100%;
+            padding: 16px;
+            border-radius: 16px;
+            background: #1C1C1E;
+            color: #FFFFFF;
+            border: none;
+            font-size: 18px;
+            font-weight: 600;
+            cursor: pointer;
+            margin-top: 16px;
+        }
     </style>
 </head>
 <body>
@@ -121,7 +211,7 @@
         </div>
     </div>
 
-    <!-- 主页面（先隐藏） -->
+    <!-- 主页面 -->
     <div id="mainContent" style="display: none;">
         <header>
             <div>另一个我</div>
@@ -135,13 +225,31 @@
             </div>
         </div>
 
-        <button class="add-btn">+</button>
+        <!-- 新增：记账弹窗 -->
+        <div class="modal-overlay" id="billModal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <div class="modal-title">记一笔</div>
+                    <button class="close-btn" onclick="closeModal()">×</button>
+                </div>
+                <input type="number" class="amount-input" placeholder="0.00" id="billAmount" min="0.01" step="0.01">
+                <div class="type-toggle">
+                    <button class="type-btn active" data-type="expense">支出</button>
+                    <button class="type-btn" data-type="income">收入</button>
+                </div>
+                <button class="submit-btn" onclick="saveBill()">保存</button>
+            </div>
+        </div>
+
+        <!-- 修改：+号按钮添加点击事件 -->
+        <button class="add-btn" onclick="openModal()">+</button>
     </div>
 
-    <!-- 这里就是<script>标签啦！ -->
     <script>
         // 密码锁相关
         let password = '1234'; // 默认密码1234
+        // 记账弹窗相关
+        let currentType = 'expense'; // 默认是支出
 
         // 显示当前日期
         const today = new Date();
@@ -173,6 +281,42 @@
                 }
             }
         }
+
+        // 新增：打开记账弹窗
+        function openModal() {
+            document.getElementById('billModal').classList.add('show');
+            document.getElementById('billAmount').focus();
+        }
+
+        // 新增：关闭记账弹窗
+        function closeModal() {
+            document.getElementById('billModal').classList.remove('show');
+            document.getElementById('billAmount').value = ''; // 清空金额输入框
+        }
+
+        // 新增：保存账单（先做提示，后续存本地）
+        function saveBill() {
+            const amount = document.getElementById('billAmount').value;
+            if (!amount || parseFloat(amount) <= 0) {
+                alert('请输入有效的金额（大于0）');
+                return;
+            }
+            // 提示记账成功
+            alert(`成功记录${currentType === 'expense' ? '支出' : '收入'}：¥${amount}`);
+            closeModal();
+        }
+
+        // 新增：切换收支类型
+        document.querySelectorAll('.type-btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+                // 移除所有按钮的选中状态
+                document.querySelectorAll('.type-btn').forEach(b => b.classList.remove('active'));
+                // 选中当前按钮
+                this.classList.add('active');
+                // 记录当前类型（支出/收入）
+                currentType = this.getAttribute('data-type');
+            });
+        });
     </script>
 </body>
 </html>
