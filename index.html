@@ -72,113 +72,6 @@
         .stats-value.expense { color: #FF3B30; }
         .stats-value.income { color: #34C759; }
 
-        /* ========== iOS原生日历1:1复刻样式 ========== */
-        .calendar-section {
-            background: #fff;
-            border-radius: 16px;
-            margin: 0 16px 16px;
-            padding: 16px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.04);
-        }
-        /* iOS日历头部（月份切换+标题） */
-        .calendar-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 16px;
-        }
-        .calendar-nav {
-            display: flex;
-            gap: 8px;
-        }
-        /* iOS风格箭头按钮（极简无背景，点击有高亮） */
-        .calendar-nav-btn {
-            width: 36px;
-            height: 36px;
-            border-radius: 50%;
-            border: none;
-            background: transparent;
-            color: #007AFF; /* iOS系统蓝色 */
-            font-size: 20px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            -webkit-tap-highlight-color: rgba(0, 122, 255, 0.1);
-        }
-        .calendar-month-text {
-            font-size: 17px;
-            font-weight: 500;
-            color: #1C1C1E;
-        }
-        /* iOS日历星期栏（周日红色） */
-        .calendar-week {
-            display: grid;
-            grid-template-columns: repeat(7, 1fr);
-            text-align: center;
-            margin-bottom: 8px;
-        }
-        .calendar-week-item {
-            font-size: 12px;
-            padding: 4px 0;
-            color: #8E8E93;
-        }
-        .calendar-week-item:first-child {
-            color: #FF3B30; /* iOS日历周日红色 */
-        }
-        /* iOS日历日期网格 */
-        .calendar-days {
-            display: grid;
-            grid-template-columns: repeat(7, 1fr);
-            gap: 2px;
-        }
-        /* iOS日期样式（圆形点击态、今日圈线、选中蓝底） */
-        .calendar-day {
-            aspect-ratio: 1/1;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            border-radius: 50%; /* iOS圆形日期 */
-            font-size: 14px;
-            color: #1C1C1E;
-            background: transparent;
-            -webkit-tap-highlight-color: rgba(0, 122, 255, 0.1);
-        }
-        /* 空日期（上月/下月） */
-        .calendar-day.empty {
-            color: #C7C7CC;
-        }
-        /* iOS今日样式：灰色边框圈 */
-        .calendar-day.today {
-            border: 1px solid #8E8E93;
-            font-weight: 500;
-        }
-        /* 有账单的日期：底部小红点（iOS同款） */
-        .calendar-day.has-bill {
-            position: relative;
-        }
-        .calendar-day.has-bill::after {
-            content: '';
-            position: absolute;
-            bottom: 2px;
-            width: 4px;
-            height: 4px;
-            border-radius: 50%;
-            background: #FF3B30;
-        }
-        /* iOS选中日期：蓝色背景+白色文字 */
-        .calendar-day.active {
-            background: #007AFF;
-            color: #fff;
-            font-weight: 500;
-        }
-        /* 选中日期提示 */
-        .selected-date-tip {
-            text-align: center;
-            padding: 8px 0 0;
-            font-size: 14px;
-            color: #8E8E93;
-        }
-
         /* 最近账单区域 */
         .bills-section {
             padding: 0 16px;
@@ -285,15 +178,42 @@
         .bill-amount.expense { color: #FF3B30; }
         .bill-amount.income { color: #34C759; }
 
-        /* 底部+号按钮 */
-        .add-btn {
+        /* 底部功能按钮组 */
+        .btn-group {
             position: fixed; bottom: 20px; right: 20px;
+            display: flex; flex-direction: column; gap: 12px;
+        }
+        /* 添加按钮（原有） */
+        .add-btn {
             width: 60px; height: 60px; border-radius: 50%;
             background: #1C1C1E; color: #fff; font-size: 36px;
             border: none; cursor: pointer;
             -webkit-tap-highlight-color: transparent;
             box-shadow: 0 4px 12px rgba(0,0,0,0.15);
             display: flex; align-items: center; justify-content: center;
+        }
+        /* 日历按钮（新增：陶瓷白色、日字、圆滑） */
+        .calendar-btn {
+            width: 60px; height: 60px; border-radius: 50%;
+            background: #F8F8FA; /* 陶瓷白色 */
+            color: #1C1C1E; font-size: 24px; font-weight: 600;
+            border: none; cursor: pointer;
+            -webkit-tap-highlight-color: transparent;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.08); /* 更浅阴影，贴合陶瓷质感 */
+            display: flex; align-items: center; justify-content: center;
+            /* 圆滑质感优化 */
+            border: 1px solid rgba(0,0,0,0.05);
+        }
+        /* 选中日期提示（替代原大日历） */
+        .selected-date-tip {
+            background: #fff;
+            border-radius: 16px;
+            margin: 0 16px 16px;
+            padding: 12px 16px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+            font-size: 15px;
+            color: #1C1C1E;
+            text-align: center;
         }
 
         /* 记账弹窗 */
@@ -446,6 +366,140 @@
             padding: 8px 20px; border-radius: 8px;
             font-size: 14px;
         }
+
+        /* ========== 日历弹窗（完整日历表） ========== */
+        .calendar-modal {
+            position: fixed; top:0; left:0; right:0; bottom:0;
+            background: rgba(0,0,0,0.5); display: none;
+            z-index: 150;
+        }
+        .calendar-modal.show { display: flex; align-items: center; justify-content: center; }
+        .calendar-modal-content {
+            background: #fff;
+            border-radius: 24px;
+            width: 90%; max-width: 400px;
+            padding: 20px;
+            max-height: 80vh;
+            overflow: hidden;
+        }
+        /* 日历头部（年月选择+跳转） */
+        .calendar-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
+            padding-bottom: 8px;
+            border-bottom: 1px solid #F2F2F7;
+        }
+        .calendar-nav {
+            display: flex; gap: 8px;
+        }
+        .calendar-nav-btn {
+            width: 36px; height: 36px;
+            border-radius: 50%;
+            border: none;
+            background: transparent;
+            color: #007AFF;
+            font-size: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            -webkit-tap-highlight-color: rgba(0, 122, 255, 0.1);
+        }
+        /* 年月选择器 */
+        .calendar-date-select {
+            display: flex; gap: 8px;
+            align-items: center;
+        }
+        .calendar-select {
+            padding: 4px 8px;
+            border: 1px solid #E5E5EA;
+            border-radius: 8px;
+            background: #F9F9F9;
+            color: #1C1C1E;
+            font-size: 16px;
+            -webkit-appearance: none;
+            appearance: none;
+        }
+        .calendar-month-text {
+            font-size: 17px;
+            font-weight: 500;
+            color: #1C1C1E;
+            margin: 0 8px;
+        }
+        /* 日历关闭按钮 */
+        .calendar-close-btn {
+            width: 36px; height: 36px;
+            border-radius: 50%;
+            border: none;
+            background: #F2F2F7;
+            color: #1C1C1E;
+            font-size: 18px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        /* iOS日历星期栏（周日红色） */
+        .calendar-week {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            text-align: center;
+            margin-bottom: 8px;
+        }
+        .calendar-week-item {
+            font-size: 12px;
+            padding: 4px 0;
+            color: #8E8E93;
+        }
+        .calendar-week-item:first-child {
+            color: #FF3B30;
+        }
+        /* iOS日历日期网格（支持滑动） */
+        .calendar-wrap {
+            overflow: hidden;
+        }
+        .calendar-days {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 2px;
+            transition: transform 0.3s ease;
+        }
+        /* iOS日期样式 */
+        .calendar-day {
+            aspect-ratio: 1/1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            font-size: 14px;
+            color: #1C1C1E;
+            background: transparent;
+            -webkit-tap-highlight-color: rgba(0, 122, 255, 0.1);
+        }
+        .calendar-day.empty {
+            color: #C7C7CC;
+        }
+        .calendar-day.today {
+            border: 1px solid #8E8E93;
+            font-weight: 500;
+        }
+        .calendar-day.has-bill {
+            position: relative;
+        }
+        .calendar-day.has-bill::after {
+            content: '';
+            position: absolute;
+            bottom: 2px;
+            width: 4px;
+            height: 4px;
+            border-radius: 50%;
+            background: #FF3B30;
+        }
+        .calendar-day.active {
+            background: #007AFF;
+            color: #fff;
+            font-weight: 500;
+        }
     </style>
 </head>
 <body>
@@ -484,27 +538,8 @@
             </div>
         </div>
 
-        <!-- ========== iOS原生风格日历组件 ========== -->
-        <div class="calendar-section">
-            <div class="calendar-header">
-                <div class="calendar-nav">
-                    <button class="calendar-nav-btn" onclick="changeMonth(-1)">◀</button>
-                    <div class="calendar-month-text" id="calendarMonthText">2025年12月</div>
-                    <button class="calendar-nav-btn" onclick="changeMonth(1)">▶</button>
-                </div>
-            </div>
-            <div class="calendar-week">
-                <div class="calendar-week-item">日</div>
-                <div class="calendar-week-item">一</div>
-                <div class="calendar-week-item">二</div>
-                <div class="calendar-week-item">三</div>
-                <div class="calendar-week-item">四</div>
-                <div class="calendar-week-item">五</div>
-                <div class="calendar-week-item">六</div>
-            </div>
-            <div class="calendar-days" id="calendarDays"></div>
-            <div class="selected-date-tip" id="selectedDateTip">当前选中：2025年12月22日（今日）</div>
-        </div>
+        <!-- 选中日期提示（替代原大日历） -->
+        <div class="selected-date-tip" id="selectedDateTip">当前选中：2025年12月22日（今日）</div>
 
         <!-- 最近账单区域 -->
         <div class="bills-section">
@@ -514,7 +549,11 @@
             </div>
         </div>
 
-        <button class="add-btn" onclick="openBillModal()">+</button>
+        <!-- 底部功能按钮组（添加+日历） -->
+        <div class="btn-group">
+            <button class="add-btn" onclick="openBillModal()">+</button>
+            <button class="calendar-btn" onclick="openCalendarModal()">日</button>
+        </div>
 
         <!-- 记账弹窗 -->
         <div class="modal" id="billModal">
@@ -545,6 +584,54 @@
                 <div class="add-cate-btn-group">
                     <button class="add-cate-submit" onclick="saveNewCate()">确认</button>
                     <button class="add-cate-cancel" onclick="closeAddCateModal()">取消</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 日历弹窗（完整日历表） -->
+        <div class="calendar-modal" id="calendarModal">
+            <div class="calendar-modal-content">
+                <div class="calendar-header">
+                    <div class="calendar-nav">
+                        <button class="calendar-nav-btn" onclick="changeMonth(-1)">◀</button>
+                        <!-- 年月选择器（支持直接跳转） -->
+                        <div class="calendar-date-select">
+                            <select class="calendar-select" id="yearSelect" onchange="jumpToSelectedDate()">
+                                <option value="2023">2023</option>
+                                <option value="2024">2024</option>
+                                <option value="2025" selected>2025</option>
+                                <option value="2026">2026</option>
+                            </select>
+                            <select class="calendar-select" id="monthSelect" onchange="jumpToSelectedDate()">
+                                <option value="1">1月</option>
+                                <option value="2">2月</option>
+                                <option value="3">3月</option>
+                                <option value="4">4月</option>
+                                <option value="5">5月</option>
+                                <option value="6">6月</option>
+                                <option value="7">7月</option>
+                                <option value="8">8月</option>
+                                <option value="9">9月</option>
+                                <option value="10">10月</option>
+                                <option value="11">11月</option>
+                                <option value="12" selected>12月</option>
+                            </select>
+                        </div>
+                        <button class="calendar-nav-btn" onclick="changeMonth(1)">▶</button>
+                    </div>
+                    <button class="calendar-close-btn" onclick="closeCalendarModal()">×</button>
+                </div>
+                <div class="calendar-week">
+                    <div class="calendar-week-item">日</div>
+                    <div class="calendar-week-item">一</div>
+                    <div class="calendar-week-item">二</div>
+                    <div class="calendar-week-item">三</div>
+                    <div class="calendar-week-item">四</div>
+                    <div class="calendar-week-item">五</div>
+                    <div class="calendar-week-item">六</div>
+                </div>
+                <div class="calendar-wrap" id="calendarWrap" ontouchstart="touchStart(event)" ontouchmove="touchMove(event)" ontouchend="touchEnd(event)">
+                    <div class="calendar-days" id="calendarDays"></div>
                 </div>
             </div>
         </div>
@@ -583,12 +670,15 @@
         };
         // 账单数据
         let bills = JSON.parse(localStorage.getItem('phoneBills')) || [];
-        // 滑动相关变量（适配iOS删除按钮）
+        // 滑动相关变量（账单删除）
         let startX = 0; 
         let currentBillId = ''; 
-        // 日历相关变量（iOS风格）
+        // 日历相关变量
         let currentCalendarDate = new Date(); // 当前显示的月份
         let selectedDate = new Date(); // 选中的日期
+        // 日历滑动变量（左右滑切换月份）
+        let touchStartX = 0;
+        let touchEndX = 0;
 
         // ========== 密码锁功能 ==========
         function nextInput(input) {
@@ -606,7 +696,7 @@
                 if (inputPwd === password) {
                     document.getElementById('lockScreen').style.display = 'none';
                     document.getElementById('mainPage').style.display = 'block';
-                    renderCalendar(); // 初始化日历
+                    initCalendarSelect(); // 初始化年月选择器
                     renderHomePage(); // 初始化账单
                 } else {
                     document.getElementById('alertText').textContent = '数字密码错误';
@@ -621,14 +711,66 @@
             inputs[0].focus();
         }
 
-        // ========== iOS风格日历核心功能 ==========
+        // ========== 日历核心功能（弹窗+滑动+跳转） ==========
+        // 打开日历弹窗
+        function openCalendarModal() {
+            document.getElementById('calendarModal').classList.add('show');
+            renderCalendar(); // 渲染日历
+        }
+        // 关闭日历弹窗
+        function closeCalendarModal() {
+            document.getElementById('calendarModal').classList.remove('show');
+            // 更新选中日期提示
+            const year = selectedDate.getFullYear();
+            const month = selectedDate.getMonth() + 1;
+            const day = selectedDate.getDate();
+            document.getElementById('selectedDateTip').textContent = `当前选中：${year}年${month}月${day}日${year === new Date().getFullYear() && month === new Date().getMonth() + 1 && day === new Date().getDate() ? '（今日）' : ''}`;
+            renderHomePage(); // 刷新账单
+        }
+        // 初始化年月选择器
+        function initCalendarSelect() {
+            document.getElementById('yearSelect').value = currentCalendarDate.getFullYear();
+            document.getElementById('monthSelect').value = currentCalendarDate.getMonth() + 1;
+        }
+        // 跳转选中的年月
+        function jumpToSelectedDate() {
+            const year = parseInt(document.getElementById('yearSelect').value);
+            const month = parseInt(document.getElementById('monthSelect').value) - 1;
+            currentCalendarDate = new Date(year, month, 1);
+            renderCalendar();
+        }
+        // 触摸开始（日历滑动）
+        function touchStart(e) {
+            touchStartX = e.changedTouches[0].screenX;
+        }
+        // 触摸移动（日历滑动）
+        function touchMove(e) {
+            touchEndX = e.changedTouches[0].screenX;
+        }
+        // 触摸结束（日历滑动切换月份）
+        function touchEnd() {
+            const diffX = touchEndX - touchStartX;
+            // 左滑（切换下月）
+            if (diffX < -50) {
+                changeMonth(1);
+            }
+            // 右滑（切换上月）
+            else if (diffX > 50) {
+                changeMonth(-1);
+            }
+        }
+        // 切换月份
+        function changeMonth(diff) {
+            currentCalendarDate.setMonth(currentCalendarDate.getMonth() + diff);
+            // 更新年月选择器
+            document.getElementById('yearSelect').value = currentCalendarDate.getFullYear();
+            document.getElementById('monthSelect').value = currentCalendarDate.getMonth() + 1;
+            renderCalendar();
+        }
         // 渲染日历
         function renderCalendar() {
             const year = currentCalendarDate.getFullYear();
             const month = currentCalendarDate.getMonth();
-            // 更新月份标题
-            document.getElementById('calendarMonthText').textContent = `${year}年${month + 1}月`;
-            
             // 获取当月第一天是星期几（0=周日）
             const firstDay = new Date(year, month, 1).getDay();
             // 获取当月总天数
@@ -660,16 +802,16 @@
                 dayEl.className = 'calendar-day';
                 dayEl.textContent = day;
 
-                // 标记今日（iOS风格：灰色边框圈）
+                // 标记今日
                 if (year === todayYear && month === todayMonth && day === todayDay) {
                     dayEl.classList.add('today');
                 }
-                // 标记有账单的日期（底部小红点）
+                // 标记有账单的日期
                 const dateKey = `${year}-${month + 1}-${day}`;
                 if (billDates.includes(dateKey)) {
                     dayEl.classList.add('has-bill');
                 }
-                // 标记选中日期（iOS蓝色背景）
+                // 标记选中日期
                 if (year === selectedDate.getFullYear() && month === selectedDate.getMonth() && day === selectedDate.getDate()) {
                     dayEl.classList.add('active');
                 }
@@ -677,12 +819,7 @@
                 // 点击日期选中
                 dayEl.onclick = () => {
                     selectedDate = new Date(year, month, day);
-                    // 更新选中提示
-                    document.getElementById('selectedDateTip').textContent = `当前选中：${year}年${month + 1}月${day}日`;
-                    // 重新渲染日历（更新选中态）
-                    renderCalendar();
-                    // 渲染选中日期的账单
-                    renderHomePage();
+                    renderCalendar(); // 刷新选中态
                 };
 
                 calendarDaysEl.appendChild(dayEl);
@@ -690,7 +827,7 @@
 
             // 3. 渲染下月开头天数（空占位）
             const totalCells = firstDay + totalDays;
-            const emptyCells = 42 - totalCells; // 日历固定6行42格
+            const emptyCells = 42 - totalCells;
             for (let i = 0; i < emptyCells; i++) {
                 const dayEl = document.createElement('div');
                 dayEl.className = 'calendar-day empty';
@@ -698,13 +835,6 @@
                 calendarDaysEl.appendChild(dayEl);
             }
         }
-
-        // 切换月份
-        function changeMonth(diff) {
-            currentCalendarDate.setMonth(currentCalendarDate.getMonth() + diff);
-            renderCalendar();
-        }
-
         // 获取有账单的日期列表
         function getBillDates() {
             const dates = [];
@@ -718,9 +848,9 @@
             return dates;
         }
 
-        // ========== 首页/账单渲染功能（适配日历筛选） ==========
+        // ========== 首页/账单渲染功能 ==========
         function renderHomePage() {
-            // 1. 计算选中日期的收支（如果选中的是当月，同步更新月度统计）
+            // 1. 计算选中日期的收支（当月更新月度统计）
             const selectedYear = selectedDate.getFullYear();
             const selectedMonth = selectedDate.getMonth() + 1;
             const selectedDay = selectedDate.getDate();
@@ -786,7 +916,7 @@
                     </div>
                 `;
 
-                // iOS同款删除按钮（无文字，纯CSS图标）
+                // iOS同款删除按钮
                 const deleteBtn = document.createElement('button');
                 deleteBtn.className = 'bill-delete-btn';
                 deleteBtn.onclick = () => deleteBill(bill.id);
@@ -803,7 +933,7 @@
             });
         }
 
-        // ========== iOS同款账单滑动事件处理 ==========
+        // ========== 账单滑动删除事件 ==========
         function handleTouchStart(e, billId) {
             startX = e.touches[0].clientX; 
             currentBillId = billId; 
@@ -839,7 +969,6 @@
             if (confirm('确定删除这条账单吗？')) {
                 bills = bills.filter(bill => bill.id !== billId);
                 localStorage.setItem('phoneBills', JSON.stringify(bills));
-                renderCalendar(); // 更新日历红点
                 renderHomePage();
                 alert('账单删除成功！');
             } else {
@@ -864,7 +993,7 @@
             document.getElementById('billAmount').value = '';
         }
 
-        // ========== 分类功能（图标匹配+文字居中） ==========
+        // ========== 分类功能 ==========
         function renderCategories() {
             const grid = document.getElementById('categoryGrid');
             grid.innerHTML = '';
@@ -919,7 +1048,7 @@
             localStorage.setItem('phoneCates', JSON.stringify(categories));
         }
 
-        // ========== 新增分类功能（图标匹配） ==========
+        // ========== 新增分类功能 ==========
         function openAddCateModal() {
             document.getElementById('addCateModal').classList.add('show');
             document.getElementById('newCateInput').focus();
@@ -970,7 +1099,7 @@
                 return;
             }
 
-            const billDate = selectedDate.toISOString().split('T')[0]; // 保存选中日期的账单
+            const billDate = selectedDate.toISOString().split('T')[0];
             const newBill = {
                 id: Date.now().toString(),
                 category: selectedCate,
@@ -984,7 +1113,6 @@
 
             alert(`✅ 记账成功！\n${currentType === 'expense' ? '支出' : '收入'}：¥${amount}\n分类：${selectedCate}\n日期：${billDate.replace(/-/g, '年')}月${selectedDate.getDate()}日`);
             closeBillModal();
-            renderCalendar(); // 更新日历红点
             renderHomePage();
         }
 
