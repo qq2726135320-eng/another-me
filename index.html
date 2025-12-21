@@ -689,6 +689,14 @@
         const SWIPE_THRESHOLD = 100; // 滑动阈值提高到100px，进一步减少误触
         const SWIPE_TIME_THRESHOLD = 250; // 滑动时间阈值缩短到250ms
 
+        // ========== 工具函数：格式化日期为YYYY-MM-DD（解决时区问题） ==========
+        function formatDateToYMD(date) {
+            const year = date.getFullYear();
+            const month = String(date.getMonth() + 1).padStart(2, '0'); // 补0，比如1月→01
+            const day = String(date.getDate()).padStart(2, '0'); // 补0，比如5日→05
+            return `${year}-${month}-${day}`;
+        }
+
         // ========== 密码锁功能 ==========
         function nextInput(input) {
             const inputs = document.querySelectorAll('.password-input');
@@ -839,7 +847,7 @@
             const todayYear = today.getFullYear();
             const todayMonth = today.getMonth();
             const todayDay = today.getDate();
-            // 获取有账单的日期列表
+            // 获取有账单的日期列表（使用修复后的日期格式化）
             const billDates = getBillDates();
 
             for (let day = 1; day <= totalDays; day++) {
@@ -851,8 +859,8 @@
                 if (year === todayYear && month === todayMonth && day === todayDay) {
                     dayEl.classList.add('today');
                 }
-                // 标记有账单的日期
-                const dateKey = `${year}-${month + 1}-${day}`;
+                // 标记有账单的日期（使用修复后的日期格式）
+                const dateKey = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
                 if (billDates.includes(dateKey)) {
                     dayEl.classList.add('has-bill');
                 }
@@ -888,17 +896,15 @@
                 calendarDaysEl.appendChild(dayEl);
             }
         }
-        // 获取有账单的日期列表
+        // 获取有账单的日期列表（使用修复后的日期格式化）
         function getBillDates() {
             const dates = [];
             bills.forEach(bill => {
-                const date = new Date(bill.date);
-                const dateKey = `${date.getFullYear()}-${date.getMonth() + 1}-${date.getDate()}`;
-                if (!dates.includes(dateKey)) {
-                    dates.push(dateKey);
-                }
+                // 直接使用账单存储的日期（已修复格式），无需再转换
+                dates.push(bill.date);
             });
-            return dates;
+            // 去重
+            return [...new Set(dates)];
         }
 
         // ========== 首页/账单渲染功能 ==========
@@ -907,6 +913,8 @@
             const selectedYear = selectedDate.getFullYear();
             const selectedMonth = selectedDate.getMonth() + 1;
             const selectedDay = selectedDate.getDate();
+            // 格式化选中日期（用于筛选，解决时区问题）
+            const selectedDateStr = formatDateToYMD(selectedDate);
             
             // 月度收支统计（仅当月）
             const today = new Date();
@@ -914,6 +922,7 @@
                 let monthExpense = 0;
                 let monthIncome = 0;
                 bills.forEach(bill => {
+                    // 解析账单日期（修复后格式）
                     const billDate = new Date(bill.date);
                     if (billDate.getFullYear() === selectedYear && billDate.getMonth() + 1 === selectedMonth) {
                         if (bill.type === 'expense') {
@@ -927,13 +936,8 @@
                 document.getElementById('monthIncome').textContent = `¥${monthIncome.toFixed(2)}`;
             }
 
-            // 2. 筛选选中日期的账单
-            const filteredBills = bills.filter(bill => {
-                const billDate = new Date(bill.date);
-                return billDate.getFullYear() === selectedYear && 
-                       billDate.getMonth() + 1 === selectedMonth && 
-                       billDate.getDate() === selectedDay;
-            });
+            // 2. 筛选选中日期的账单（使用修复后的日期格式）
+            const filteredBills = bills.filter(bill => bill.date === selectedDateStr);
 
             const billsListEl = document.getElementById('recentBillsList');
             if (filteredBills.length === 0) {
@@ -946,7 +950,9 @@
             filteredBills.forEach(bill => {
                 const cate = categories.find(c => c.includes(bill.category.replace(/[^\u4e00-\u9fa5]/g, ''))) || '其他🔧';
                 const cateEmoji = cate.replace(/[\u4e00-\u9fa5]/g, '');
-                const dateStr = bill.date.replace(/-/g, '月') + '日';
+                // 格式化账单日期显示（修复时区问题）
+                const billDate = new Date(bill.date);
+                const dateStr = `${billDate.getFullYear()}年${billDate.getMonth() + 1}月${billDate.getDate()}日`;
 
                 // 包裹滑动容器 + 账单条目 + 删除按钮
                 const swipeContainer = document.createElement('div');
@@ -1140,7 +1146,7 @@
             event.target.classList.add('active');
         }
 
-        // ========== 保存账单功能 ==========
+        // ========== 保存账单功能（核心修复：日期时区问题） ==========
         function saveBill() {
             const amount = document.getElementById('billAmount').value.trim();
             if (!amount || parseFloat(amount) <= 0) {
@@ -1152,19 +1158,25 @@
                 return;
             }
 
-            const billDate = selectedDate.toISOString().split('T')[0];
+            // 核心修复：使用自定义格式化函数，替代toISOString()，避免时区偏移
+            const billDate = formatDateToYMD(selectedDate);
+            
             const newBill = {
                 id: Date.now().toString(),
                 category: selectedCate,
                 amount: parseFloat(amount).toFixed(2),
                 type: currentType,
-                date: billDate
+                date: billDate // 存储修复后的日期格式
             };
 
             bills.unshift(newBill);
             localStorage.setItem('phoneBills', JSON.stringify(bills));
 
-            alert(`✅ 记账成功！\n${currentType === 'expense' ? '支出' : '收入'}：¥${amount}\n分类：${selectedCate}\n日期：${billDate.replace(/-/g, '年')}月${selectedDate.getDate()}日`);
+            // 提示文案也使用修复后的日期
+            const dateObj = new Date(billDate);
+            const tipDate = `${dateObj.getFullYear()}年${dateObj.getMonth() + 1}月${dateObj.getDate()}日`;
+            alert(`✅ 记账成功！\n${currentType === 'expense' ? '支出' : '收入'}：¥${amount}\n分类：${selectedCate}\n日期：${tipDate}`);
+            
             closeBillModal();
             renderHomePage();
         }
