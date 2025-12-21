@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
     <title>另一个我</title>
     <style>
-        /* 只保留核心样式，减少冲突 */
+        /* 核心样式（只加删除/添加分类的样式） */
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { background: #F2F2F7; padding-bottom: 80px; }
         .add-btn {
@@ -25,7 +25,7 @@
             width: 48px; height: 48px; border: 2px solid #ccc;
             border-radius: 8px; text-align: center; font-size: 24px;
         }
-        /* 弹窗 */
+        /* 记账弹窗 */
         .modal {
             position: fixed; top:0; left:0; right:0; bottom:0;
             background: rgba(0,0,0,0.5); display: none;
@@ -37,14 +37,14 @@
             border-top-right-radius: 24px;
             padding: 20px;
         }
-        /* 分类样式（极简） */
+        /* 分类样式（新增删除按钮） */
         .category-grid {
             display: grid; grid-template-columns: repeat(4, 1fr);
             gap: 10px; margin: 20px 0;
         }
         .category-item {
             display: flex; flex-direction: column;
-            align-items: center;
+            align-items: center; position: relative;
         }
         .category-icon {
             width: 40px; height: 40px; background: #f2f2f7;
@@ -54,6 +54,36 @@
         }
         .category-item.active .category-icon {
             background: #000; color: #fff;
+        }
+        /* 新增：分类删除按钮 */
+        .cate-del {
+            position: absolute; top: -5px; right: 10px;
+            width: 16px; height: 16px; background: #ff3b30;
+            color: #fff; font-size: 12px; border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            cursor: pointer; display: none;
+        }
+        .category-item:hover .cate-del { display: block; } /* 鼠标悬浮显示删除 */
+        /* 新增：添加分类按钮 */
+        .add-cate-btn {
+            width: 100%; padding: 8px; border: 1px dashed #ccc;
+            border-radius: 8px; background: #f9f9f9;
+            cursor: pointer; margin: 10px 0;
+        }
+        /* 新增：添加分类弹窗 */
+        .add-cate-modal {
+            position: fixed; top:0; left:0; right:0; bottom:0;
+            background: rgba(0,0,0,0.5); display: none;
+            align-items: center; justify-content: center;
+        }
+        .add-cate-modal.show { display: flex; }
+        .add-cate-content {
+            background: #fff; padding: 20px; border-radius: 16px;
+            width: 80%; max-width: 300px;
+        }
+        .add-cate-input {
+            width: 100%; padding: 8px; border: 1px solid #ccc;
+            border-radius: 8px; margin: 10px 0;
         }
     </style>
 </head>
@@ -83,26 +113,40 @@
                     <button onclick="setType('expense')" style="flex:1; padding:8px; background:#000; color:#fff; border:none; border-radius:20px;">支出</button>
                     <button onclick="setType('income')" style="flex:1; padding:8px; border:1px solid #ccc; border-radius:20px;">收入</button>
                 </div>
-                <!-- 分类区域（核心） -->
+                <!-- 分类区域（新增添加按钮） -->
                 <div>
                     <div>分类</div>
                     <div class="category-grid" id="categoryGrid">
                         <!-- 分类会在这里生成 -->
                     </div>
+                    <!-- 新增：添加分类按钮 -->
+                    <button class="add-cate-btn" onclick="openAddCateModal()">+ 新增分类</button>
                 </div>
                 <button onclick="save()" style="width:100%; padding:10px; background:#000; color:#fff; border:none; border-radius:10px; margin-top:10px;">保存</button>
                 <button onclick="closeModal()" style="width:100%; padding:10px; margin-top:10px; border:none; background:#eee; border-radius:10px;">关闭</button>
             </div>
         </div>
+
+        <!-- 新增：添加分类弹窗 -->
+        <div class="add-cate-modal" id="addCateModal">
+            <div class="add-cate-content">
+                <h3>新增分类</h3>
+                <input type="text" id="newCateName" placeholder="比如：奶茶、话费" class="add-cate-input">
+                <div style="display:flex; gap:10px; margin-top:10px;">
+                    <button onclick="saveNewCate()" style="flex:1; padding:8px; background:#000; color:#fff; border:none; border-radius:8px;">确认</button>
+                    <button onclick="closeAddCateModal()" style="flex:1; padding:8px; border:1px solid #ccc; border-radius:8px;">取消</button>
+                </div>
+            </div>
+        </div>
     </div>
 
     <script>
-        // 全局变量
+        // 全局变量（分类存在本地存储，永久保存）
         let pwd = '1234';
         let currentType = 'expense';
         let selectedCate = '';
-        // 分类列表（极简）
-        const cates = ['餐饮🍜','交通🚌','娱乐🎬','学习📚','购物🛍️','房租🏠','工资💼','其他🔧'];
+        // 初始化分类：优先读本地存储，没有就用默认
+        let cates = JSON.parse(localStorage.getItem('myCates')) || ['餐饮🍜','交通🚌','娱乐🎬','学习📚','购物🛍️','房租🏠','工资💼','其他🔧'];
 
         // 密码相关
         function next(input) {
@@ -123,38 +167,90 @@
             }
         }
 
-        // 弹窗+分类核心
+        // 记账弹窗
         function openModal() {
-            // 打开弹窗时强制渲染分类
-            renderCates();
+            renderCates(); // 打开弹窗时渲染分类
             document.getElementById('billModal').classList.add('show');
         }
         function closeModal() {
             document.getElementById('billModal').classList.remove('show');
             document.getElementById('amount').value = '';
         }
-        // 渲染分类（极简版，确保能显示）
+
+        // 核心：渲染分类（新增删除按钮）
         function renderCates() {
             const grid = document.getElementById('categoryGrid');
             grid.innerHTML = ''; // 清空
-            // 循环生成分类
-            cates.forEach(cate => {
+            // 循环生成每个分类（带删除按钮）
+            cates.forEach((cate, idx) => {
                 const item = document.createElement('div');
                 item.className = 'category-item';
                 // 默认选中第一个
-                if(cate === cates[0]) item.classList.add('active');
-                // 分类内容
-                item.innerHTML = `<div class="category-icon">${cate}</div>`;
-                // 点击选中
-                item.onclick = function() {
+                if(idx === 0) item.classList.add('active');
+                // 分类HTML（新增删除小叉号）
+                item.innerHTML = `
+                    <div class="cate-del" onclick="delCate(${idx})">×</div>
+                    <div class="category-icon">${cate}</div>
+                `;
+                // 点击分类选中
+                item.onclick = (e) => {
+                    // 点击删除按钮时，不触发选中
+                    if(e.target.classList.contains('cate-del')) return;
                     document.querySelectorAll('.category-item').forEach(i=>i.classList.remove('active'));
-                    this.classList.add('active');
+                    item.classList.add('active');
                     selectedCate = cate;
                 };
                 grid.appendChild(item);
             });
             // 默认选中第一个分类
             selectedCate = cates[0];
+            // 保存分类到本地存储
+            localStorage.setItem('myCates', JSON.stringify(cates));
+        }
+
+        // 新增：打开添加分类弹窗
+        function openAddCateModal() {
+            document.getElementById('addCateModal').classList.add('show');
+            document.getElementById('newCateName').focus();
+        }
+        // 新增：关闭添加分类弹窗
+        function closeAddCateModal() {
+            document.getElementById('addCateModal').classList.remove('show');
+            document.getElementById('newCateName').value = '';
+        }
+        // 新增：保存新分类
+        function saveNewCate() {
+            const newCate = document.getElementById('newCateName').value.trim();
+            if(!newCate) {
+                alert('请输入分类名称！');
+                return;
+            }
+            if(cates.includes(newCate)) {
+                alert('这个分类已经存在啦！');
+                return;
+            }
+            // 给新分类加个随机emoji（可选，也可以让用户自己加）
+            const emojis = ['🥤','📱','☕','🎁','🚗','💄','📦','🎮'];
+            const randomEmoji = emojis[Math.floor(Math.random() * emojis.length)];
+            cates.push(newCate + randomEmoji); // 比如输入“奶茶”→变成“奶茶🥤”
+            // 重新渲染分类+关闭弹窗
+            renderCates();
+            closeAddCateModal();
+            alert(`新增分类成功：${newCate + randomEmoji}`);
+        }
+
+        // 新增：删除分类
+        function delCate(idx) {
+            if(cates.length <= 1) {
+                alert('至少保留1个分类哦！');
+                return;
+            }
+            const delCateName = cates[idx];
+            if(confirm(`确定删除“${delCateName}”分类吗？`)) {
+                cates.splice(idx, 1); // 删除对应索引的分类
+                renderCates(); // 重新渲染
+                alert(`删除分类成功：${delCateName}`);
+            }
         }
 
         // 收支类型
@@ -162,7 +258,7 @@
             currentType = type;
         }
 
-        // 保存
+        // 保存账单
         function save() {
             const amount = document.getElementById('amount').value;
             if(!amount || amount <=0) {
