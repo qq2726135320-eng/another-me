@@ -457,7 +457,7 @@
         /* iOS日历日期网格（支持滑动） */
         .calendar-wrap {
             overflow: hidden;
-            touch-action: manipulation; /* 禁用浏览器默认触摸行为，解决冲突 */
+            touch-action: none; /* 完全禁用容器的触摸行为，仅通过手动判定 */
         }
         .calendar-days {
             display: grid;
@@ -477,10 +477,12 @@
             background: transparent;
             -webkit-tap-highlight-color: rgba(0, 122, 255, 0.1);
             cursor: pointer;
+            touch-action: manipulation; /* 日期元素仅允许点击/缩放，禁用滑动 */
         }
         .calendar-day.empty {
             color: #C7C7CC;
             cursor: default; /* 空日期不可点击 */
+            touch-action: none;
         }
         .calendar-day.today {
             border: 1px solid #8E8E93;
@@ -682,9 +684,10 @@
         // 日历滑动变量（左右滑切换月份）
         let touchStartX = 0;
         let touchEndX = 0;
-        let touchStartTime = 0; // 新增：记录触摸开始时间，防误触
-        const SWIPE_THRESHOLD = 80; // 滑动阈值提高到80px，减少误触
-        const SWIPE_TIME_THRESHOLD = 300; // 滑动时间阈值300ms
+        let touchStartTime = 0; 
+        let isDateClick = false; // 新增：标记是否点击了日期元素
+        const SWIPE_THRESHOLD = 100; // 滑动阈值提高到100px，进一步减少误触
+        const SWIPE_TIME_THRESHOLD = 250; // 滑动时间阈值缩短到250ms
 
         // ========== 密码锁功能 ==========
         function nextInput(input) {
@@ -717,12 +720,12 @@
             inputs[0].focus();
         }
 
-        // ========== 日历核心功能（修复滑动+点击冲突） ==========
+        // ========== 日历核心功能（彻底修复右侧日期点击问题） ==========
         // 打开日历弹窗
         function openCalendarModal() {
             document.getElementById('calendarModal').classList.add('show');
             renderCalendar(); // 渲染日历
-            // 绑定触摸事件（移到打开弹窗时绑定，避免全局冲突）
+            // 绑定触摸事件到整个日历容器（仅用于滑动判定）
             const calendarWrap = document.getElementById('calendarWrap');
             calendarWrap.addEventListener('touchstart', handleCalendarTouchStart);
             calendarWrap.addEventListener('touchmove', handleCalendarTouchMove);
@@ -731,7 +734,7 @@
         // 关闭日历弹窗
         function closeCalendarModal() {
             document.getElementById('calendarModal').classList.remove('show');
-            // 移除触摸事件，避免内存泄漏
+            // 移除触摸事件
             const calendarWrap = document.getElementById('calendarWrap');
             calendarWrap.removeEventListener('touchstart', handleCalendarTouchStart);
             calendarWrap.removeEventListener('touchmove', handleCalendarTouchMove);
@@ -755,26 +758,38 @@
             currentCalendarDate = new Date(year, month, 1);
             renderCalendar();
         }
-        // 触摸开始（日历滑动，修复冲突）
+        // 触摸开始（日历滑动）
         function handleCalendarTouchStart(e) {
+            // 如果触摸的是日期元素，标记为点击
+            if (e.target.classList.contains('calendar-day') && !e.target.classList.contains('empty')) {
+                isDateClick = true;
+                return; // 直接返回，不记录滑动起始值
+            }
+            isDateClick = false;
             touchStartX = e.changedTouches[0].screenX;
-            touchStartTime = new Date().getTime(); // 记录触摸开始时间
-            // 阻止事件冒泡，避免影响日期点击
-            e.stopPropagation();
+            touchStartTime = new Date().getTime();
         }
         // 触摸移动（日历滑动）
         function handleCalendarTouchMove(e) {
+            if (isDateClick) return; // 点击日期时，不处理滑动
             touchEndX = e.changedTouches[0].screenX;
-            e.stopPropagation();
         }
-        // 触摸结束（日历滑动切换月份，增加双重判定）
+        // 触摸结束（日历滑动切换月份）
         function handleCalendarTouchEnd(e) {
-            e.stopPropagation();
+            // 如果是点击日期，直接重置状态，不执行滑动逻辑
+            if (isDateClick) {
+                isDateClick = false;
+                touchStartX = 0;
+                touchEndX = 0;
+                touchStartTime = 0;
+                return;
+            }
+            
             const diffX = touchEndX - touchStartX;
             const diffTime = new Date().getTime() - touchStartTime;
             
-            // 只有满足「滑动距离≥阈值」且「滑动时间≤阈值」才切换月份
-            if (diffTime <= SWIPE_TIME_THRESHOLD) {
+            // 只有满足所有条件才切换月份
+            if (diffTime <= SWIPE_TIME_THRESHOLD && Math.abs(diffX) >= SWIPE_THRESHOLD) {
                 // 左滑（切换下月）
                 if (diffX < -SWIPE_THRESHOLD) {
                     changeMonth(1);
@@ -797,7 +812,7 @@
             document.getElementById('monthSelect').value = currentCalendarDate.getMonth() + 1;
             renderCalendar();
         }
-        // 渲染日历（修复日期点击逻辑）
+        // 渲染日历（彻底修复右侧日期点击）
         function renderCalendar() {
             const year = currentCalendarDate.getFullYear();
             const month = currentCalendarDate.getMonth();
@@ -819,7 +834,7 @@
                 calendarDaysEl.appendChild(dayEl);
             }
 
-            // 2. 渲染当月天数（iOS风格，修复点击逻辑）
+            // 2. 渲染当月天数（iOS风格）
             const today = new Date();
             const todayYear = today.getFullYear();
             const todayMonth = today.getMonth();
@@ -846,12 +861,19 @@
                     dayEl.classList.add('active');
                 }
 
-                // 修复日期点击：阻止冒泡+优先响应点击
-                dayEl.onclick = (e) => {
-                    e.stopPropagation(); // 阻止事件冒泡到滑动容器
+                // 日期点击逻辑（完全独立，不触发滑动）
+                dayEl.addEventListener('click', () => {
                     selectedDate = new Date(year, month, day);
                     renderCalendar(); // 刷新选中态
-                };
+                });
+
+                // 阻止日期元素的触摸事件冒泡到容器
+                dayEl.addEventListener('touchstart', (e) => {
+                    e.stopImmediatePropagation(); // 阻止其他touchstart监听
+                });
+                dayEl.addEventListener('touchend', (e) => {
+                    e.stopImmediatePropagation(); // 阻止其他touchend监听
+                });
 
                 calendarDaysEl.appendChild(dayEl);
             }
