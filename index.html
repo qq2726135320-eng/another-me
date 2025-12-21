@@ -7,6 +7,29 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="default"/>
     <title>另一个我</title>
     <style>
+        /* 自定义提示框样式（居中显示） */
+.custom-alert {
+    position: fixed; top:0; left:0; right:0; bottom:0;
+    background: rgba(0,0,0,0.5);
+    display: flex; align-items: center; justify-content: center;
+    z-index: 300;
+    display: none; /* 默认隐藏 */
+}
+.alert-content {
+    background: #000; color: #fff;
+    padding: 24px; border-radius: 12px;
+    width: 80%; max-width: 300px;
+    text-align: center; /* 文字居中 */
+}
+.alert-text {
+    font-size: 16px; margin-bottom: 15px;
+}
+.alert-close {
+    background: transparent;
+    border: 1px solid #fff; color: #fff;
+    padding: 8px 20px; border-radius: 8px;
+    font-size: 14px;
+}
         /* 全局重置 */
         * { 
             margin: 0; padding: 0; box-sizing: border-box; 
@@ -260,6 +283,13 @@
 <body>
     <!-- 密码锁页面 -->
     <div class="lock-screen" id="lockScreen">
+        <!-- 新增：自定义提示框（居中显示） -->
+<div class="custom-alert" id="customAlert">
+    <div class="alert-content">
+        <div class="alert-text" id="alertText"></div>
+        <button class="alert-close" onclick="closeAlert()">关闭</button>
+    </div>
+</div>
         <div class="lock-title">请输入数字密码</div>
         <div class="password-inputs">
             <input type="password" class="password-input" maxlength="1" oninput="nextInput(this)">
@@ -351,22 +381,31 @@
                 inputs[index + 1].focus();
             }
         }
-        function checkPassword() {
-            const inputs = document.querySelectorAll('.password-input');
-            const inputPwd = Array.from(inputs).map(i => i.value).join('');
-            
-            if (inputPwd.length === 4) {
-                if (inputPwd === password) {
-                    document.getElementById('lockScreen').style.display = 'none';
-                    document.getElementById('mainPage').style.display = 'block';
-                    renderHomePage(); // 页面加载后渲染首页
-                } else {
-                    alert('密码错误！请输入1234');
-                    inputs.forEach(i => i.value = '');
-                    inputs[0].focus();
-                }
-            }
+       function checkPassword() {
+    const inputs = document.querySelectorAll('.password-input');
+    const inputPwd = Array.from(inputs).map(i => i.value).join('');
+    
+    if (inputPwd.length === 4) {
+        if (inputPwd === password) {
+            document.getElementById('lockScreen').style.display = 'none';
+            document.getElementById('mainPage').style.display = 'block';
+            renderHomePage();
+        } else {
+            // 替换原来的alert，显示自定义提示框
+            document.getElementById('alertText').textContent = '数字密码错误';
+            document.getElementById('customAlert').style.display = 'flex';
         }
+    }
+}
+
+// 新增：关闭提示框的函数
+function closeAlert() {
+    document.getElementById('customAlert').style.display = 'none';
+    // 清空密码输入框并聚焦第一个
+    const inputs = document.querySelectorAll('.password-input');
+    inputs.forEach(input => input.value = '');
+    inputs[0].focus();
+}
 
         // ========== 首页渲染功能（新增） ==========
         function renderHomePage() {
@@ -570,4 +609,5 @@
     </script>
 </body>
 </html>
+
 
