@@ -19,6 +19,7 @@
             background: #F2F2F7;
             color: #1C1C1E;
             padding-bottom: 80px;
+            position: relative; /* 新增：防止弹窗溢出 */
         }
         header {
             padding: 24px 20px 12px;
@@ -44,6 +45,7 @@
             justify-content: center;
             box-shadow: 0 4px 16px rgba(0,0,0,0.15);
             cursor: pointer;
+            z-index: 90; /* 确保+号在最上层 */
         }
         /* 密码锁样式 */
         .lock-screen {
@@ -57,6 +59,7 @@
             flex-direction: column;
             align-items: center;
             justify-content: center;
+            z-index: 200;
         }
         .lock-title {
             font-size: 24px;
@@ -107,7 +110,7 @@
         .amount.expense {
             color: #FF3B30;
         }
-        /* 新增：记账弹窗样式 */
+        /* 记账弹窗样式（修复核心） */
         .modal-overlay {
             position: fixed;
             top: 0;
@@ -117,14 +120,15 @@
             background: rgba(0,0,0,0.5);
             display: flex;
             align-items: flex-end;
-            z-index: 100;
+            z-index: 100; /* 确保弹窗在+号上面 */
             opacity: 0;
             pointer-events: none;
-            transition: opacity 0.2s;
+            transition: opacity 0.3s ease;
         }
+        /* 修复：强制显示弹窗 */
         .modal-overlay.show {
-            opacity: 1;
-            pointer-events: auto;
+            opacity: 1 !important;
+            pointer-events: auto !important;
         }
         .modal-content {
             background: #FFFFFF;
@@ -133,10 +137,10 @@
             padding: 24px;
             width: 100%;
             transform: translateY(100%);
-            transition: transform 0.2s;
+            transition: transform 0.3s ease;
         }
         .modal-overlay.show .modal-content {
-            transform: translateY(0);
+            transform: translateY(0) !important;
         }
         .modal-header {
             display: flex;
@@ -225,7 +229,7 @@
             </div>
         </div>
 
-        <!-- 新增：记账弹窗 -->
+        <!-- 记账弹窗（提前放，确保能找到） -->
         <div class="modal-overlay" id="billModal">
             <div class="modal-content">
                 <div class="modal-header">
@@ -241,22 +245,21 @@
             </div>
         </div>
 
-        <!-- 修改：+号按钮添加点击事件 -->
+        <!-- +号按钮 -->
         <button class="add-btn" onclick="openModal()">+</button>
     </div>
 
     <script>
-        // 密码锁相关
-        let password = '1234'; // 默认密码1234
-        // 记账弹窗相关
-        let currentType = 'expense'; // 默认是支出
+        // 基础变量
+        let password = '1234';
+        let currentType = 'expense';
 
-        // 显示当前日期
+        // 显示日期
         const today = new Date();
         const dateStr = today.getFullYear() + '年' + (today.getMonth() + 1) + '月' + today.getDate() + '日';
         document.getElementById('currentDate').textContent = dateStr;
 
-        // 密码输入自动切换下一个框
+        // 密码相关
         function moveToNext(input) {
             const inputs = document.querySelectorAll('.password-input');
             const currentIndex = Array.from(inputs).indexOf(input);
@@ -264,12 +267,9 @@
                 inputs[currentIndex + 1].focus();
             }
         }
-
-        // 验证密码
         function checkPassword() {
             const inputs = document.querySelectorAll('.password-input');
             const enteredPassword = Array.from(inputs).map(input => input.value).join('');
-            
             if (enteredPassword.length === 4) {
                 if (enteredPassword === password) {
                     document.getElementById('lockScreen').style.display = 'none';
@@ -282,41 +282,48 @@
             }
         }
 
-        // 新增：打开记账弹窗
+        // 弹窗核心函数（修复：确保能找到元素）
         function openModal() {
-            document.getElementById('billModal').classList.add('show');
-            document.getElementById('billAmount').focus();
+            // 手动打印日志，方便排查
+            console.log('点击+号，打开弹窗');
+            const modal = document.getElementById('billModal');
+            if (modal) {
+                modal.classList.add('show');
+                document.getElementById('billAmount').focus();
+            } else {
+                alert('弹窗元素没找到！');
+            }
         }
-
-        // 新增：关闭记账弹窗
         function closeModal() {
-            document.getElementById('billModal').classList.remove('show');
-            document.getElementById('billAmount').value = ''; // 清空金额输入框
+            const modal = document.getElementById('billModal');
+            if (modal) {
+                modal.classList.remove('show');
+                document.getElementById('billAmount').value = '';
+            }
         }
 
-        // 新增：保存账单（先做提示，后续存本地）
+        // 保存账单
         function saveBill() {
             const amount = document.getElementById('billAmount').value;
             if (!amount || parseFloat(amount) <= 0) {
                 alert('请输入有效的金额（大于0）');
                 return;
             }
-            // 提示记账成功
             alert(`成功记录${currentType === 'expense' ? '支出' : '收入'}：¥${amount}`);
             closeModal();
         }
 
-        // 新增：切换收支类型
-        document.querySelectorAll('.type-btn').forEach(btn => {
-            btn.addEventListener('click', function() {
-                // 移除所有按钮的选中状态
-                document.querySelectorAll('.type-btn').forEach(b => b.classList.remove('active'));
-                // 选中当前按钮
-                this.classList.add('active');
-                // 记录当前类型（支出/收入）
-                currentType = this.getAttribute('data-type');
+        // 切换收支类型
+        window.onload = function() {
+            // 页面加载完成后再绑定事件，避免元素没加载
+            document.querySelectorAll('.type-btn').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    document.querySelectorAll('.type-btn').forEach(b => b.classList.remove('active'));
+                    this.classList.add('active');
+                    currentType = this.getAttribute('data-type');
+                });
             });
-        });
+        };
     </script>
 </body>
 </html>
