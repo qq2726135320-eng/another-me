@@ -1,72 +1,178 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>另一个我</title>
-
-<link rel="manifest" href="manifest.json">
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="default">
-
-  <!-- PWA -->
-  <link rel="manifest" href="manifest.json">
-  <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="default">
-
-  <style>
-    body {
-      margin: 0;
-      font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text";
-      background: #F2F2F7;
-      color: #1C1C1E;
-    }
-
-    header {
-      padding: 24px 20px 12px;
-      font-size: 24px;
-      font-weight: 600;
-    }
-
-    .card {
-      background: #fff;
-      margin: 16px;
-      padding: 20px;
-      border-radius: 16px;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.04);
-    }
-
-    .amount {
-      font-size: 32px;
-      font-weight: bold;
-      margin-top: 8px;
-    }
-
-    .add-btn {
-      position: fixed;
-      bottom: 28px;
-      right: 24px;
-      width: 56px;
-      height: 56px;
-      border-radius: 50%;
-      background: #1C1C1E;
-      color: white;
-      font-size: 32px;
-      border: none;
-    }
-  </style>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>另一个我</title>
+    <link rel="manifest" href="manifest.json">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <style>
+        /* 基础样式 */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", sans-serif;
+        }
+        body {
+            background: #F2F2F7;
+            color: #1C1C1E;
+            padding-bottom: 80px;
+        }
+        header {
+            padding: 24px 20px 12px;
+            font-size: 24px;
+            font-weight: 600;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .add-btn {
+            position: fixed;
+            bottom: 28px;
+            right: 24px;
+            width: 56px;
+            height: 56px;
+            border-radius: 50%;
+            background: #1C1C1E;
+            color: white;
+            font-size: 32px;
+            border: none;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 4px 16px rgba(0,0,0,0.15);
+            cursor: pointer;
+        }
+        /* 密码锁样式 */
+        .lock-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: #F2F2F7;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+        .lock-title {
+            font-size: 24px;
+            font-weight: 600;
+            margin-bottom: 48px;
+        }
+        .password-inputs {
+            display: flex;
+            gap: 16px;
+            margin-bottom: 48px;
+        }
+        .password-input {
+            width: 48px;
+            height: 48px;
+            border-radius: 8px;
+            border: 2px solid #E5E5EA;
+            background: transparent;
+            font-size: 24px;
+            text-align: center;
+            outline: none;
+        }
+        .password-input:focus {
+            border-color: #1C1C1E;
+        }
+        /* 卡片样式 */
+        .card {
+            background: #FFFFFF;
+            margin: 16px;
+            padding: 20px;
+            border-radius: 16px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.04);
+        }
+        .summary-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
+        }
+        .summary-title {
+            font-size: 18px;
+            font-weight: 600;
+        }
+        .amount {
+            font-size: 32px;
+            font-weight: bold;
+            color: #1C1C1E;
+        }
+        .amount.expense {
+            color: #FF3B30;
+        }
+    </style>
 </head>
-
 <body>
+    <!-- 密码锁页面 -->
+    <div class="lock-screen" id="lockScreen">
+        <div class="lock-title">请输入密码</div>
+        <div class="password-inputs">
+            <input type="password" class="password-input" maxlength="1" oninput="moveToNext(this)">
+            <input type="password" class="password-input" maxlength="1" oninput="moveToNext(this)">
+            <input type="password" class="password-input" maxlength="1" oninput="moveToNext(this)">
+            <input type="password" class="password-input" maxlength="1" oninput="checkPassword()">
+        </div>
+    </div>
 
-<header>另一个我</header>
+    <!-- 主页面（先隐藏） -->
+    <div id="mainContent" style="display: none;">
+        <header>
+            <div>另一个我</div>
+            <div id="currentDate"></div>
+        </header>
 
-<div class="card">
-  <div>本月支出</div>
-  <div class="amount">¥ 0.00</div>
-</div>
+        <div class="card">
+            <div class="summary-header">
+                <div class="summary-title">本月支出</div>
+                <div id="monthExpense" class="amount expense">¥0.00</div>
+            </div>
+        </div>
 
-<button class="add-btn">＋</button>
+        <button class="add-btn">+</button>
+    </div>
 
+    <!-- 这里就是<script>标签啦！ -->
+    <script>
+        // 密码锁相关
+        let password = '1234'; // 默认密码1234
+
+        // 显示当前日期
+        const today = new Date();
+        const dateStr = today.getFullYear() + '年' + (today.getMonth() + 1) + '月' + today.getDate() + '日';
+        document.getElementById('currentDate').textContent = dateStr;
+
+        // 密码输入自动切换下一个框
+        function moveToNext(input) {
+            const inputs = document.querySelectorAll('.password-input');
+            const currentIndex = Array.from(inputs).indexOf(input);
+            if (input.value && currentIndex < inputs.length - 1) {
+                inputs[currentIndex + 1].focus();
+            }
+        }
+
+        // 验证密码
+        function checkPassword() {
+            const inputs = document.querySelectorAll('.password-input');
+            const enteredPassword = Array.from(inputs).map(input => input.value).join('');
+            
+            if (enteredPassword.length === 4) {
+                if (enteredPassword === password) {
+                    document.getElementById('lockScreen').style.display = 'none';
+                    document.getElementById('mainContent').style.display = 'block';
+                } else {
+                    alert('密码错误，请重试');
+                    inputs.forEach(input => input.value = '');
+                    inputs[0].focus();
+                }
+            }
+        }
+    </script>
 </body>
 </html>
