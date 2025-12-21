@@ -86,7 +86,7 @@
             font-size: 14px;
         }
 
-        /* 账单滑动删除容器（核心修改：iOS原生垃圾桶） */
+        /* 账单滑动删除容器（iOS原生垃圾桶） */
         .bill-swipe-container {
             position: relative;
             width: 100%;
@@ -252,11 +252,9 @@
         .category-item.active .category-icon {
             background: #1C1C1E; color: #fff;
         }
-      /* 原样式基础上添加text-align: center */
-.category-name {
-    font-size: 12px; color: #8E8E93;
-    text-align: center; /* 解决文字向左偏移，改为居中 */
-}
+        .category-name {
+            font-size: 12px; color: #8E8E93;
+            text-align: center; /* 核心修改：分类文字居中 */
         }
         .category-item.active .category-name {
             color: #1C1C1E; font-weight: 500;
@@ -433,20 +431,26 @@
             '餐饮🍜', '交通🚌', '娱乐🎬', '学习📚',
             '购物🛍️', '房租🏠', '工资💼', '其他🔧'
         ];
-        // 新增：分类与图标一一对应（解决奶茶/游戏图标错误）
-const cateIcons = {
-  '餐饮': '🍜',
-  '交通': '🚌',
-  '娱乐': '🎬',
-  '学习': '📚',
-  '购物': '🛍️',
-  '房租': '🏠',
-  '工资': '💼',
-  '其他': '🔧',
-  '奶茶': '🥤',  // 奶茶对应奶茶图标
-  '游戏': '🎮',  // 游戏对应游戏图标
-  '玩乐': '🎁'   // 玩乐对应礼物图标
-};
+        // 核心新增：分类与图标一一对应映射表（解决图标不匹配）
+        const cateIcons = {
+            '餐饮': '🍜',
+            '交通': '🚌',
+            '娱乐': '🎬',
+            '学习': '📚',
+            '购物': '🛍️',
+            '房租': '🏠',
+            '工资': '💼',
+            '其他': '🔧',
+            '奶茶': '🥤',
+            '游戏': '🎮',
+            '话费': '📱',
+            '咖啡': '☕',
+            '礼物': '🎁',
+            '汽车': '🚗',
+            '美妆': '💄',
+            '零食': '🍔',
+            '音乐': '🎵'
+        };
         // 账单数据
         let bills = JSON.parse(localStorage.getItem('phoneBills')) || [];
         // 滑动相关变量（适配iOS删除按钮）
@@ -634,64 +638,66 @@ const cateIcons = {
             document.getElementById('billAmount').value = '';
         }
 
-        // ========== 分类功能 ==========
-    function renderCategories() {
-    const grid = document.getElementById('categoryGrid');
-    grid.innerHTML = '';
-    
-    categories.forEach((cate, index) => {
-        const cateItem = document.createElement('div');
-        cateItem.className = 'category-item';
-        if (index === 0) cateItem.classList.add('active');
-        
-        // 新增：提取纯分类名称（去掉原有emoji）
-        const catePureName = cate.replace(/[^\u4e00-\u9fa5]/g, '');
-        // 新增：根据分类名取对应图标（解决不匹配问题）
-        const matchIcon = cateIcons[catePureName] || '🔧';
-        
-        // 替换原有innerHTML，用匹配的图标+居中文字
-        cateItem.innerHTML = `
-            <div class="category-icon">${matchIcon}</div>
-            <div class="category-name">${catePureName}</div>
-        `;
+        // ========== 分类功能（核心修改：图标匹配+文字居中） ==========
+        function renderCategories() {
+            const grid = document.getElementById('categoryGrid');
+            grid.innerHTML = '';
+            
+            categories.forEach((cate, index) => {
+                const cateItem = document.createElement('div');
+                cateItem.className = 'category-item';
+                if (index === 0) cateItem.classList.add('active');
+                
+                // 提取纯分类名称（去掉原有emoji）
+                const catePureName = cate.replace(/[^\u4e00-\u9fa5]/g, '');
+                // 根据分类名匹配对应图标（解决不匹配问题）
+                const matchIcon = cateIcons[catePureName] || '🔧';
+                
+                // 渲染：匹配的图标 + 居中文字
+                cateItem.innerHTML = `
+                    <div class="category-icon">${matchIcon}</div>
+                    <div class="category-name">${catePureName}</div>
+                `;
 
-        // 以下原有代码完全不变（长按删除、点击选中逻辑）
-        cateItem.addEventListener('touchstart', () => {
-            longPressTimer = setTimeout(() => {
-                if (confirm(`确定删除「${cate}」分类吗？`)) {
-                    if (categories.length <= 1) {
-                        alert('至少保留1个分类哦～');
-                        return;
-                    }
-                    categories.splice(index, 1);
-                    renderCategories();
-                    localStorage.setItem('phoneCates', JSON.stringify(categories));
-                    alert(`已删除「${cate}」分类`);
-                }
-            }, 500);
-        });
-        cateItem.addEventListener('touchend', () => clearTimeout(longPressTimer));
-        cateItem.addEventListener('touchmove', () => clearTimeout(longPressTimer));
+                // 长按删除逻辑（完全不变）
+                cateItem.addEventListener('touchstart', () => {
+                    longPressTimer = setTimeout(() => {
+                        if (confirm(`确定删除「${cate}」分类吗？`)) {
+                            if (categories.length <= 1) {
+                                alert('至少保留1个分类哦～');
+                                return;
+                            }
+                            categories.splice(index, 1);
+                            renderCategories();
+                            localStorage.setItem('phoneCates', JSON.stringify(categories));
+                            alert(`已删除「${cate}」分类`);
+                        }
+                    }, 500);
+                });
+                cateItem.addEventListener('touchend', () => clearTimeout(longPressTimer));
+                cateItem.addEventListener('touchmove', () => clearTimeout(longPressTimer));
 
-        cateItem.addEventListener('click', () => {
-            document.querySelectorAll('.category-item').forEach(item => {
-                item.classList.remove('active');
+                // 点击选中逻辑（仅修改选中值为纯名称）
+                cateItem.addEventListener('click', () => {
+                    document.querySelectorAll('.category-item').forEach(item => {
+                        item.classList.remove('active');
+                    });
+                    cateItem.classList.add('active');
+                    selectedCate = catePureName;
+                });
+
+                grid.appendChild(cateItem);
             });
-            cateItem.classList.add('active');
-            selectedCate = catePureName; // 改为纯名称
-        });
 
-        grid.appendChild(cateItem);
-    });
+            // 默认选中第一个分类的纯名称
+            if (categories.length > 0) {
+                const firstCateName = categories[0].replace(/[^\u4e00-\u9fa5]/g, '');
+                selectedCate = firstCateName;
+            }
+            localStorage.setItem('phoneCates', JSON.stringify(categories));
+        }
 
-    // 新增：默认选中第一个分类的纯名称
-    if (categories.length > 0) {
-        const firstCateName = categories[0].replace(/[^\u4e00-\u9fa5]/g, '');
-        selectedCate = firstCateName;
-    }
-    localStorage.setItem('phoneCates', JSON.stringify(categories));
-}
-        // ========== 新增分类功能 ==========
+        // ========== 新增分类功能（核心修改：图标匹配） ==========
         function openAddCateModal() {
             document.getElementById('addCateModal').classList.add('show');
             document.getElementById('newCateInput').focus();
@@ -701,26 +707,26 @@ const cateIcons = {
             document.getElementById('newCateInput').value = '';
         }
         function saveNewCate() {
-    const newCateName = document.getElementById('newCateInput').value.trim();
-    if (!newCateName) {
-        alert('请输入分类名称～');
-        return;
-    }
-    const cateNames = categories.map(c => c.replace(/[^\u4e00-\u9fa5]/g, ''));
-    if (cateNames.includes(newCateName)) {
-        alert('这个分类已经存在啦～');
-        return;
-    }
-    
-    // 替换原有随机emoji，改为匹配图标
-    const newCateIcon = cateIcons[newCateName] || '🔧';
-    const newCate = newCateName + newCateIcon;
-    
-    categories.push(newCate);
-    renderCategories();
-    closeAddCateModal();
-    alert(`新增分类成功：${newCate}`);
-}
+            const newCateName = document.getElementById('newCateInput').value.trim();
+            if (!newCateName) {
+                alert('请输入分类名称～');
+                return;
+            }
+            const cateNames = categories.map(c => c.replace(/[^\u4e00-\u9fa5]/g, ''));
+            if (cateNames.includes(newCateName)) {
+                alert('这个分类已经存在啦～');
+                return;
+            }
+            
+            // 核心修改：根据分类名匹配对应图标
+            const newCateIcon = cateIcons[newCateName] || '🔧';
+            const newCate = newCateName + newCateIcon;
+            
+            categories.push(newCate);
+            renderCategories();
+            closeAddCateModal();
+            alert(`新增分类成功：${newCate}`);
+        }
 
         // ========== 收支类型切换 ==========
         function setType(type) {
@@ -768,4 +774,3 @@ const cateIcons = {
     </script>
 </body>
 </html>
-
