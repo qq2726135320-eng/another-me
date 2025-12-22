@@ -656,7 +656,7 @@
         }
 
         .add-btn {
-            position: absolute;
+            position: fixed;
             bottom: 40px;
             right: 20px;
             width: 56px;
@@ -688,7 +688,7 @@
             background: rgba(0, 0, 0, 0.4);
             display: none;
             align-items: flex-end;
-            z-index: 1000;
+            z-index: 1100; /* 提高z-index避免被添加按钮遮挡 */
             backdrop-filter: blur(8px);
         }
 
@@ -716,6 +716,7 @@
         .modal-header {
             padding: 24px 16px 16px;
             position: relative;
+            flex-shrink: 0;
         }
 
         .modal-title {
@@ -749,6 +750,9 @@
 
         .modal-body {
             padding: 0 16px;
+            max-height: 60vh;
+            overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
         }
 
         .modal-footer {
@@ -757,6 +761,7 @@
             gap: 10px;
             border-top: 0.5px solid #E5E5EA;
             margin-top: 20px;
+            flex-shrink: 0;
         }
 
         .modal-btn {
@@ -1006,6 +1011,20 @@
             font-weight: 600;
             color: #1C1C1E;
             margin-bottom: 16px;
+        }
+
+        /* 分类管理页面样式 */
+        .category-list {
+            max-height: 50vh;
+            overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        /* 预算管理页面样式 */
+        .budget-categories-container {
+            max-height: 50vh;
+            overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
         }
 
         /* 响应式调整 */
@@ -1264,7 +1283,11 @@
                     
                     <div class="input-group">
                         <label class="input-label">分类预算</label>
-                        <div id="budgetCategoriesList"></div>
+                        <div class="budget-categories-container" id="budgetCategoriesList"></div>
+                    </div>
+                    
+                    <div class="input-group">
+                        <button class="type-btn" onclick="addBudgetCategory()" style="width: 100%;">+ 添加预算分类</button>
                     </div>
                 </div>
                 <div class="modal-footer">
@@ -1286,6 +1309,9 @@
                         <!-- 分类将通过JS动态生成 -->
                     </div>
                     <button class="type-btn" onclick="openAddCateModal()" style="width: 100%; margin-top: 16px;">+ 添加新分类</button>
+                </div>
+                <div class="modal-footer">
+                    <button class="modal-btn save-btn" onclick="closeCategoryModal()">完成</button>
                 </div>
             </div>
         </div>
@@ -1588,8 +1614,38 @@
             budgetList.innerHTML = budgetItemsHTML;
         }
 
+        function addBudgetCategory() {
+            const categoryName = prompt('请输入分类名称:');
+            if (!categoryName) return;
+            
+            const icon = prompt('请输入图标emoji (如: 🍜):');
+            if (!icon) return;
+            
+            const newCategory = categoryName + icon;
+            
+            // 添加到分类列表
+            if (!categories.includes(newCategory)) {
+                categories.push(newCategory);
+                localStorage.setItem('phoneCates', JSON.stringify(categories));
+            }
+            
+            // 重新渲染预算设置列表
+            renderBudgetSetList();
+        }
+
         function saveBudgets() {
             const monthKey = getCurrentMonthKey();
+            const totalBudget = parseFloat(document.getElementById('totalBudget').value) || 0;
+            const budgetPeriod = document.getElementById('budgetPeriod').value;
+            
+            if (!monthlyBudgets[monthKey]) {
+                monthlyBudgets[monthKey] = {};
+            }
+            
+            // 保存总预算
+            monthlyBudgets[monthKey]._total = totalBudget;
+            monthlyBudgets[monthKey]._period = budgetPeriod;
+            
             const inputs = document.querySelectorAll('#budgetCategoriesList input');
             
             inputs.forEach(input => {
@@ -1629,6 +1685,7 @@
                 const dayElement = document.createElement('div');
                 dayElement.className = 'calendar-day';
                 dayElement.textContent = prevMonthDays - firstDay + i + 1;
+                dayElement.style.color = '#C7C7CC';
                 calendarDays.appendChild(dayElement);
             }
             
@@ -1671,6 +1728,17 @@
                 calendarDays.appendChild(dayElement);
             }
             
+            // 添加下个月的占位日期
+            const totalCells = 42; // 6行x7列
+            const cellsUsed = firstDay + daysInMonth;
+            for (let i = 1; i <= totalCells - cellsUsed; i++) {
+                const dayElement = document.createElement('div');
+                dayElement.className = 'calendar-day';
+                dayElement.textContent = i;
+                dayElement.style.color = '#C7C7CC';
+                calendarDays.appendChild(dayElement);
+            }
+            
             // 更新日历标题
             document.getElementById('calendarMonth').textContent = `${year}年${month + 1}月`;
         }
@@ -1691,6 +1759,7 @@
                 const dayElement = document.createElement('div');
                 dayElement.className = 'calendar-day-large';
                 dayElement.textContent = prevMonthDays - firstDay + i + 1;
+                dayElement.style.color = '#C7C7CC';
                 calendarDaysGrid.appendChild(dayElement);
             }
             
@@ -1722,11 +1791,27 @@
                 dayElement.addEventListener('click', function() {
                     const [y, m, d] = this.dataset.date.split('-').map(Number);
                     selectedDate = new Date(y, m - 1, d);
+                    currentCalendarDate = new Date(y, m - 1, d);
                     renderCalendar();
+                    renderMiniCalendar();
                 });
                 
                 calendarDaysGrid.appendChild(dayElement);
             }
+            
+            // 添加下个月的占位日期
+            const totalCells = 42; // 6行x7列
+            const cellsUsed = firstDay + daysInMonth;
+            for (let i = 1; i <= totalCells - cellsUsed; i++) {
+                const dayElement = document.createElement('div');
+                dayElement.className = 'calendar-day-large';
+                dayElement.textContent = i;
+                dayElement.style.color = '#C7C7CC';
+                calendarDaysGrid.appendChild(dayElement);
+            }
+            
+            // 更新日历标题
+            document.getElementById('calendarMonth').textContent = `${year}年${month + 1}月`;
         }
 
         function changeMonth(direction) {
@@ -1782,7 +1867,14 @@
             const categoryGrid = document.getElementById('categoryGrid');
             categoryGrid.innerHTML = '';
             
-            categories.forEach(cate => {
+            // 过滤分类，只显示当前类型的分类
+            const filteredCategories = categories.filter(cate => {
+                const cateName = cate.replace(/[^\u4e00-\u9fa5a-zA-Z0-9]/g, '');
+                // 这里简单判断，实际应该根据分类类型来过滤
+                return true; // 暂时显示所有分类
+            });
+            
+            filteredCategories.forEach(cate => {
                 const cateItem = document.createElement('div');
                 cateItem.className = `category-item ${selectedCate === cate ? 'active' : ''}`;
                 
