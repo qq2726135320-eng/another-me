@@ -664,6 +664,7 @@
             border-bottom: 1px solid #F2F2F7;
             display: flex; justify-content: space-between;
             align-items: center;
+            cursor: pointer;
         }
         .data-option:last-child {
             border-bottom: none;
@@ -678,59 +679,70 @@
         .data-icon {
             font-size: 20px;
         }
-        
-        /* 二维码弹窗样式 */
-        .qrcode-modal {
+
+        /* 文本分享弹窗 */
+        .text-share-modal {
             position: fixed; top:0; left:0; right:0; bottom:0;
-            background: rgba(0,0,0,0.8);
+            background: rgba(0,0,0,0.5);
             display: flex; align-items: center; justify-content: center;
-            z-index: 1000;
+            z-index: 1000; padding: 0 20px;
         }
-        .qrcode-content {
+        .text-share-content {
             background: white;
             padding: 24px;
             border-radius: 16px;
-            text-align: center;
-            width: 90%;
-            max-width: 300px;
+            width: 100%;
+            max-width: 400px;
+            max-height: 80vh;
+            overflow-y: auto;
         }
-        .qrcode-title {
+        .text-share-title {
             font-size: 18px;
             font-weight: 600;
-            margin-bottom: 10px;
+            margin-bottom: 15px;
+            text-align: center;
         }
-        .qrcode-subtitle {
+        .text-share-textarea {
+            width: 100%;
+            height: 150px;
+            padding: 12px;
+            border: 1px solid #E5E5EA;
+            border-radius: 12px;
             font-size: 14px;
-            color: #8E8E93;
-            margin-bottom: 20px;
+            font-family: monospace;
+            margin-bottom: 15px;
+            resize: none;
+            -webkit-appearance: none;
+            appearance: none;
         }
-        .qrcode-img-container {
-            width: 200px;
-            height: 200px;
-            margin: 0 auto 20px;
-            background: #F2F2F7;
-            border-radius: 8px;
+        .text-share-textarea:focus {
+            outline: none;
+            border-color: #007AFF;
+        }
+        .text-share-buttons {
             display: flex;
-            align-items: center;
-            justify-content: center;
-            position: relative;
+            gap: 10px;
         }
-        .qrcode-img {
-            max-width: 100%;
-            max-height: 100%;
+        .text-share-btn {
+            flex: 1;
+            padding: 12px;
+            border-radius: 12px;
+            border: none;
+            font-size: 16px;
         }
-        .qrcode-error {
-            font-size: 14px;
-            color: #8E8E93;
-        }
-        .qrcode-close-btn {
-            padding: 10px 24px;
+        .text-share-copy {
             background: #007AFF;
             color: white;
-            border: none;
-            border-radius: 8px;
-            font-size: 16px;
+        }
+        .text-share-close {
+            background: #F2F2F7;
+            color: #1C1C1E;
+        }
+        .text-share-tips {
+            font-size: 12px;
+            color: #8E8E93;
             margin-top: 10px;
+            line-height: 1.4;
         }
     </style>
 </head>
@@ -894,7 +906,7 @@
             </div>
         </div>
 
-        <!-- 数据管理弹窗 -->
+        <!-- 数据管理弹窗（修复版：添加了"从文本恢复"选项） -->
         <div class="data-modal" id="dataModal">
             <div class="data-modal-content">
                 <div class="data-modal-title">数据管理</div>
@@ -915,12 +927,21 @@
                     <div class="data-icon">📥</div>
                 </div>
                 
-                <div class="data-option" onclick="showQRCode()">
+                <div class="data-option" onclick="shareAsText()">
                     <div>
-                        <div class="data-label">二维码分享</div>
-                        <div class="data-desc">生成二维码，手机扫码恢复</div>
+                        <div class="data-label">文本分享</div>
+                        <div class="data-desc">生成文本代码，手动复制粘贴</div>
                     </div>
-                    <div class="data-icon">📱</div>
+                    <div class="data-icon">📝</div>
+                </div>
+                
+                <!-- 新增：从文本恢复 -->
+                <div class="data-option" onclick="openTextRestore()">
+                    <div>
+                        <div class="data-label">从文本恢复</div>
+                        <div class="data-desc">粘贴数据代码恢复数据</div>
+                    </div>
+                    <div class="data-icon">📋</div>
                 </div>
                 
                 <div class="data-option" onclick="clearLocalData()">
@@ -940,6 +961,40 @@
                 </div>
                 
                 <button class="modal-btn close-btn" onclick="closeDataModal()">关闭</button>
+            </div>
+        </div>
+
+        <!-- 文本分享弹窗 -->
+        <div class="text-share-modal" id="textShareModal" style="display: none;">
+            <div class="text-share-content">
+                <div class="text-share-title">文本分享</div>
+                <textarea class="text-share-textarea" id="textShareArea" readonly placeholder="数据代码将在这里显示..."></textarea>
+                <div class="text-share-buttons">
+                    <button class="text-share-btn text-share-copy" onclick="copyTextData()">复制代码</button>
+                    <button class="text-share-btn text-share-close" onclick="closeTextShare()">关闭</button>
+                </div>
+                <div class="text-share-tips">
+                    <strong>使用方法：</strong><br>
+                    1. 复制上面的代码<br>
+                    2. 在新设备上打开本应用<br>
+                    3. 点击"数据管理" → "从文本恢复"<br>
+                    4. 粘贴代码并确认恢复
+                </div>
+            </div>
+        </div>
+
+        <!-- 文本恢复弹窗 -->
+        <div class="text-share-modal" id="textRestoreModal" style="display: none;">
+            <div class="text-share-content">
+                <div class="text-share-title">从文本恢复数据</div>
+                <textarea class="text-share-textarea" id="textRestoreArea" placeholder="请粘贴数据代码..."></textarea>
+                <div class="text-share-buttons">
+                    <button class="text-share-btn text-share-copy" onclick="restoreFromText()">恢复数据</button>
+                    <button class="text-share-btn text-share-close" onclick="closeTextRestore()">关闭</button>
+                </div>
+                <div class="text-share-tips">
+                    <strong>注意：</strong>这将覆盖当前设备上的所有数据！请确保已备份。
+                </div>
             </div>
         </div>
     </div>
@@ -1015,7 +1070,7 @@
             }
         }
 
-        // ========== 数据管理功能 ==========
+        // ========== 数据管理功能（修复版） ==========
         // 打开数据管理弹窗
         function openDataModal() {
             document.getElementById('dataModal').classList.add('show');
@@ -1093,57 +1148,103 @@
             input.click();
         }
 
-        // BUG修复2: 显示二维码分享（改进版）
-        function showQRCode() {
+        // 文本分享功能
+        function shareAsText() {
             const allData = {
                 bills: bills,
                 categories: categories,
                 budgets: monthlyBudgets,
-                version: '1.0',
+                version: '2.0',
                 timestamp: Date.now()
             };
             
-            // 使用更简单的编码，避免URL过长
+            // 生成压缩的文本数据
             const dataStr = JSON.stringify(allData);
-            // 使用更短的base64编码
+            // 使用更简单的base64编码
             const compressed = btoa(unescape(encodeURIComponent(dataStr)));
             
-            // 创建二维码弹窗
-            const qrModal = document.createElement('div');
-            qrModal.className = 'qrcode-modal';
-            qrModal.innerHTML = `
-                <div class="qrcode-content">
-                    <div class="qrcode-title">扫码恢复数据</div>
-                    <div class="qrcode-subtitle">用另一台设备扫描二维码</div>
-                    <div class="qrcode-img-container">
-                        <img class="qrcode-img" src="" alt="二维码" onerror="this.parentElement.innerHTML='<div class=\'qrcode-error\'>二维码生成失败<br>请使用导出功能</div>'">
-                    </div>
-                    <button class="qrcode-close-btn" onclick="this.parentElement.parentElement.remove()">关闭</button>
-                </div>
-            `;
-            document.body.appendChild(qrModal);
-            
-            // 生成二维码图片URL（使用可靠的二维码生成服务）
-            // 注意：由于外部API可能不稳定，这里添加了错误处理
-            const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(compressed)}&format=png&margin=10`;
-            
-            // 设置图片源，并添加备用方案
-            const img = qrModal.querySelector('.qrcode-img');
-            img.src = qrCodeUrl;
-            
-            // 设置图片加载错误处理
-            img.onerror = function() {
-                // 如果第一个服务失败，尝试备用服务
-                const backupUrl = `https://quickchart.io/qr?text=${encodeURIComponent(compressed)}&size=200&margin=10`;
-                this.src = backupUrl;
-                
-                // 如果备用服务也失败
-                this.onerror = function() {
-                    this.parentElement.innerHTML = '<div class="qrcode-error">二维码生成失败<br>请使用导出/导入功能</div>';
-                };
-            };
+            // 显示文本分享弹窗
+            document.getElementById('textShareModal').style.display = 'flex';
+            document.getElementById('textShareArea').value = compressed;
             
             closeDataModal();
+        }
+
+        // 复制文本数据
+        function copyTextData() {
+            const textArea = document.getElementById('textShareArea');
+            textArea.select();
+            textArea.setSelectionRange(0, 99999); // 移动设备兼容
+    
+            try {
+                const successful = document.execCommand('copy');
+                if (successful) {
+                    showAlert('数据代码已复制到剪贴板');
+                } else {
+                    // 备用方案
+                    navigator.clipboard.writeText(textArea.value).then(function() {
+                        showAlert('数据代码已复制到剪贴板');
+                    }).catch(function(err) {
+                        showAlert('复制失败，请手动选择并复制');
+                    });
+                }
+            } catch (err) {
+                showAlert('复制失败，请手动选择并复制');
+            }
+        }
+
+        // 关闭文本分享
+        function closeTextShare() {
+            document.getElementById('textShareModal').style.display = 'none';
+        }
+
+        // 打开文本恢复弹窗
+        function openTextRestore() {
+            document.getElementById('textRestoreModal').style.display = 'flex';
+            closeDataModal();
+        }
+
+        // 从文本恢复数据
+        function restoreFromText() {
+            const textArea = document.getElementById('textRestoreArea');
+            const dataCode = textArea.value.trim();
+            
+            if (!dataCode) {
+                showAlert('请输入数据代码');
+                return;
+            }
+            
+            try {
+                // 解码base64数据
+                const decoded = decodeURIComponent(escape(atob(dataCode)));
+                const importedData = JSON.parse(decoded);
+                
+                if (confirm('确定要恢复数据吗？这将覆盖当前所有数据！')) {
+                    bills = importedData.bills || [];
+                    categories = importedData.categories || categories;
+                    monthlyBudgets = importedData.budgets || {};
+                    
+                    // 保存到本地存储
+                    localStorage.setItem('phoneBills', JSON.stringify(bills));
+                    localStorage.setItem('phoneCates', JSON.stringify(categories));
+                    localStorage.setItem('monthlyBudgets', JSON.stringify(monthlyBudgets));
+                    
+                    // 刷新页面
+                    renderHomePage();
+                    renderBudgets();
+                    renderCalendar();
+                    
+                    showAlert('数据恢复成功！');
+                    closeTextRestore();
+                }
+            } catch (error) {
+                showAlert('数据代码格式错误，请检查后重试');
+            }
+        }
+
+        // 关闭文本恢复
+        function closeTextRestore() {
+            document.getElementById('textRestoreModal').style.display = 'none';
         }
 
         // 清空本地数据
