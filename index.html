@@ -2,119 +2,232 @@
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <title>账单管理系统</title>
     <style>
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
-            font-family: 'PingFang SC', 'Microsoft YaHei', sans-serif;
+            font-family: -apple-system, BlinkMacSystemFont, 'PingFang SC', 'Helvetica Neue', sans-serif;
+            -webkit-tap-highlight-color: transparent;
+        }
+        
+        :root {
+            --safe-area-inset-bottom: env(safe-area-inset-bottom, 0px);
+            --safe-area-inset-top: env(safe-area-inset-top, 0px);
+            --primary-color: #007AFF;
+            --danger-color: #FF3B30;
+            --success-color: #34C759;
+            --warning-color: #FF9500;
+            --bg-color: #F2F2F7;
+            --card-bg: #FFFFFF;
+            --text-primary: #000000;
+            --text-secondary: #8E8E93;
+            --border-color: #C7C7CC;
+            --shadow-color: rgba(0, 0, 0, 0.1);
+        }
+        
+        @media (prefers-color-scheme: dark) {
+            :root {
+                --bg-color: #000000;
+                --card-bg: #1C1C1E;
+                --text-primary: #FFFFFF;
+                --text-secondary: #8E8E93;
+                --border-color: #38383A;
+                --shadow-color: rgba(255, 255, 255, 0.1);
+            }
         }
         
         body {
-            background-color: #f5f5f5;
-            color: #333;
+            background-color: var(--bg-color);
+            color: var(--text-primary);
             padding: 20px;
             min-height: 100vh;
+            padding-top: calc(20px + var(--safe-area-inset-top));
+            padding-bottom: calc(20px + var(--safe-area-inset-bottom));
         }
         
         .container {
-            max-width: 1200px;
+            max-width: 800px;
             margin: 0 auto;
             position: relative;
         }
         
-        /* 标题样式 */
+        /* iOS风格标题 */
         .header {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 30px;
-            flex-wrap: wrap;
+            margin-bottom: 20px;
+            padding-top: 10px;
         }
         
         .header h1 {
-            font-size: 28px;
-            color: #2c3e50;
+            font-size: 34px;
+            font-weight: 700;
+            color: var(--text-primary);
+            letter-spacing: -0.5px;
         }
         
-        /* 功能按钮区域 */
+        /* iOS风格按钮 */
         .action-buttons {
             display: flex;
-            gap: 15px;
+            gap: 12px;
         }
         
         .action-btn {
-            padding: 10px 20px;
-            background-color: #2c3e50;
-            color: white;
+            padding: 10px 16px;
+            background-color: var(--card-bg);
+            color: var(--primary-color);
             border: none;
-            border-radius: 8px;
+            border-radius: 10px;
             cursor: pointer;
-            font-size: 14px;
+            font-size: 16px;
             font-weight: 600;
-            transition: all 0.3s ease;
+            transition: all 0.2s ease;
+            -webkit-appearance: none;
+            box-shadow: 0 2px 8px var(--shadow-color);
         }
         
-        .action-btn:hover {
-            background-color: #1a252f;
-            transform: translateY(-2px);
-        }
-        
-        .action-btn.budget {
-            background-color: #3498db;
-        }
-        
-        .action-btn.budget:hover {
-            background-color: #2980b9;
+        .action-btn:hover, .action-btn:active {
+            background-color: rgba(0, 122, 255, 0.1);
+            transform: scale(0.98);
         }
         
         /* 主内容区域 */
         .main-content {
-            display: grid;
-            grid-template-columns: 1fr 350px;
-            gap: 30px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
         }
         
-        @media (max-width: 992px) {
-            .main-content {
-                grid-template-columns: 1fr;
-            }
-        }
-        
-        /* 账单列表容器 */
-        .bills-container {
-            background-color: white;
+        /* iOS风格卡片 */
+        .card {
+            background-color: var(--card-bg);
             border-radius: 16px;
-            padding: 25px;
-            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.06);
-            min-height: 400px;
-            position: relative;
+            padding: 20px;
+            box-shadow: 0 4px 20px var(--shadow-color);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+        }
+        
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        
+        .stat-card {
+            background: linear-gradient(135deg, rgba(0, 122, 255, 0.1), rgba(52, 199, 89, 0.1));
+            border-radius: 14px;
+            padding: 18px;
+            text-align: center;
+            border: 1px solid rgba(0, 122, 255, 0.1);
+        }
+        
+        .stat-value {
+            font-size: 28px;
+            font-weight: 700;
+            margin-bottom: 4px;
+            letter-spacing: -0.5px;
+        }
+        
+        .income .stat-value {
+            color: var(--success-color);
+        }
+        
+        .expense .stat-value {
+            color: var(--danger-color);
+        }
+        
+        .balance .stat-value {
+            color: var(--primary-color);
+        }
+        
+        .stat-label {
+            font-size: 14px;
+            color: var(--text-secondary);
+            font-weight: 500;
+        }
+        
+        /* 账单列表 */
+        .bills-container {
+            max-height: 400px;
+            overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
         }
         
         .bills-list {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-            gap: 20px;
-            max-height: 500px;
-            overflow-y: auto;
-            padding: 10px 5px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
         }
         
-        /* 预算面板样式 */
+        .bill-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 16px;
+            background-color: var(--card-bg);
+            border-radius: 14px;
+            border: 1px solid var(--border-color);
+            transition: all 0.2s ease;
+        }
+        
+        .bill-item:active {
+            transform: scale(0.98);
+            background-color: rgba(0, 122, 255, 0.05);
+        }
+        
+        .bill-info {
+            flex: 1;
+        }
+        
+        .bill-category {
+            font-weight: 600;
+            font-size: 17px;
+            margin-bottom: 4px;
+        }
+        
+        .bill-date {
+            font-size: 15px;
+            color: var(--text-secondary);
+        }
+        
+        .bill-note {
+            font-size: 14px;
+            color: var(--text-secondary);
+            margin-top: 6px;
+            font-style: italic;
+        }
+        
+        .bill-amount {
+            font-size: 20px;
+            font-weight: 700;
+            text-align: right;
+        }
+        
+        .income .bill-amount {
+            color: var(--success-color);
+        }
+        
+        .expense .bill-amount {
+            color: var(--danger-color);
+        }
+        
+        /* 预算面板 */
         .budget-panel {
-            background-color: white;
-            border-radius: 16px;
-            padding: 25px;
-            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.06);
-            height: fit-content;
+            margin-top: 20px;
         }
         
         .budget-panel h2 {
             font-size: 22px;
-            color: #2c3e50;
-            margin-bottom: 25px;
+            font-weight: 700;
+            margin-bottom: 20px;
             display: flex;
             justify-content: space-between;
             align-items: center;
@@ -127,45 +240,57 @@
         }
         
         .budget-category {
+            padding: 16px;
+            background-color: var(--card-bg);
+            border-radius: 14px;
+            border: 1px solid var(--border-color);
+        }
+        
+        .category-header {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            padding: 15px;
-            background-color: #f8f9fa;
-            border-radius: 10px;
-            transition: all 0.3s ease;
-        }
-        
-        .budget-category:hover {
-            background-color: #e9ecef;
+            margin-bottom: 12px;
         }
         
         .category-name {
             font-weight: 600;
-            color: #2c3e50;
+            font-size: 17px;
         }
         
         .budget-info {
             display: flex;
-            flex-direction: column;
-            align-items: flex-end;
-            gap: 5px;
+            align-items: baseline;
+            gap: 8px;
+            margin-bottom: 10px;
         }
         
         .budget-amount {
-            font-size: 18px;
+            font-size: 22px;
             font-weight: 700;
         }
         
+        .budget-amount.overspent {
+            color: var(--danger-color);
+        }
+        
+        .budget-amount.under {
+            color: var(--success-color);
+        }
+        
+        .budget-amount.warning {
+            color: var(--warning-color);
+        }
+        
         .actual-amount {
-            font-size: 14px;
-            color: #7f8c8d;
+            font-size: 16px;
+            color: var(--text-secondary);
         }
         
         .progress-bar {
             width: 100%;
             height: 6px;
-            background-color: #e0e0e0;
+            background-color: var(--border-color);
             border-radius: 3px;
             margin-top: 8px;
             overflow: hidden;
@@ -178,186 +303,134 @@
         }
         
         .progress-fill.safe {
-            background-color: #4CAF50;
+            background-color: var(--success-color);
         }
         
         .progress-fill.warning {
-            background-color: #ff9800;
+            background-color: var(--warning-color);
         }
         
         .progress-fill.danger {
-            background-color: #f44336;
+            background-color: var(--danger-color);
         }
         
-        /* 账单项样式 */
-        .bill-item {
-            background-color: #f8f9fa;
-            border-radius: 12px;
-            padding: 20px;
-            transition: all 0.3s ease;
-            border-left: 4px solid #4CAF50;
-            position: relative;
-            overflow: hidden;
-        }
-        
-        .bill-item.expense {
-            border-left-color: #ff6b6b;
-        }
-        
-        .bill-item:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.08);
-        }
-        
-        .bill-category {
-            font-weight: 600;
-            font-size: 16px;
-            color: #2c3e50;
-            margin-bottom: 8px;
-        }
-        
-        .bill-amount {
-            font-size: 24px;
-            font-weight: 700;
-            margin-bottom: 5px;
-        }
-        
-        .bill-item.income .bill-amount {
-            color: #4CAF50;
-        }
-        
-        .bill-item.expense .bill-amount {
-            color: #ff6b6b;
-        }
-        
-        .bill-date {
-            font-size: 14px;
-            color: #7f8c8d;
-            margin-bottom: 8px;
-        }
-        
-        .bill-note {
-            font-size: 14px;
-            color: #5a6c7d;
-            margin-top: 10px;
-            padding: 8px;
-            background-color: rgba(255, 255, 255, 0.7);
-            border-radius: 6px;
-            font-style: italic;
-            max-height: 60px;
-            overflow-y: auto;
-        }
-        
-        /* 功能按钮容器 - 固定在右下角且置于顶层 */
+        /* iOS风格浮动按钮 */
         .floating-buttons {
             position: fixed;
-            bottom: 30px;
-            right: 30px;
+            bottom: calc(30px + var(--safe-area-inset-bottom));
+            right: 20px;
             display: flex;
             flex-direction: column;
-            gap: 20px;
-            z-index: 1000; /* 确保按钮在最顶层 */
+            gap: 15px;
+            z-index: 1000;
         }
         
-        /* 添加账单按钮 */
+        .floating-btn {
+            width: 56px;
+            height: 56px;
+            border-radius: 28px;
+            border: none;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            -webkit-appearance: none;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+        }
+        
+        .floating-btn:active {
+            transform: scale(0.95);
+        }
+        
         .add-bill-btn {
-            width: 70px;
-            height: 70px;
-            border-radius: 50%;
-            background-color: #000;
+            background-color: var(--primary-color);
             color: white;
-            border: none;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 30px;
-            cursor: pointer;
-            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.2);
-            transition: all 0.3s ease;
-            z-index: 1001; /* 确保按钮在最顶层 */
+            font-size: 28px;
+            font-weight: 300;
         }
         
-        .add-bill-btn:hover {
-            transform: scale(1.1);
-            background-color: #333;
-            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.25);
-        }
-        
-        /* 日历按钮 */
         .calendar-btn {
-            width: 70px;
-            height: 70px;
-            border-radius: 50%;
-            background-color: white;
-            color: black;
-            border: none;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 24px;
-            font-weight: bold;
-            cursor: pointer;
-            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
-            transition: all 0.3s ease;
-            z-index: 1001; /* 确保按钮在最顶层 */
+            background-color: var(--card-bg);
+            color: var(--text-primary);
+            font-size: 22px;
+            font-weight: 700;
+            border: 1px solid var(--border-color);
         }
         
-        .calendar-btn:hover {
-            transform: scale(1.1);
-            background-color: #f8f9fa;
-            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.2);
-        }
-        
-        /* 添加账单表单 */
-        .add-bill-form {
+        /* iOS风格模态框 */
+        .modal {
             position: fixed;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            background-color: white;
-            border-radius: 20px;
-            padding: 30px;
-            width: 90%;
-            max-width: 500px;
-            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: rgba(0, 0, 0, 0.4);
             z-index: 2000;
             display: none;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            -webkit-tap-highlight-color: transparent;
         }
         
-        .add-bill-form.active {
-            display: block;
+        .modal.active {
+            display: flex;
         }
         
-        .form-header {
+        .modal-content {
+            width: 100%;
+            max-width: 500px;
+            max-height: 85vh;
+            overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
+            background-color: var(--card-bg);
+            border-radius: 20px;
+            padding: 0;
+            animation: modalSlideIn 0.3s ease;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+        }
+        
+        @keyframes modalSlideIn {
+            from {
+                opacity: 0;
+                transform: translateY(50px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        .modal-header {
+            padding: 20px;
+            border-bottom: 1px solid var(--border-color);
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 25px;
         }
         
-        .form-header h2 {
-            font-size: 24px;
-            color: #2c3e50;
+        .modal-header h2 {
+            font-size: 22px;
+            font-weight: 700;
         }
         
         .close-btn {
             background: none;
             border: none;
-            font-size: 28px;
+            color: var(--primary-color);
+            font-size: 18px;
+            font-weight: 600;
             cursor: pointer;
-            color: #7f8c8d;
-            width: 40px;
-            height: 40px;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
+            padding: 8px;
+            -webkit-appearance: none;
         }
         
-        .close-btn:hover {
-            background-color: #f5f5f5;
+        .modal-body {
+            padding: 20px;
         }
         
+        /* 表单样式 */
         .form-group {
             margin-bottom: 20px;
         }
@@ -366,49 +439,52 @@
             display: block;
             margin-bottom: 8px;
             font-weight: 600;
-            color: #2c3e50;
+            color: var(--text-primary);
         }
         
-        .form-control {
+        .ios-input, .ios-select, .ios-textarea {
             width: 100%;
-            padding: 14px;
-            border: 2px solid #e0e0e0;
-            border-radius: 10px;
-            font-size: 16px;
-            transition: border-color 0.3s;
+            padding: 14px 16px;
+            background-color: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            font-size: 17px;
+            color: var(--text-primary);
+            -webkit-appearance: none;
+            appearance: none;
         }
         
-        .form-control:focus {
+        .ios-input:focus, .ios-select:focus, .ios-textarea:focus {
             outline: none;
-            border-color: #3498db;
+            border-color: var(--primary-color);
+        }
+        
+        .ios-textarea {
+            resize: vertical;
+            min-height: 100px;
+            font-family: inherit;
         }
         
         .form-row {
-            display: flex;
-            gap: 20px;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
         }
         
-        .form-row .form-group {
-            flex: 1;
-        }
-        
-        /* 类别管理样式 */
+        /* 类别管理 */
         .category-management {
-            display: flex;
-            gap: 10px;
-            margin-bottom: 15px;
-        }
-        
-        .category-input {
-            flex: 1;
+            display: grid;
+            grid-template-columns: 1fr auto;
+            gap: 12px;
+            margin-bottom: 20px;
         }
         
         .category-list {
             max-height: 200px;
             overflow-y: auto;
-            border: 1px solid #e0e0e0;
-            border-radius: 10px;
-            padding: 10px;
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 12px;
             margin-bottom: 20px;
         }
         
@@ -416,490 +492,475 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
-            padding: 8px 12px;
-            margin-bottom: 5px;
-            background-color: #f8f9fa;
-            border-radius: 6px;
-        }
-        
-        .category-item:hover {
-            background-color: #e9ecef;
+            padding: 12px;
+            margin-bottom: 8px;
+            background-color: rgba(0, 122, 255, 0.05);
+            border-radius: 10px;
         }
         
         .delete-category {
             background: none;
             border: none;
-            color: #ff6b6b;
+            color: var(--danger-color);
+            font-size: 24px;
             cursor: pointer;
-            font-size: 18px;
-            width: 30px;
-            height: 30px;
-            border-radius: 50%;
+            padding: 4px;
+            -webkit-appearance: none;
+            width: 32px;
+            height: 32px;
+            border-radius: 16px;
             display: flex;
             align-items: center;
             justify-content: center;
         }
         
-        .delete-category:hover {
-            background-color: rgba(255, 107, 107, 0.1);
+        .delete-category:active {
+            background-color: rgba(255, 59, 48, 0.1);
         }
         
-        /* 新增的备注文本框 */
-        .note-textarea {
-            width: 100%;
-            padding: 14px;
-            border: 2px solid #e0e0e0;
-            border-radius: 10px;
-            font-size: 16px;
-            resize: vertical;
-            min-height: 100px;
-            transition: border-color 0.3s;
-            font-family: inherit;
-        }
-        
-        .note-textarea:focus {
-            outline: none;
-            border-color: #3498db;
-        }
-        
-        .form-actions {
-            display: flex;
-            justify-content: flex-end;
-            gap: 15px;
+        /* iOS风格按钮组 */
+        .button-group {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
             margin-top: 30px;
         }
         
-        .btn {
-            padding: 14px 30px;
-            border-radius: 10px;
-            font-size: 16px;
+        .ios-button {
+            padding: 16px;
+            border: none;
+            border-radius: 12px;
+            font-size: 17px;
             font-weight: 600;
             cursor: pointer;
-            transition: all 0.3s ease;
-            border: none;
+            transition: all 0.2s ease;
+            -webkit-appearance: none;
+            text-align: center;
         }
         
-        .btn-primary {
-            background-color: #2c3e50;
+        .ios-button.primary {
+            background-color: var(--primary-color);
             color: white;
         }
         
-        .btn-primary:hover {
-            background-color: #1a252f;
+        .ios-button.primary:active {
+            background-color: #0056CC;
         }
         
-        .btn-secondary {
-            background-color: #ecf0f1;
-            color: #2c3e50;
+        .ios-button.secondary {
+            background-color: var(--card-bg);
+            color: var(--text-primary);
+            border: 1px solid var(--border-color);
         }
         
-        .btn-secondary:hover {
-            background-color: #d5dbdd;
+        .ios-button.secondary:active {
+            background-color: rgba(0, 0, 0, 0.05);
         }
         
-        /* 日历面板 */
-        .calendar-panel {
-            position: fixed;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            background-color: white;
-            border-radius: 20px;
-            padding: 30px;
-            width: 90%;
-            max-width: 500px;
-            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
-            z-index: 2000;
-            display: none;
-        }
-        
-        .calendar-panel.active {
-            display: block;
-        }
-        
-        /* 年份选择器样式 */
-        .year-selector {
-            display: flex;
-            justify-content: center;
+        /* 日历样式 */
+        .calendar-controls {
+            display: grid;
+            grid-template-columns: auto 1fr auto;
+            gap: 12px;
             align-items: center;
-            gap: 20px;
             margin-bottom: 20px;
         }
         
-        .year-selector select {
-            padding: 10px 15px;
-            border-radius: 8px;
-            border: 2px solid #e0e0e0;
-            font-size: 16px;
-            font-weight: 600;
-            color: #2c3e50;
-            background-color: white;
+        .calendar-nav-btn {
+            background: none;
+            border: none;
+            color: var(--primary-color);
+            font-size: 20px;
             cursor: pointer;
-        }
-        
-        .year-selector select:focus {
-            outline: none;
-            border-color: #3498db;
-        }
-        
-        .calendar-header {
+            padding: 8px;
+            -webkit-appearance: none;
+            width: 44px;
+            height: 44px;
+            border-radius: 22px;
             display: flex;
-            justify-content: space-between;
             align-items: center;
-            margin-bottom: 20px;
+            justify-content: center;
         }
         
-        .calendar-days {
+        .calendar-nav-btn:active {
+            background-color: rgba(0, 122, 255, 0.1);
+        }
+        
+        .calendar-month {
+            font-size: 20px;
+            font-weight: 700;
+            text-align: center;
+        }
+        
+        .calendar-grid {
             display: grid;
             grid-template-columns: repeat(7, 1fr);
-            gap: 10px;
-            margin-top: 20px;
+            gap: 4px;
+            text-align: center;
+        }
+        
+        .calendar-day-header {
+            padding: 12px 0;
+            font-weight: 600;
+            color: var(--text-secondary);
+            font-size: 15px;
         }
         
         .calendar-day {
-            height: 40px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            border-radius: 8px;
+            padding: 12px 0;
+            border-radius: 12px;
             cursor: pointer;
+            font-size: 17px;
+            transition: all 0.2s ease;
         }
         
-        .calendar-day:hover {
-            background-color: #f0f0f0;
+        .calendar-day:hover, .calendar-day:active {
+            background-color: rgba(0, 122, 255, 0.1);
         }
         
-        .calendar-day.active {
-            background-color: #2c3e50;
+        .calendar-day.today {
+            background-color: var(--primary-color);
             color: white;
         }
         
-        /* 预算设置面板 */
-        .budget-form {
-            position: fixed;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            background-color: white;
-            border-radius: 20px;
-            padding: 30px;
-            width: 90%;
-            max-width: 500px;
-            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
-            z-index: 2000;
-            display: none;
+        .calendar-day.has-bills {
+            background-color: rgba(52, 199, 89, 0.1);
+            color: var(--success-color);
         }
         
-        .budget-form.active {
-            display: block;
+        .calendar-day.other-month {
+            color: var(--text-secondary);
         }
         
-        .budget-category-item {
-            display: flex;
-            justify-content: space-between;
+        /* 预算设置表单 */
+        .budget-settings-list {
+            max-height: 400px;
+            overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
+        }
+        
+        .budget-setting-item {
+            display: grid;
+            grid-template-columns: 1fr auto;
+            gap: 15px;
             align-items: center;
-            padding: 15px;
-            background-color: #f8f9fa;
+            padding: 16px;
+            background-color: var(--card-bg);
+            border-radius: 14px;
+            border: 1px solid var(--border-color);
+            margin-bottom: 12px;
+        }
+        
+        .budget-setting-label {
+            font-weight: 600;
+            font-size: 17px;
+        }
+        
+        .budget-setting-input {
+            width: 120px;
+            padding: 12px;
+            background-color: var(--card-bg);
+            border: 1px solid var(--border-color);
             border-radius: 10px;
-            margin-bottom: 10px;
-        }
-        
-        .budget-input {
-            width: 150px;
-            padding: 10px;
-            border: 2px solid #e0e0e0;
-            border-radius: 8px;
-            font-size: 16px;
+            font-size: 17px;
             text-align: right;
+            color: var(--text-primary);
+            -webkit-appearance: none;
         }
         
-        .budget-input:focus {
+        .budget-setting-input:focus {
             outline: none;
-            border-color: #3498db;
+            border-color: var(--primary-color);
         }
         
-        /* 遮罩层 */
-        .overlay {
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background-color: rgba(0, 0, 0, 0.5);
-            z-index: 1500;
-            display: none;
-        }
-        
-        .overlay.active {
-            display: block;
-        }
-        
-        /* 空状态提示 */
+        /* 空状态 */
         .empty-state {
             text-align: center;
             padding: 60px 20px;
-            color: #95a5a6;
+            color: var(--text-secondary);
         }
         
         .empty-state h3 {
-            font-size: 22px;
-            margin-bottom: 10px;
+            font-size: 20px;
+            margin-bottom: 12px;
+            font-weight: 600;
         }
         
-        /* 统计信息 */
-        .stats {
-            display: flex;
-            justify-content: space-between;
-            margin-bottom: 30px;
-            background-color: white;
-            border-radius: 16px;
-            padding: 25px;
-            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.06);
+        .empty-state p {
+            font-size: 16px;
         }
         
-        .stat-item {
-            text-align: center;
-            flex: 1;
-        }
-        
-        .stat-value {
-            font-size: 32px;
-            font-weight: 700;
-            margin-bottom: 5px;
-        }
-        
-        .stat-label {
-            font-size: 14px;
-            color: #7f8c8d;
-        }
-        
-        .income-stat .stat-value {
-            color: #4CAF50;
-        }
-        
-        .expense-stat .stat-value {
-            color: #ff6b6b;
+        /* 适配iPhone X及更高版本的刘海屏 */
+        @supports (padding: max(0px)) {
+            body {
+                padding-left: max(20px, env(safe-area-inset-left));
+                padding-right: max(20px, env(safe-area-inset-right));
+            }
         }
         
         /* 响应式调整 */
         @media (max-width: 768px) {
-            .floating-buttons {
-                bottom: 20px;
-                right: 20px;
-            }
-            
-            .add-bill-btn, .calendar-btn {
-                width: 60px;
-                height: 60px;
-                font-size: 26px;
-            }
-            
-            .bills-list {
+            .stats-grid {
                 grid-template-columns: 1fr;
+                gap: 12px;
             }
             
             .form-row {
-                flex-direction: column;
-                gap: 0;
+                grid-template-columns: 1fr;
+                gap: 12px;
             }
             
-            .stats {
-                flex-direction: column;
-                gap: 20px;
+            .button-group {
+                grid-template-columns: 1fr;
             }
             
-            .header {
-                flex-direction: column;
-                align-items: flex-start;
-                gap: 15px;
+            .modal-content {
+                max-height: 90vh;
             }
             
-            .action-buttons {
-                width: 100%;
-                justify-content: flex-start;
+            .floating-buttons {
+                bottom: calc(20px + var(--safe-area-inset-bottom));
+                right: 15px;
             }
+            
+            .floating-btn {
+                width: 52px;
+                height: 52px;
+            }
+        }
+        
+        /* 长按上下文菜单 */
+        .context-menu {
+            position: fixed;
+            background-color: var(--card-bg);
+            border-radius: 14px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+            z-index: 3000;
+            display: none;
+            min-width: 200px;
+            overflow: hidden;
+        }
+        
+        .context-menu.active {
+            display: block;
+            animation: contextMenuShow 0.2s ease;
+        }
+        
+        @keyframes contextMenuShow {
+            from {
+                opacity: 0;
+                transform: scale(0.95);
+            }
+            to {
+                opacity: 1;
+                transform: scale(1);
+            }
+        }
+        
+        .context-menu-item {
+            padding: 16px 20px;
+            cursor: pointer;
+            transition: background-color 0.2s ease;
+            border-bottom: 1px solid var(--border-color);
+        }
+        
+        .context-menu-item:last-child {
+            border-bottom: none;
+        }
+        
+        .context-menu-item:active {
+            background-color: rgba(0, 122, 255, 0.1);
+        }
+        
+        .context-menu-item.danger {
+            color: var(--danger-color);
         }
     </style>
 </head>
 <body>
     <div class="container">
-        <!-- 统计信息 -->
-        <div class="stats">
-            <div class="stat-item income-stat">
+        <!-- 头部 -->
+        <div class="header">
+            <h1>账单管理</h1>
+            <div class="action-buttons">
+                <button class="action-btn" id="budget-btn">预算</button>
+                <button class="action-btn" id="manage-categories-btn">类别</button>
+            </div>
+        </div>
+        
+        <!-- 统计卡片 -->
+        <div class="stats-grid">
+            <div class="stat-card income">
                 <div class="stat-value" id="total-income">¥0</div>
                 <div class="stat-label">总收入</div>
             </div>
-            <div class="stat-item expense-stat">
+            <div class="stat-card expense">
                 <div class="stat-value" id="total-expense">¥0</div>
                 <div class="stat-label">总支出</div>
             </div>
-            <div class="stat-item">
+            <div class="stat-card balance">
                 <div class="stat-value" id="balance">¥0</div>
                 <div class="stat-label">结余</div>
             </div>
         </div>
         
-        <!-- 头部 -->
-        <div class="header">
-            <h1>账单管理系统</h1>
-            <div class="action-buttons">
-                <button class="action-btn budget" id="budget-btn">设置预算</button>
-                <button class="action-btn" id="manage-categories-btn">管理类别</button>
+        <!-- 账单列表 -->
+        <div class="card">
+            <div class="header">
+                <h2>近期账单</h2>
+                <div class="date-display" id="current-date">本月</div>
             </div>
-        </div>
-        
-        <!-- 主内容区域 -->
-        <div class="main-content">
-            <!-- 账单列表 -->
+            
             <div class="bills-container">
-                <div class="header">
-                    <h2>账单记录</h2>
-                    <div class="date-display" id="current-date">2023年10月</div>
-                </div>
-                
                 <div class="bills-list" id="bills-list">
                     <!-- 账单项目将通过JavaScript动态添加 -->
                     <div class="empty-state">
                         <h3>暂无账单记录</h3>
-                        <p>点击右下角的"+"按钮添加您的第一笔账单</p>
+                        <p>点击右下角按钮添加账单</p>
                     </div>
                 </div>
             </div>
-            
-            <!-- 预算面板 -->
-            <div class="budget-panel">
-                <h2>预算概览 <span id="budget-summary">¥0 / ¥0</span></h2>
-                <div class="budget-categories" id="budget-categories">
-                    <!-- 预算类别将通过JavaScript动态添加 -->
-                    <div class="empty-state">
-                        <h4>暂无预算设置</h4>
-                        <p>点击"设置预算"按钮为各个类别设置预算</p>
-                    </div>
+        </div>
+        
+        <!-- 预算概览 -->
+        <div class="card budget-panel">
+            <h2>预算概览 <span id="budget-summary">¥0 / ¥0</span></h2>
+            <div class="budget-categories" id="budget-categories">
+                <!-- 预算类别将通过JavaScript动态添加 -->
+                <div class="empty-state">
+                    <h4>暂无预算设置</h4>
+                    <p>点击"预算"按钮设置预算</p>
                 </div>
             </div>
         </div>
     </div>
     
-    <!-- 功能按钮容器 - 始终在顶层 -->
+    <!-- 浮动按钮 -->
     <div class="floating-buttons">
-        <!-- 日历按钮 -->
-        <button class="calendar-btn" id="calendar-btn">日</button>
-        
-        <!-- 添加账单按钮 -->
-        <button class="add-bill-btn" id="add-bill-btn">+</button>
+        <button class="floating-btn calendar-btn" id="calendar-btn">日</button>
+        <button class="floating-btn add-bill-btn" id="add-bill-btn">+</button>
     </div>
     
-    <!-- 添加账单表单 -->
-    <div class="add-bill-form" id="add-bill-form">
-        <div class="form-header">
-            <h2>添加账单</h2>
-            <button class="close-btn" id="close-form-btn">&times;</button>
+    <!-- 添加账单模态框 -->
+    <div class="modal" id="add-bill-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>添加账单</h2>
+                <button class="close-btn" id="close-bill-modal">完成</button>
+            </div>
+            <div class="modal-body">
+                <form id="bill-form">
+                    <div class="category-management">
+                        <input type="text" class="ios-input" id="new-category" placeholder="新类别名称">
+                        <button type="button" class="ios-button secondary" id="add-category-btn">添加</button>
+                    </div>
+                    
+                    <div class="category-list" id="category-list">
+                        <!-- 类别列表将通过JavaScript动态生成 -->
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="bill-category">类别</label>
+                        <select class="ios-select" id="bill-category" required>
+                            <option value="">请选择类别</option>
+                            <!-- 类别选项将通过JavaScript动态生成 -->
+                        </select>
+                    </div>
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="bill-amount">金额</label>
+                            <input type="number" class="ios-input" id="bill-amount" placeholder="0.00" min="0" step="0.01" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="bill-type">类型</label>
+                            <select class="ios-select" id="bill-type" required>
+                                <option value="income">收入</option>
+                                <option value="expense">支出</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="bill-date">日期</label>
+                        <input type="date" class="ios-input" id="bill-date" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="bill-note">备注（可选）</label>
+                        <textarea class="ios-textarea" id="bill-note" placeholder="添加备注..."></textarea>
+                    </div>
+                    
+                    <div class="button-group">
+                        <button type="button" class="ios-button secondary" id="cancel-bill-btn">取消</button>
+                        <button type="submit" class="ios-button primary">保存</button>
+                    </div>
+                </form>
+            </div>
         </div>
-        
-        <form id="bill-form">
-            <div class="category-management">
-                <div class="form-group category-input">
-                    <input type="text" class="form-control" id="new-category" placeholder="输入新类别名称">
-                </div>
-                <button type="button" class="btn btn-secondary" id="add-category-btn">添加类别</button>
+    </div>
+    
+    <!-- 日历模态框 -->
+    <div class="modal" id="calendar-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>日历</h2>
+                <button class="close-btn" id="close-calendar-modal">完成</button>
             </div>
-            
-            <div class="category-list" id="category-list">
-                <!-- 类别列表将通过JavaScript动态生成 -->
-            </div>
-            
-            <div class="form-row">
-                <div class="form-group">
-                    <label for="bill-category">选择类别</label>
-                    <select class="form-control" id="bill-category" required>
-                        <option value="">选择类别</option>
-                        <!-- 类别选项将通过JavaScript动态生成 -->
+            <div class="modal-body">
+                <div class="calendar-controls">
+                    <button class="calendar-nav-btn" id="prev-year">«</button>
+                    <select class="ios-select" id="year-select">
+                        <!-- 年份选项将通过JavaScript动态生成 -->
                     </select>
+                    <button class="calendar-nav-btn" id="next-year">»</button>
                 </div>
                 
-                <div class="form-group">
-                    <label for="bill-amount">金额</label>
-                    <input type="number" class="form-control" id="bill-amount" placeholder="0.00" min="0" step="0.01" required>
-                </div>
-            </div>
-            
-            <div class="form-row">
-                <div class="form-group">
-                    <label for="bill-date">日期</label>
-                    <input type="date" class="form-control" id="bill-date" required>
+                <div class="calendar-controls">
+                    <button class="calendar-nav-btn" id="prev-month">‹</button>
+                    <div class="calendar-month" id="calendar-month">2023年10月</div>
+                    <button class="calendar-nav-btn" id="next-month">›</button>
                 </div>
                 
-                <div class="form-group">
-                    <label for="bill-type">类型</label>
-                    <select class="form-control" id="bill-type" required>
-                        <option value="income">收入</option>
-                        <option value="expense">支出</option>
-                    </select>
+                <div class="calendar-grid">
+                    <div class="calendar-day-header">日</div>
+                    <div class="calendar-day-header">一</div>
+                    <div class="calendar-day-header">二</div>
+                    <div class="calendar-day-header">三</div>
+                    <div class="calendar-day-header">四</div>
+                    <div class="calendar-day-header">五</div>
+                    <div class="calendar-day-header">六</div>
+                    <!-- 日历天数将通过JavaScript动态生成 -->
                 </div>
             </div>
-            
-            <!-- 新增的备注功能 -->
-            <div class="form-group">
-                <label for="bill-note">备注（可选）</label>
-                <textarea class="note-textarea" id="bill-note" placeholder="添加账单备注..."></textarea>
+        </div>
+    </div>
+    
+    <!-- 预算设置模态框 -->
+    <div class="modal" id="budget-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>设置预算</h2>
+                <button class="close-btn" id="close-budget-modal">完成</button>
             </div>
-            
-            <div class="form-actions">
-                <button type="button" class="btn btn-secondary" id="cancel-btn">取消</button>
-                <button type="submit" class="btn btn-primary">添加账单</button>
+            <div class="modal-body">
+                <div class="budget-settings-list" id="budget-settings">
+                    <!-- 预算设置项目将通过JavaScript动态生成 -->
+                </div>
+                
+                <div class="button-group">
+                    <button type="button" class="ios-button secondary" id="cancel-budget-btn">取消</button>
+                    <button type="button" class="ios-button primary" id="save-budget-btn">保存预算</button>
+                </div>
             </div>
-        </form>
-    </div>
-    
-    <!-- 日历面板 -->
-    <div class="calendar-panel" id="calendar-panel">
-        <div class="form-header">
-            <h2>日历</h2>
-            <button class="close-btn" id="close-calendar-btn">&times;</button>
-        </div>
-        
-        <!-- 年份选择器 -->
-        <div class="year-selector">
-            <button id="prev-year">&lt;&lt;</button>
-            <select id="year-select">
-                <!-- 年份选项将通过JavaScript动态生成 -->
-            </select>
-            <select id="month-select">
-                <!-- 月份选项将通过JavaScript动态生成 -->
-            </select>
-            <button id="next-year">&gt;&gt;</button>
-        </div>
-        
-        <div class="calendar-header">
-            <button id="prev-month">&lt;</button>
-            <h3 id="calendar-month">2023年10月</h3>
-            <button id="next-month">&gt;</button>
-        </div>
-        
-        <div class="calendar-days" id="calendar-days">
-            <!-- 日历天数将通过JavaScript动态生成 -->
         </div>
     </div>
     
-    <!-- 预算设置表单 -->
-    <div class="budget-form" id="budget-form">
-        <div class="form-header">
-            <h2>设置预算</h2>
-            <button class="close-btn" id="close-budget-btn">&times;</button>
-        </div>
-        
-        <div class="budget-categories" id="budget-settings">
-            <!-- 预算设置项目将通过JavaScript动态生成 -->
-        </div>
-        
-        <div class="form-actions">
-            <button type="button" class="btn btn-secondary" id="cancel-budget-btn">取消</button>
-            <button type="button" class="btn btn-primary" id="save-budget-btn">保存预算</button>
-        </div>
+    <!-- 上下文菜单 -->
+    <div class="context-menu" id="context-menu">
+        <div class="context-menu-item" data-action="edit">编辑账单</div>
+        <div class="context-menu-item danger" data-action="delete">删除账单</div>
     </div>
-    
-    <!-- 遮罩层 -->
-    <div class="overlay" id="overlay"></div>
 
     <script>
         // 从localStorage加载数据或使用默认数据
@@ -926,19 +987,21 @@
             }
         });
         
+        // 当前选中的账单（用于上下文菜单）
+        let selectedBillId = null;
+        
         // DOM元素
         const addBillBtn = document.getElementById('add-bill-btn');
         const calendarBtn = document.getElementById('calendar-btn');
         const budgetBtn = document.getElementById('budget-btn');
         const manageCategoriesBtn = document.getElementById('manage-categories-btn');
-        const addBillForm = document.getElementById('add-bill-form');
-        const calendarPanel = document.getElementById('calendar-panel');
-        const budgetForm = document.getElementById('budget-form');
-        const overlay = document.getElementById('overlay');
-        const closeFormBtn = document.getElementById('close-form-btn');
-        const closeCalendarBtn = document.getElementById('close-calendar-btn');
-        const closeBudgetBtn = document.getElementById('close-budget-btn');
-        const cancelBtn = document.getElementById('cancel-btn');
+        const addBillModal = document.getElementById('add-bill-modal');
+        const calendarModal = document.getElementById('calendar-modal');
+        const budgetModal = document.getElementById('budget-modal');
+        const closeBillModal = document.getElementById('close-bill-modal');
+        const closeCalendarModal = document.getElementById('close-calendar-modal');
+        const closeBudgetModal = document.getElementById('close-budget-modal');
+        const cancelBillBtn = document.getElementById('cancel-bill-btn');
         const cancelBudgetBtn = document.getElementById('cancel-budget-btn');
         const billForm = document.getElementById('bill-form');
         const billsList = document.getElementById('bills-list');
@@ -952,6 +1015,7 @@
         const newCategoryInput = document.getElementById('new-category');
         const billCategorySelect = document.getElementById('bill-category');
         const saveBudgetBtn = document.getElementById('save-budget-btn');
+        const contextMenu = document.getElementById('context-menu');
         
         // 初始化
         document.addEventListener('DOMContentLoaded', function() {
@@ -977,47 +1041,62 @@
             
             // 初始化日历
             initCalendar();
+            
+            // 防止iOS橡皮筋效果
+            document.body.addEventListener('touchmove', function(e) {
+                if (e.target === document.body || e.target === document.documentElement) {
+                    e.preventDefault();
+                }
+            }, { passive: false });
         });
         
-        // 打开添加账单表单
+        // 打开添加账单模态框
         addBillBtn.addEventListener('click', function() {
-            addBillForm.classList.add('active');
-            overlay.classList.add('active');
+            addBillModal.classList.add('active');
+            // 自动聚焦到金额输入框
+            setTimeout(() => {
+                document.getElementById('bill-amount').focus();
+            }, 300);
         });
         
-        // 打开日历面板
+        // 打开日历模态框
         calendarBtn.addEventListener('click', function() {
-            calendarPanel.classList.add('active');
-            overlay.classList.add('active');
+            calendarModal.classList.add('active');
         });
         
-        // 打开预算设置表单
+        // 打开预算设置模态框
         budgetBtn.addEventListener('click', function() {
             renderBudgetSettings();
-            budgetForm.classList.add('active');
-            overlay.classList.add('active');
+            budgetModal.classList.add('active');
         });
         
         // 打开类别管理
         manageCategoriesBtn.addEventListener('click', function() {
-            addBillForm.classList.add('active');
-            overlay.classList.add('active');
+            addBillModal.classList.add('active');
         });
         
-        // 关闭所有面板
-        function closeAllPanels() {
-            addBillForm.classList.remove('active');
-            calendarPanel.classList.remove('active');
-            budgetForm.classList.remove('active');
-            overlay.classList.remove('active');
+        // 关闭模态框
+        function closeAllModals() {
+            addBillModal.classList.remove('active');
+            calendarModal.classList.remove('active');
+            budgetModal.classList.remove('active');
+            contextMenu.classList.remove('active');
         }
         
-        closeFormBtn.addEventListener('click', closeAllPanels);
-        closeCalendarBtn.addEventListener('click', closeAllPanels);
-        closeBudgetBtn.addEventListener('click', closeAllPanels);
-        cancelBtn.addEventListener('click', closeAllPanels);
-        cancelBudgetBtn.addEventListener('click', closeAllPanels);
-        overlay.addEventListener('click', closeAllPanels);
+        closeBillModal.addEventListener('click', closeAllModals);
+        closeCalendarModal.addEventListener('click', closeAllModals);
+        closeBudgetModal.addEventListener('click', closeAllModals);
+        cancelBillBtn.addEventListener('click', closeAllModals);
+        cancelBudgetBtn.addEventListener('click', closeAllModals);
+        
+        // 点击模态框外部关闭
+        document.querySelectorAll('.modal').forEach(modal => {
+            modal.addEventListener('click', function(e) {
+                if (e.target === this) {
+                    closeAllModals();
+                }
+            });
+        });
         
         // 添加新类别
         addCategoryBtn.addEventListener('click', function() {
@@ -1031,27 +1110,37 @@
                 
                 // 更新预算面板
                 updateBudgetPanel();
+                
+                // 显示成功提示
+                showToast('类别添加成功');
             }
         });
         
         // 删除类别
         function deleteCategory(category) {
             if (categories.length <= 1) {
-                alert('至少需要保留一个类别！');
+                showToast('至少需要保留一个类别', 'error');
                 return;
             }
             
-            if (confirm(`确定要删除"${category}"类别吗？`)) {
-                const index = categories.indexOf(category);
-                if (index !== -1) {
-                    categories.splice(index, 1);
-                    delete budgets[category];
-                    saveToLocalStorage();
-                    renderCategoryList();
-                    
-                    // 更新预算面板
-                    updateBudgetPanel();
-                }
+            // 检查是否有账单使用这个类别
+            const hasBills = bills.some(bill => bill.category === category);
+            if (hasBills) {
+                showToast('该类别下有账单，无法删除', 'error');
+                return;
+            }
+            
+            const index = categories.indexOf(category);
+            if (index !== -1) {
+                categories.splice(index, 1);
+                delete budgets[category];
+                saveToLocalStorage();
+                renderCategoryList();
+                
+                // 更新预算面板
+                updateBudgetPanel();
+                
+                showToast('类别删除成功');
             }
         }
         
@@ -1059,7 +1148,7 @@
         function renderCategoryList() {
             // 清空列表
             categoryListEl.innerHTML = '';
-            billCategorySelect.innerHTML = '<option value="">选择类别</option>';
+            billCategorySelect.innerHTML = '<option value="">请选择类别</option>';
             
             // 添加每个类别
             categories.forEach(category => {
@@ -1068,7 +1157,7 @@
                 categoryItem.className = 'category-item';
                 categoryItem.innerHTML = `
                     <span>${category}</span>
-                    <button class="delete-category" data-category="${category}">&times;</button>
+                    <button class="delete-category" data-category="${category}">×</button>
                 `;
                 categoryListEl.appendChild(categoryItem);
                 
@@ -1101,12 +1190,12 @@
             
             // 验证数据
             if (!category) {
-                alert('请选择账单类别！');
+                showToast('请选择账单类别', 'error');
                 return;
             }
             
             if (!amount || amount <= 0) {
-                alert('请输入有效的金额！');
+                showToast('请输入有效的金额', 'error');
                 return;
             }
             
@@ -1139,11 +1228,11 @@
             billForm.reset();
             document.getElementById('bill-date').value = new Date().toISOString().split('T')[0];
             
-            // 关闭表单
-            closeAllPanels();
+            // 关闭模态框
+            closeAllModals();
             
             // 显示成功提示
-            alert('账单添加成功！');
+            showToast('账单添加成功');
         });
         
         // 渲染账单列表
@@ -1156,7 +1245,7 @@
                 billsList.innerHTML = `
                     <div class="empty-state">
                         <h3>暂无账单记录</h3>
-                        <p>点击右下角的"+"按钮添加您的第一笔账单</p>
+                        <p>点击右下角按钮添加账单</p>
                     </div>
                 `;
                 return;
@@ -1165,14 +1254,18 @@
             // 按日期排序（最新的在前）
             bills.sort((a, b) => new Date(b.date) - new Date(a.date));
             
+            // 只显示最近的10条账单
+            const recentBills = bills.slice(0, 10);
+            
             // 添加每个账单项目
-            bills.forEach(bill => {
+            recentBills.forEach(bill => {
                 const billItem = document.createElement('div');
                 billItem.className = `bill-item ${bill.type}`;
+                billItem.dataset.id = bill.id;
                 
                 // 格式化日期
                 const dateObj = new Date(bill.date);
-                const formattedDate = `${dateObj.getFullYear()}年${dateObj.getMonth() + 1}月${dateObj.getDate()}日`;
+                const formattedDate = `${dateObj.getMonth() + 1}月${dateObj.getDate()}日`;
                 
                 // 格式化金额
                 const formattedAmount = bill.type === 'income' ? `+¥${bill.amount.toFixed(2)}` : `-¥${bill.amount.toFixed(2)}`;
@@ -1181,14 +1274,93 @@
                 const noteHtml = bill.note ? `<div class="bill-note">${bill.note}</div>` : '';
                 
                 billItem.innerHTML = `
-                    <div class="bill-category">${bill.category}</div>
+                    <div class="bill-info">
+                        <div class="bill-category">${bill.category}</div>
+                        <div class="bill-date">${formattedDate}</div>
+                        ${noteHtml}
+                    </div>
                     <div class="bill-amount">${formattedAmount}</div>
-                    <div class="bill-date">${formattedDate}</div>
-                    ${noteHtml}
                 `;
+                
+                // 添加长按事件
+                billItem.addEventListener('contextmenu', function(e) {
+                    e.preventDefault();
+                    selectedBillId = bill.id;
+                    showContextMenu(e.clientX, e.clientY);
+                });
+                
+                // iOS触摸长按
+                let pressTimer;
+                billItem.addEventListener('touchstart', function(e) {
+                    pressTimer = setTimeout(() => {
+                        selectedBillId = bill.id;
+                        const touch = e.touches[0] || e.changedTouches[0];
+                        showContextMenu(touch.clientX, touch.clientY);
+                    }, 500);
+                });
+                
+                billItem.addEventListener('touchend', function() {
+                    clearTimeout(pressTimer);
+                });
+                
+                billItem.addEventListener('touchmove', function() {
+                    clearTimeout(pressTimer);
+                });
                 
                 billsList.appendChild(billItem);
             });
+        }
+        
+        // 显示上下文菜单
+        function showContextMenu(x, y) {
+            contextMenu.style.left = `${x}px`;
+            contextMenu.style.top = `${y}px`;
+            contextMenu.classList.add('active');
+            
+            // 点击其他地方关闭上下文菜单
+            setTimeout(() => {
+                document.addEventListener('click', closeContextMenu);
+            }, 0);
+        }
+        
+        // 关闭上下文菜单
+        function closeContextMenu() {
+            contextMenu.classList.remove('active');
+            document.removeEventListener('click', closeContextMenu);
+        }
+        
+        // 上下文菜单事件处理
+        contextMenu.querySelectorAll('.context-menu-item').forEach(item => {
+            item.addEventListener('click', function() {
+                const action = this.dataset.action;
+                if (action === 'delete') {
+                    deleteBill(selectedBillId);
+                } else if (action === 'edit') {
+                    editBill(selectedBillId);
+                }
+                closeContextMenu();
+            });
+        });
+        
+        // 删除账单
+        function deleteBill(id) {
+            if (confirm('确定要删除这条账单吗？')) {
+                const index = bills.findIndex(bill => bill.id === id);
+                if (index !== -1) {
+                    bills.splice(index, 1);
+                    saveToLocalStorage();
+                    renderBills();
+                    updateStats();
+                    updateBudgetPanel();
+                    showToast('账单已删除');
+                }
+            }
+        }
+        
+        // 编辑账单
+        function editBill(id) {
+            // 这里可以扩展编辑功能
+            showToast('编辑功能开发中', 'warning');
         }
         
         // 更新统计信息
@@ -1196,11 +1368,19 @@
             let totalIncome = 0;
             let totalExpense = 0;
             
+            // 计算本月数据
+            const now = new Date();
+            const currentMonth = now.getMonth();
+            const currentYear = now.getFullYear();
+            
             bills.forEach(bill => {
-                if (bill.type === 'income') {
-                    totalIncome += bill.amount;
-                } else {
-                    totalExpense += bill.amount;
+                const billDate = new Date(bill.date);
+                if (billDate.getMonth() === currentMonth && billDate.getFullYear() === currentYear) {
+                    if (bill.type === 'income') {
+                        totalIncome += bill.amount;
+                    } else {
+                        totalExpense += bill.amount;
+                    }
                 }
             });
             
@@ -1222,9 +1402,17 @@
                 actualSpending[category] = 0;
             });
             
+            // 只计算本月数据
+            const now = new Date();
+            const currentMonth = now.getMonth();
+            const currentYear = now.getFullYear();
+            
             bills.forEach(bill => {
-                if (bill.type === 'expense' && actualSpending[bill.category] !== undefined) {
-                    actualSpending[bill.category] += bill.amount;
+                const billDate = new Date(bill.date);
+                if (billDate.getMonth() === currentMonth && billDate.getFullYear() === currentYear) {
+                    if (bill.type === 'expense' && actualSpending[bill.category] !== undefined) {
+                        actualSpending[bill.category] += bill.amount;
+                    }
                 }
             });
             
@@ -1239,14 +1427,14 @@
             
             // 更新预算概览
             document.getElementById('budget-summary').textContent = 
-                `¥${totalActual.toFixed(2)} / ¥${totalBudget.toFixed(2)}`;
+                `¥${totalActual.toFixed(0)} / ¥${totalBudget.toFixed(0)}`;
             
             // 如果没有预算设置，显示空状态
             if (totalBudget === 0) {
                 budgetCategoriesEl.innerHTML = `
                     <div class="empty-state">
                         <h4>暂无预算设置</h4>
-                        <p>点击"设置预算"按钮为各个类别设置预算</p>
+                        <p>点击"预算"按钮设置预算</p>
                     </div>
                 `;
                 return;
@@ -1264,14 +1452,25 @@
                     // 计算百分比和进度条颜色
                     const percentage = budgetAmount > 0 ? (actualAmount / budgetAmount) * 100 : 0;
                     let progressClass = 'safe';
-                    if (percentage > 80) progressClass = 'warning';
-                    if (percentage > 100) progressClass = 'danger';
+                    let amountClass = 'under';
+                    
+                    if (percentage > 80) {
+                        progressClass = 'warning';
+                        amountClass = 'warning';
+                    }
+                    if (percentage > 100) {
+                        progressClass = 'danger';
+                        amountClass = 'overspent';
+                    }
                     
                     budgetCategory.innerHTML = `
-                        <div class="category-name">${category}</div>
+                        <div class="category-header">
+                            <div class="category-name">${category}</div>
+                            <div class="actual-amount">${percentage.toFixed(0)}%</div>
+                        </div>
                         <div class="budget-info">
-                            <div class="budget-amount">¥${actualAmount.toFixed(2)} / ¥${budgetAmount.toFixed(2)}</div>
-                            <div class="actual-amount">${percentage.toFixed(1)}%</div>
+                            <div class="budget-amount ${amountClass}">¥${actualAmount.toFixed(0)}</div>
+                            <div class="actual-amount">/ ¥${budgetAmount.toFixed(0)}</div>
                         </div>
                         <div class="progress-bar">
                             <div class="progress-fill ${progressClass}" style="width: ${Math.min(percentage, 100)}%"></div>
@@ -1294,26 +1493,36 @@
                 actualSpending[category] = 0;
             });
             
+            // 只计算本月数据
+            const now = new Date();
+            const currentMonth = now.getMonth();
+            const currentYear = now.getFullYear();
+            
             bills.forEach(bill => {
-                if (bill.type === 'expense' && actualSpending[bill.category] !== undefined) {
-                    actualSpending[bill.category] += bill.amount;
+                const billDate = new Date(bill.date);
+                if (billDate.getMonth() === currentMonth && billDate.getFullYear() === currentYear) {
+                    if (bill.type === 'expense' && actualSpending[bill.category] !== undefined) {
+                        actualSpending[bill.category] += bill.amount;
+                    }
                 }
             });
             
             // 添加每个预算设置项
             categories.forEach(category => {
                 const budgetItem = document.createElement('div');
-                budgetItem.className = 'budget-category-item';
+                budgetItem.className = 'budget-setting-item';
                 
                 const budgetAmount = budgets[category] || 0;
                 const actualAmount = actualSpending[category] || 0;
                 
                 budgetItem.innerHTML = `
-                    <div class="category-name">${category}</div>
-                    <div class="budget-info">
-                        <div class="actual-amount">已支出: ¥${actualAmount.toFixed(2)}</div>
-                        <input type="number" class="budget-input" data-category="${category}" 
-                               value="${budgetAmount}" min="0" step="0.01" placeholder="预算金额">
+                    <div class="budget-setting-label">${category}</div>
+                    <div style="display: flex; flex-direction: column; align-items: flex-end;">
+                        <div style="font-size: 14px; color: var(--text-secondary); margin-bottom: 4px;">
+                            已支出: ¥${actualAmount.toFixed(2)}
+                        </div>
+                        <input type="number" class="budget-setting-input" data-category="${category}" 
+                               value="${budgetAmount}" min="0" step="1" placeholder="预算">
                     </div>
                 `;
                 
@@ -1324,12 +1533,12 @@
         // 保存预算设置
         saveBudgetBtn.addEventListener('click', function() {
             // 获取所有预算输入
-            const budgetInputs = document.querySelectorAll('.budget-input');
+            const budgetInputs = document.querySelectorAll('.budget-setting-input');
             
             // 更新预算数据
             budgetInputs.forEach(input => {
                 const category = input.getAttribute('data-category');
-                const budget = parseFloat(input.value) || 0;
+                const budget = parseInt(input.value) || 0;
                 budgets[category] = budget;
             });
             
@@ -1339,11 +1548,11 @@
             // 更新预算面板
             updateBudgetPanel();
             
-            // 关闭预算设置表单
-            closeAllPanels();
+            // 关闭预算设置模态框
+            closeAllModals();
             
             // 显示成功提示
-            alert('预算设置已保存！');
+            showToast('预算设置已保存');
         });
         
         // 日历功能
@@ -1364,18 +1573,6 @@
                 yearSelect.appendChild(option);
             }
             
-            // 初始化月份选择器
-            const monthSelect = document.getElementById('month-select');
-            for (let month = 1; month <= 12; month++) {
-                const option = document.createElement('option');
-                option.value = month - 1;
-                option.textContent = month + '月';
-                if (month - 1 === currentMonth) {
-                    option.selected = true;
-                }
-                monthSelect.appendChild(option);
-            }
-            
             // 生成日历
             generateCalendar(currentYear, currentMonth);
             
@@ -1385,20 +1582,58 @@
                 generateCalendar(currentYear, currentMonth);
             });
             
-            // 月份选择事件
-            monthSelect.addEventListener('change', function() {
-                currentMonth = parseInt(this.value);
+            // 月份切换按钮
+            document.getElementById('prev-month').addEventListener('click', function() {
+                currentMonth--;
+                if (currentMonth < 0) {
+                    currentMonth = 11;
+                    currentYear--;
+                }
+                updateYearSelect();
+                generateCalendar(currentYear, currentMonth);
+            });
+            
+            document.getElementById('next-month').addEventListener('click', function() {
+                currentMonth++;
+                if (currentMonth > 11) {
+                    currentMonth = 0;
+                    currentYear++;
+                }
+                updateYearSelect();
+                generateCalendar(currentYear, currentMonth);
+            });
+            
+            // 年份切换按钮
+            document.getElementById('prev-year').addEventListener('click', function() {
+                currentYear--;
+                if (currentYear < 2025) currentYear = 2035;
+                updateYearSelect();
+                generateCalendar(currentYear, currentMonth);
+            });
+            
+            document.getElementById('next-year').addEventListener('click', function() {
+                currentYear++;
+                if (currentYear > 2035) currentYear = 2025;
+                updateYearSelect();
                 generateCalendar(currentYear, currentMonth);
             });
         }
         
+        // 更新年份选择器
+        function updateYearSelect() {
+            document.getElementById('year-select').value = currentYear;
+        }
+        
         // 生成日历
         function generateCalendar(year, month) {
-            const calendarMonthEl = document.getElementById('calendar-month');
-            calendarMonthEl.textContent = `${year}年${month + 1}月`;
+            document.getElementById('calendar-month').textContent = `${year}年${month + 1}月`;
             
-            const calendarDaysEl = document.getElementById('calendar-days');
-            calendarDaysEl.innerHTML = '';
+            const calendarGrid = document.querySelector('.calendar-grid');
+            
+            // 清空之前的日期（保留星期标题）
+            while (calendarGrid.children.length > 7) {
+                calendarGrid.removeChild(calendarGrid.lastChild);
+            }
             
             // 获取当月第一天和最后一天
             const firstDay = new Date(year, month, 1);
@@ -1408,126 +1643,62 @@
             // 获取第一天是星期几（0 = 星期日）
             const firstDayIndex = firstDay.getDay();
             
-            // 添加星期几标题
-            const weekdays = ['日', '一', '二', '三', '四', '五', '六'];
-            weekdays.forEach(day => {
-                const dayEl = document.createElement('div');
-                dayEl.className = 'calendar-day';
-                dayEl.style.fontWeight = 'bold';
-                dayEl.textContent = day;
-                calendarDaysEl.appendChild(dayEl);
-            });
-            
-            // 添加上个月的最后几天（如果有）
+            // 添加上个月的最后几天
             const prevMonthLastDay = new Date(year, month, 0).getDate();
             for (let i = firstDayIndex; i > 0; i--) {
                 const dayEl = document.createElement('div');
-                dayEl.className = 'calendar-day';
+                dayEl.className = 'calendar-day other-month';
                 dayEl.textContent = prevMonthLastDay - i + 1;
-                dayEl.style.color = '#ccc';
-                calendarDaysEl.appendChild(dayEl);
+                calendarGrid.appendChild(dayEl);
             }
             
-            // 添加当月天数
+            // 获取今天日期
             const today = new Date();
-            const isCurrentMonth = today.getMonth() === month && today.getFullYear() === year;
+            const isToday = (day) => {
+                return year === today.getFullYear() && 
+                       month === today.getMonth() && 
+                       day === today.getDate();
+            };
             
-            for (let i = 1; i <= daysInMonth; i++) {
+            // 添加当月天数
+            for (let day = 1; day <= daysInMonth; day++) {
                 const dayEl = document.createElement('div');
                 dayEl.className = 'calendar-day';
-                dayEl.textContent = i;
+                dayEl.textContent = day;
                 
-                // 如果是今天，添加高亮
-                if (isCurrentMonth && i === today.getDate()) {
-                    dayEl.classList.add('active');
+                // 检查是否是今天
+                if (isToday(day)) {
+                    dayEl.classList.add('today');
                 }
                 
                 // 检查这一天是否有账单
-                const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(i).padStart(2, '0')}`;
+                const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
                 const hasBills = bills.some(bill => bill.date === dateStr);
                 
                 if (hasBills) {
-                    dayEl.style.backgroundColor = '#e3f2fd';
-                    dayEl.style.fontWeight = 'bold';
+                    dayEl.classList.add('has-bills');
                 }
                 
-                calendarDaysEl.appendChild(dayEl);
+                // 点击日期设置账单日期
+                dayEl.addEventListener('click', function() {
+                    document.getElementById('bill-date').value = dateStr;
+                    closeAllModals();
+                    addBillModal.classList.add('active');
+                });
+                
+                calendarGrid.appendChild(dayEl);
             }
             
-            // 添加下个月的前几天（如果有）
+            // 添加下个月的前几天
             const totalCells = 42; // 6行 * 7天
             const nextMonthDays = totalCells - (firstDayIndex + daysInMonth);
             
             for (let i = 1; i <= nextMonthDays; i++) {
                 const dayEl = document.createElement('div');
-                dayEl.className = 'calendar-day';
+                dayEl.className = 'calendar-day other-month';
                 dayEl.textContent = i;
-                dayEl.style.color = '#ccc';
-                calendarDaysEl.appendChild(dayEl);
+                calendarGrid.appendChild(dayEl);
             }
-            
-            // 为日期添加点击事件
-            document.querySelectorAll('#calendar-days .calendar-day').forEach((dayEl, index) => {
-                // 跳过星期标题和前一个月的日期
-                if (index >= 7 && !dayEl.style.color) {
-                    dayEl.addEventListener('click', function() {
-                        const day = parseInt(this.textContent);
-                        const month = currentMonth + 1;
-                        const year = currentYear;
-                        
-                        // 设置表单日期为选中的日期
-                        const dateStr = `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
-                        document.getElementById('bill-date').value = dateStr;
-                        
-                        // 关闭日历面板，打开添加账单表单
-                        closeAllPanels();
-                        addBillForm.classList.add('active');
-                        overlay.classList.add('active');
-                    });
-                }
-            });
-        }
-        
-        // 月份切换按钮
-        document.getElementById('prev-month').addEventListener('click', function() {
-            currentMonth--;
-            if (currentMonth < 0) {
-                currentMonth = 11;
-                currentYear--;
-            }
-            updateSelectors();
-            generateCalendar(currentYear, currentMonth);
-        });
-        
-        document.getElementById('next-month').addEventListener('click', function() {
-            currentMonth++;
-            if (currentMonth > 11) {
-                currentMonth = 0;
-                currentYear++;
-            }
-            updateSelectors();
-            generateCalendar(currentYear, currentMonth);
-        });
-        
-        // 年份切换按钮
-        document.getElementById('prev-year').addEventListener('click', function() {
-            currentYear--;
-            if (currentYear < 2025) currentYear = 2035;
-            updateSelectors();
-            generateCalendar(currentYear, currentMonth);
-        });
-        
-        document.getElementById('next-year').addEventListener('click', function() {
-            currentYear++;
-            if (currentYear > 2035) currentYear = 2025;
-            updateSelectors();
-            generateCalendar(currentYear, currentMonth);
-        });
-        
-        // 更新选择器值
-        function updateSelectors() {
-            document.getElementById('year-select').value = currentYear;
-            document.getElementById('month-select').value = currentMonth;
         }
         
         // 保存数据到localStorage
@@ -1536,6 +1707,93 @@
             localStorage.setItem('categories', JSON.stringify(categories));
             localStorage.setItem('budgets', JSON.stringify(budgets));
         }
+        
+        // 显示Toast通知
+        function showToast(message, type = 'success') {
+            // 移除现有的toast
+            const existingToast = document.querySelector('.toast');
+            if (existingToast) {
+                existingToast.remove();
+            }
+            
+            // 创建toast
+            const toast = document.createElement('div');
+            toast.className = `toast ${type}`;
+            toast.textContent = message;
+            toast.style.cssText = `
+                position: fixed;
+                top: 80px;
+                left: 50%;
+                transform: translateX(-50%);
+                background-color: ${type === 'error' ? 'var(--danger-color)' : type === 'warning' ? 'var(--warning-color)' : 'var(--success-color)'};
+                color: white;
+                padding: 12px 24px;
+                border-radius: 10px;
+                font-size: 16px;
+                font-weight: 600;
+                z-index: 3000;
+                box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+                animation: toastSlideIn 0.3s ease;
+            `;
+            
+            document.body.appendChild(toast);
+            
+            // 3秒后移除toast
+            setTimeout(() => {
+                toast.style.animation = 'toastSlideOut 0.3s ease';
+                setTimeout(() => {
+                    if (toast.parentNode) {
+                        toast.remove();
+                    }
+                }, 300);
+            }, 3000);
+            
+            // 添加CSS动画
+            if (!document.querySelector('#toast-styles')) {
+                const style = document.createElement('style');
+                style.id = 'toast-styles';
+                style.textContent = `
+                    @keyframes toastSlideIn {
+                        from {
+                            opacity: 0;
+                            transform: translateX(-50%) translateY(-20px);
+                        }
+                        to {
+                            opacity: 1;
+                            transform: translateX(-50%) translateY(0);
+                        }
+                    }
+                    @keyframes toastSlideOut {
+                        from {
+                            opacity: 1;
+                            transform: translateX(-50%) translateY(0);
+                        }
+                        to {
+                            opacity: 0;
+                            transform: translateX(-50%) translateY(-20px);
+                        }
+                    }
+                `;
+                document.head.appendChild(style);
+            }
+        }
+        
+        // 阻止iOS双击缩放
+        let lastTouchEnd = 0;
+        document.addEventListener('touchend', function(event) {
+            const now = Date.now();
+            if (now - lastTouchEnd <= 300) {
+                event.preventDefault();
+            }
+            lastTouchEnd = now;
+        }, false);
+        
+        // 防止iOS橡皮筋效果
+        document.addEventListener('touchmove', function(event) {
+            if (event.scale !== 1) {
+                event.preventDefault();
+            }
+        }, { passive: false });
     </script>
 </body>
 </html>
