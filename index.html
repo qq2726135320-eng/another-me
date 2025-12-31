@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <title>账单管理系统</title>
+    <title>账单管理</title>
     <style>
         * {
             margin: 0;
@@ -61,76 +61,36 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 20px;
+            margin-bottom: 15px;
             padding-top: 10px;
         }
         
         .header h1 {
-            font-size: 34px;
+            font-size: 28px;
             font-weight: 700;
             color: var(--text-primary);
             letter-spacing: -0.5px;
         }
         
-        /* iOS风格按钮 */
-        .action-buttons {
-            display: flex;
-            gap: 12px;
-        }
-        
-        .action-btn {
-            padding: 10px 16px;
-            background-color: var(--card-bg);
-            color: var(--primary-color);
-            border: none;
-            border-radius: 10px;
-            cursor: pointer;
-            font-size: 16px;
-            font-weight: 600;
-            transition: all 0.2s ease;
-            -webkit-appearance: none;
-            box-shadow: 0 2px 8px var(--shadow-color);
-        }
-        
-        .action-btn:hover, .action-btn:active {
-            background-color: rgba(0, 122, 255, 0.1);
-            transform: scale(0.98);
-        }
-        
-        /* 主内容区域 */
-        .main-content {
-            display: flex;
-            flex-direction: column;
-            gap: 20px;
-        }
-        
-        /* iOS风格卡片 */
-        .card {
-            background-color: var(--card-bg);
-            border-radius: 16px;
-            padding: 20px;
-            box-shadow: 0 4px 20px var(--shadow-color);
-            backdrop-filter: blur(20px);
-            -webkit-backdrop-filter: blur(20px);
-        }
-        
+        /* 缩小版统计卡片 */
         .stats-grid {
             display: grid;
             grid-template-columns: repeat(3, 1fr);
-            gap: 15px;
+            gap: 10px;
             margin-bottom: 20px;
         }
         
         .stat-card {
-            background: linear-gradient(135deg, rgba(0, 122, 255, 0.1), rgba(52, 199, 89, 0.1));
-            border-radius: 14px;
-            padding: 18px;
+            background: var(--card-bg);
+            border-radius: 12px;
+            padding: 12px;
             text-align: center;
-            border: 1px solid rgba(0, 122, 255, 0.1);
+            border: 1px solid var(--border-color);
+            box-shadow: 0 2px 8px var(--shadow-color);
         }
         
         .stat-value {
-            font-size: 28px;
+            font-size: 18px;
             font-weight: 700;
             margin-bottom: 4px;
             letter-spacing: -0.5px;
@@ -149,9 +109,33 @@
         }
         
         .stat-label {
-            font-size: 14px;
+            font-size: 12px;
             color: var(--text-secondary);
             font-weight: 500;
+        }
+        
+        /* 分隔线 */
+        .divider {
+            height: 1px;
+            background-color: var(--border-color);
+            margin: 20px 0;
+        }
+        
+        /* 主内容区域 */
+        .main-content {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+        
+        /* iOS风格卡片 */
+        .card {
+            background-color: var(--card-bg);
+            border-radius: 16px;
+            padding: 20px;
+            box-shadow: 0 4px 20px var(--shadow-color);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
         }
         
         /* 账单列表 */
@@ -225,7 +209,7 @@
         }
         
         .budget-panel h2 {
-            font-size: 22px;
+            font-size: 20px;
             font-weight: 700;
             margin-bottom: 20px;
             display: flex;
@@ -266,7 +250,7 @@
         }
         
         .budget-amount {
-            font-size: 22px;
+            font-size: 20px;
             font-weight: 700;
         }
         
@@ -356,6 +340,14 @@
             font-size: 22px;
             font-weight: 700;
             border: 1px solid var(--border-color);
+        }
+        
+        /* 新增预算按钮 */
+        .budget-btn {
+            background-color: var(--warning-color);
+            color: white;
+            font-size: 20px;
+            font-weight: 700;
         }
         
         /* iOS风格模态框 */
@@ -702,7 +694,7 @@
         @media (max-width: 768px) {
             .stats-grid {
                 grid-template-columns: 1fr;
-                gap: 12px;
+                gap: 10px;
             }
             
             .form-row {
@@ -721,6 +713,7 @@
             .floating-buttons {
                 bottom: calc(20px + var(--safe-area-inset-bottom));
                 right: 15px;
+                gap: 12px;
             }
             
             .floating-btn {
@@ -782,33 +775,32 @@
         <!-- 头部 -->
         <div class="header">
             <h1>账单管理</h1>
-            <div class="action-buttons">
-                <button class="action-btn" id="budget-btn">预算</button>
-                <button class="action-btn" id="manage-categories-btn">类别</button>
-            </div>
         </div>
         
         <!-- 统计卡片 -->
         <div class="stats-grid">
             <div class="stat-card income">
-                <div class="stat-value" id="total-income">¥0</div>
+                <div class="stat-value" id="total-income">¥0.00</div>
                 <div class="stat-label">总收入</div>
             </div>
             <div class="stat-card expense">
-                <div class="stat-value" id="total-expense">¥0</div>
+                <div class="stat-value" id="total-expense">¥0.00</div>
                 <div class="stat-label">总支出</div>
             </div>
             <div class="stat-card balance">
-                <div class="stat-value" id="balance">¥0</div>
+                <div class="stat-value" id="balance">¥0.00</div>
                 <div class="stat-label">结余</div>
             </div>
         </div>
+        
+        <!-- 分隔线 -->
+        <div class="divider"></div>
         
         <!-- 账单列表 -->
         <div class="card">
             <div class="header">
                 <h2>近期账单</h2>
-                <div class="date-display" id="current-date">本月</div>
+                <div class="date-display" id="current-date">2026年1月</div>
             </div>
             
             <div class="bills-container">
@@ -816,11 +808,14 @@
                     <!-- 账单项目将通过JavaScript动态添加 -->
                     <div class="empty-state">
                         <h3>暂无账单记录</h3>
-                        <p>点击右下角按钮添加账单</p>
+                        <p>点击右下角"+"按钮添加账单</p>
                     </div>
                 </div>
             </div>
         </div>
+        
+        <!-- 分隔线 -->
+        <div class="divider"></div>
         
         <!-- 预算概览 -->
         <div class="card budget-panel">
@@ -829,15 +824,16 @@
                 <!-- 预算类别将通过JavaScript动态添加 -->
                 <div class="empty-state">
                     <h4>暂无预算设置</h4>
-                    <p>点击"预算"按钮设置预算</p>
+                    <p>点击右下角"预"按钮设置预算</p>
                 </div>
             </div>
         </div>
     </div>
     
-    <!-- 浮动按钮 -->
+    <!-- 浮动按钮 - 现在有3个按钮 -->
     <div class="floating-buttons">
         <button class="floating-btn calendar-btn" id="calendar-btn">日</button>
+        <button class="floating-btn budget-btn" id="budget-btn">预</button>
         <button class="floating-btn add-bill-btn" id="add-bill-btn">+</button>
     </div>
     
@@ -965,12 +961,21 @@
     <script>
         // 从localStorage加载数据或使用默认数据
         let bills = JSON.parse(localStorage.getItem('bills')) || [
-            { id: 1, category: "餐饮", amount: 65.50, date: "2023-10-15", type: "expense", note: "和朋友聚餐" },
-            { id: 2, category: "工资", amount: 12500.00, date: "2023-10-10", type: "income", note: "10月份工资" },
-            { id: 3, category: "购物", amount: 299.00, date: "2023-10-12", type: "expense", note: "购买新衣服" },
-            { id: 4, category: "交通", amount: 150.00, date: "2023-10-08", type: "expense", note: "地铁充值" },
-            { id: 5, category: "奖金", amount: 3000.00, date: "2023-10-05", type: "income", note: "项目奖金" }
+            { id: 1, category: "餐饮", amount: 65.50, date: getTodayDate(), type: "expense", note: "和朋友聚餐" },
+            { id: 2, category: "工资", amount: 12500.00, date: getTodayDate(), type: "income", note: "10月份工资" },
+            { id: 3, category: "购物", amount: 299.00, date: getTodayDate(), type: "expense", note: "购买新衣服" },
+            { id: 4, category: "交通", amount: 150.00, date: getTodayDate(), type: "expense", note: "地铁充值" },
+            { id: 5, category: "奖金", amount: 3000.00, date: getTodayDate(), type: "income", note: "项目奖金" }
         ];
+        
+        // 获取今天日期的函数
+        function getTodayDate() {
+            const today = new Date();
+            const year = today.getFullYear();
+            const month = String(today.getMonth() + 1).padStart(2, '0');
+            const day = String(today.getDate()).padStart(2, '0');
+            return `${year}-${month}-${day}`;
+        }
         
         // 类别数据（包含默认类别）
         let categories = JSON.parse(localStorage.getItem('categories')) || [
@@ -978,7 +983,7 @@
         ];
         
         // 预算数据
-        let budgets = JSON.parse(localStorage.getItem('budgets')) || {};
+        let budgets = JSON.parse(localStorage.getItem('budgets')) || { "餐饮": 600 };
         
         // 初始化预算数据（如果不存在）
         categories.forEach(category => {
@@ -994,7 +999,6 @@
         const addBillBtn = document.getElementById('add-bill-btn');
         const calendarBtn = document.getElementById('calendar-btn');
         const budgetBtn = document.getElementById('budget-btn');
-        const manageCategoriesBtn = document.getElementById('manage-categories-btn');
         const addBillModal = document.getElementById('add-bill-modal');
         const calendarModal = document.getElementById('calendar-modal');
         const budgetModal = document.getElementById('budget-modal');
@@ -1019,11 +1023,7 @@
         
         // 初始化
         document.addEventListener('DOMContentLoaded', function() {
-            // 设置默认日期为今天
-            const today = new Date().toISOString().split('T')[0];
-            document.getElementById('bill-date').value = today;
-            
-            // 显示当前月份
+            // 显示当前月份 - 设置为当前月份
             const now = new Date();
             document.getElementById('current-date').textContent = `${now.getFullYear()}年${now.getMonth() + 1}月`;
             
@@ -1050,8 +1050,12 @@
             }, { passive: false });
         });
         
-        // 打开添加账单模态框
+        // 打开添加账单模态框 - 每次都设置日期为今天
         addBillBtn.addEventListener('click', function() {
+            // 设置日期为今天
+            const today = getTodayDate();
+            document.getElementById('bill-date').value = today;
+            
             addBillModal.classList.add('active');
             // 自动聚焦到金额输入框
             setTimeout(() => {
@@ -1068,11 +1072,6 @@
         budgetBtn.addEventListener('click', function() {
             renderBudgetSettings();
             budgetModal.classList.add('active');
-        });
-        
-        // 打开类别管理
-        manageCategoriesBtn.addEventListener('click', function() {
-            addBillModal.classList.add('active');
         });
         
         // 关闭模态框
@@ -1224,9 +1223,9 @@
             // 更新预算面板
             updateBudgetPanel();
             
-            // 重置表单
+            // 重置表单，但保留日期为今天
             billForm.reset();
-            document.getElementById('bill-date').value = new Date().toISOString().split('T')[0];
+            document.getElementById('bill-date').value = getTodayDate();
             
             // 关闭模态框
             closeAllModals();
@@ -1245,7 +1244,7 @@
                 billsList.innerHTML = `
                     <div class="empty-state">
                         <h3>暂无账单记录</h3>
-                        <p>点击右下角按钮添加账单</p>
+                        <p>点击右下角"+"按钮添加账单</p>
                     </div>
                 `;
                 return;
@@ -1434,7 +1433,7 @@
                 budgetCategoriesEl.innerHTML = `
                     <div class="empty-state">
                         <h4>暂无预算设置</h4>
-                        <p>点击"预算"按钮设置预算</p>
+                        <p>点击右下角"预"按钮设置预算</p>
                     </div>
                 `;
                 return;
