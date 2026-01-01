@@ -145,6 +145,8 @@
         .list-item .desc {
             font-size: 12px;
             color: #8e8e93;
+            line-height: 1.4;
+            word-break: break-word;
         }
 
         .list-item .actions {
@@ -235,6 +237,18 @@
             /* 确保日期输入框与其他输入框一致 */
             line-height: 1;
             height: auto;
+        }
+
+        /* 新增：确保备注输入框与其他输入框样式一致 */
+        .form-group input[type="text"] {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #e5e5e7;
+            border-radius: 8px;
+            font-size: 14px;
+            appearance: none;
+            -webkit-appearance: none;
+            background-color: white;
         }
 
         .modal-actions {
@@ -385,6 +399,11 @@
                 <label>日期</label>
                 <input type="date" id="billDate" max="">
             </div>
+            <!-- 新增：备注输入框 -->
+            <div class="form-group">
+                <label>备注（可选）</label>
+                <input type="text" id="billNote" maxlength="50" placeholder="输入备注信息（最多50字）">
+            </div>
             <div class="modal-actions">
                 <button class="btn-cancel" id="cancelAddBill">取消</button>
                 <button id="saveBillBtn">保存</button>
@@ -417,6 +436,11 @@
             <div class="form-group">
                 <label>日期</label>
                 <input type="date" id="editBillDate" max="">
+            </div>
+            <!-- 新增：编辑时的备注输入框 -->
+            <div class="form-group">
+                <label>备注（可选）</label>
+                <input type="text" id="editBillNote" maxlength="50" placeholder="输入备注信息（最多50字）">
             </div>
             <div class="modal-actions">
                 <button class="btn-cancel" id="cancelEditBill">取消</button>
@@ -541,6 +565,8 @@
             document.getElementById('billAmount').value = '';
             document.getElementById('billDate').value = today;
             document.getElementById('billDate').max = today;
+            // 新增：重置备注字段
+            document.getElementById('billNote').value = '';
             
             // 设置类别为第一个可用类别（如果有的话）
             const categories = getCategories();
@@ -664,10 +690,14 @@
                 const cat = categories.find(c => c.id === bill.categoryId) || { name: '未知类别' };
                 const item = document.createElement('div');
                 item.className = 'list-item';
+                
+                // 如果有备注，在描述部分显示备注，否则显示日期
+                const descText = bill.note ? `${bill.date} | ${bill.note}` : bill.date;
+                
                 item.innerHTML = `
                     <div class="info">
                         <div class="name">${cat.name} ${bill.type === 'income' ? '(收入)' : '(支出)'}</div>
-                        <div class="desc">${bill.date}</div>
+                        <div class="desc">${descText}</div>
                     </div>
                     <div class="actions">
                         <span style="font-weight: 600; ${bill.type === 'income' ? 'color: #34c759' : 'color: #ff3b30'}">
@@ -762,6 +792,8 @@
                 const categoryId = document.getElementById('billCategory').value;
                 const amount = parseFloat(document.getElementById('billAmount').value);
                 const date = document.getElementById('billDate').value;
+                // 新增：获取备注内容
+                const note = document.getElementById('billNote').value.trim();
                 
                 // 获取今天的日期
                 const today = new Date().toISOString().split('T')[0];
@@ -772,14 +804,15 @@
                 if (!date) return showToast('请选择日期');
                 if (date > today) return showToast('不能选择未来日期');
 
-                // 保存账单
+                // 保存账单（新增note字段）
                 const bills = getBills();
                 bills.push({
                     id: generateId(),
                     type,
                     categoryId,
                     amount,
-                    date
+                    date,
+                    note: note || ''  // 备注可以为空
                 });
                 localStorage.setItem(STORAGE.BILLS, JSON.stringify(bills));
 
@@ -941,12 +974,14 @@
                     const bill = bills.find(b => b.id === id);
                     if (!bill) return;
 
-                    // 填充编辑表单
+                    // 填充编辑表单（新增备注字段）
                     document.getElementById('editBillId').value = bill.id;
                     document.getElementById('editBillType').value = bill.type;
                     document.getElementById('editBillCategory').value = bill.categoryId;
                     document.getElementById('editBillAmount').value = bill.amount;
                     document.getElementById('editBillDate').value = bill.date;
+                    // 新增：填充备注字段
+                    document.getElementById('editBillNote').value = bill.note || '';
                     
                     // 设置最大日期为今天（修复问题3）
                     const today = new Date().toISOString().split('T')[0];
@@ -987,6 +1022,8 @@
                 const categoryId = document.getElementById('editBillCategory').value;
                 const amount = parseFloat(document.getElementById('editBillAmount').value);
                 const date = document.getElementById('editBillDate').value;
+                // 新增：获取备注内容
+                const note = document.getElementById('editBillNote').value.trim();
                 
                 // 获取今天的日期
                 const today = new Date().toISOString().split('T')[0];
@@ -997,10 +1034,10 @@
                 if (!date) return showToast('请选择日期');
                 if (date > today) return showToast('不能选择未来日期');
 
-                // 更新账单
+                // 更新账单（包括备注字段）
                 const bills = getBills().map(b => {
                     if (b.id === id) {
-                        return { ...b, type, categoryId, amount, date };
+                        return { ...b, type, categoryId, amount, date, note: note || '' };
                     }
                     return b;
                 });
