@@ -499,19 +499,26 @@
             CATEGORY_BUDGETS: 'categoryBudgets'
         };
 
+        // 获取今天日期字符串（格式：YYYY-MM-DD）
+        function getTodayDate() {
+            const now = new Date();
+            const year = now.getFullYear();
+            const month = String(now.getMonth() + 1).padStart(2, '0');
+            const day = String(now.getDate()).padStart(2, '0');
+            return `${year}-${month}-${day}`;
+        }
+
         // 初始化页面
         document.addEventListener('DOMContentLoaded', function() {
-            // 设置今日日期
-            const today = new Date().toISOString().split('T')[0];
-            document.getElementById('billDate').value = today;
-            document.getElementById('dateFilter').value = today;
-            
-            // 设置日期输入框的最大值为今天（修复问题3）
-            document.getElementById('billDate').max = today;
-            document.getElementById('editBillDate').max = today;
-
             // 初始化本地存储
             initStorage();
+
+            // 设置今日日期（关键修复：每次页面加载都强制更新）
+            const today = getTodayDate();
+            document.getElementById('billDate').value = today;
+            document.getElementById('billDate').max = today;
+            document.getElementById('dateFilter').value = today;
+            document.getElementById('editBillDate').max = today;
 
             // 渲染所有数据
             renderCategories();
@@ -560,9 +567,10 @@
 
         // 重置添加账单表单（修复问题2）
         function resetAddBillForm() {
-            const today = new Date().toISOString().split('T')[0];
+            const today = getTodayDate();
             document.getElementById('billType').value = 'expense';
             document.getElementById('billAmount').value = '';
+            // 关键修复：每次打开添加账单模态框都强制设置为当天
             document.getElementById('billDate').value = today;
             document.getElementById('billDate').max = today;
             // 新增：重置备注字段
@@ -796,7 +804,7 @@
                 const note = document.getElementById('billNote').value.trim();
                 
                 // 获取今天的日期
-                const today = new Date().toISOString().split('T')[0];
+                const today = getTodayDate();
                 
                 // 校验（修复问题3：添加未来日期校验）
                 if (!categoryId) return showToast('请选择类别');
@@ -984,7 +992,7 @@
                     document.getElementById('editBillNote').value = bill.note || '';
                     
                     // 设置最大日期为今天（修复问题3）
-                    const today = new Date().toISOString().split('T')[0];
+                    const today = getTodayDate();
                     document.getElementById('editBillDate').max = today;
 
                     // 打开编辑模态框
@@ -1026,7 +1034,7 @@
                 const note = document.getElementById('editBillNote').value.trim();
                 
                 // 获取今天的日期
-                const today = new Date().toISOString().split('T')[0];
+                const today = getTodayDate();
                 
                 // 校验（修复问题3：添加未来日期校验）
                 if (!categoryId) return showToast('请选择类别');
