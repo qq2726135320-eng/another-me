@@ -224,6 +224,17 @@
             border: 1px solid #e5e5e7;
             border-radius: 8px;
             font-size: 14px;
+            /* 确保所有输入框样式一致 */
+            appearance: none;
+            -webkit-appearance: none;
+            background-color: white;
+        }
+
+        /* 修复日期输入框的样式，确保与其他输入框对齐 */
+        .form-group input[type="date"] {
+            /* 确保日期输入框与其他输入框一致 */
+            line-height: 1;
+            height: auto;
         }
 
         .modal-actions {
@@ -368,11 +379,11 @@
             </div>
             <div class="form-group">
                 <label>金额（元）</label>
-                <input type="number" id="billAmount" step="0.01" min="0.01">
+                <input type="number" id="billAmount" step="0.01" min="0.01" placeholder="输入金额">
             </div>
             <div class="form-group">
                 <label>日期</label>
-                <input type="date" id="billDate">
+                <input type="date" id="billDate" max="">
             </div>
             <div class="modal-actions">
                 <button class="btn-cancel" id="cancelAddBill">取消</button>
@@ -401,11 +412,11 @@
             </div>
             <div class="form-group">
                 <label>金额（元）</label>
-                <input type="number" id="editBillAmount" step="0.01" min="0.01">
+                <input type="number" id="editBillAmount" step="0.01" min="0.01" placeholder="输入金额">
             </div>
             <div class="form-group">
                 <label>日期</label>
-                <input type="date" id="editBillDate">
+                <input type="date" id="editBillDate" max="">
             </div>
             <div class="modal-actions">
                 <button class="btn-cancel" id="cancelEditBill">取消</button>
@@ -420,7 +431,7 @@
             <h3>新增类别</h3>
             <div class="form-group">
                 <label>类别名称</label>
-                <input type="text" id="newCategoryName" maxlength="10">
+                <input type="text" id="newCategoryName" maxlength="10" placeholder="输入类别名称">
             </div>
             <div class="modal-actions">
                 <button class="btn-cancel" id="cancelAddCategory">取消</button>
@@ -441,7 +452,7 @@
             </div>
             <div class="form-group">
                 <label>预算金额（元）</label>
-                <input type="number" id="budgetAmountInput" step="0.01" min="0.01">
+                <input type="number" id="budgetAmountInput" step="0.01" min="0.01" placeholder="输入预算金额">
             </div>
             <div class="modal-actions">
                 <button class="btn-cancel" id="cancelSetBudget">取消</button>
@@ -470,6 +481,10 @@
             const today = new Date().toISOString().split('T')[0];
             document.getElementById('billDate').value = today;
             document.getElementById('dateFilter').value = today;
+            
+            // 设置日期输入框的最大值为今天（修复问题3）
+            document.getElementById('billDate').max = today;
+            document.getElementById('editBillDate').max = today;
 
             // 初始化本地存储
             initStorage();
@@ -517,6 +532,28 @@
         // 获取类别预算
         function getCategoryBudgets() {
             return JSON.parse(localStorage.getItem(STORAGE.CATEGORY_BUDGETS) || '{}');
+        }
+
+        // 重置添加账单表单（修复问题2）
+        function resetAddBillForm() {
+            const today = new Date().toISOString().split('T')[0];
+            document.getElementById('billType').value = 'expense';
+            document.getElementById('billAmount').value = '';
+            document.getElementById('billDate').value = today;
+            document.getElementById('billDate').max = today;
+            
+            // 设置类别为第一个可用类别（如果有的话）
+            const categories = getCategories();
+            const billCategorySelect = document.getElementById('billCategory');
+            if (categories.length > 0 && billCategorySelect.options.length > 0) {
+                billCategorySelect.value = categories[0].id;
+            }
+        }
+
+        // 重置编辑账单表单（修复问题2）
+        function resetEditBillForm() {
+            // 只重置隐藏的id字段，其他字段会在打开时填充
+            document.getElementById('editBillId').value = '';
         }
 
         // 渲染类别列表（用于类别管理和下拉选择）
@@ -700,32 +737,40 @@
                 card.style.display = card.style.display === 'none' ? 'block' : 'none';
             });
 
-            // 打开添加账单模态框
+            // 打开添加账单模态框（修复问题2和3）
             document.getElementById('addBillBtn').addEventListener('click', function() {
                 const categories = getCategories();
                 if (categories.length === 0) {
                     showToast('请先添加类别');
                     return;
                 }
+                // 重置表单（修复问题2）
+                resetAddBillForm();
                 document.getElementById('addBillModal').classList.add('show');
             });
 
-            // 取消添加账单
+            // 取消添加账单（修复问题2）
             document.getElementById('cancelAddBill').addEventListener('click', function() {
                 document.getElementById('addBillModal').classList.remove('show');
+                // 重置表单以便下次打开时是干净的状态
+                resetAddBillForm();
             });
 
-            // 保存账单
+            // 保存账单（修复问题3：添加日期校验）
             document.getElementById('saveBillBtn').addEventListener('click', function() {
                 const type = document.getElementById('billType').value;
                 const categoryId = document.getElementById('billCategory').value;
                 const amount = parseFloat(document.getElementById('billAmount').value);
                 const date = document.getElementById('billDate').value;
-
-                // 校验
+                
+                // 获取今天的日期
+                const today = new Date().toISOString().split('T')[0];
+                
+                // 校验（修复问题3：添加未来日期校验）
                 if (!categoryId) return showToast('请选择类别');
                 if (isNaN(amount) || amount < 0.01) return showToast('金额必须大于0.01元');
                 if (!date) return showToast('请选择日期');
+                if (date > today) return showToast('不能选择未来日期');
 
                 // 保存账单
                 const bills = getBills();
@@ -742,6 +787,8 @@
                 renderBills(document.getElementById('dateFilter').value);
                 renderStats();
                 document.getElementById('addBillModal').classList.remove('show');
+                // 重置表单以便下次打开时是干净的状态
+                resetAddBillForm();
                 showToast('账单添加成功');
             });
 
@@ -884,12 +931,12 @@
                 showToast('账单已清空');
             });
 
-            // 账单编辑/删除（事件委托）- 修复bug
+            // 账单编辑/删除（事件委托）- 修复问题1：无法删除"未知类别"账单
             document.getElementById('billList').addEventListener('click', function(e) {
                 // 编辑账单 - 使用closest确保点击到按钮任何部分都能触发
-                if (e.target.closest('.edit-bill')) {
-                    const button = e.target.closest('.edit-bill');
-                    const id = button.dataset.id;
+                const editBtn = e.target.closest('.edit-bill');
+                if (editBtn) {
+                    const id = editBtn.dataset.id;
                     const bills = getBills();
                     const bill = bills.find(b => b.id === id);
                     if (!bill) return;
@@ -900,18 +947,22 @@
                     document.getElementById('editBillCategory').value = bill.categoryId;
                     document.getElementById('editBillAmount').value = bill.amount;
                     document.getElementById('editBillDate').value = bill.date;
+                    
+                    // 设置最大日期为今天（修复问题3）
+                    const today = new Date().toISOString().split('T')[0];
+                    document.getElementById('editBillDate').max = today;
 
                     // 打开编辑模态框
                     document.getElementById('editBillModal').classList.add('show');
                 }
 
-                // 删除账单 - 修复bug：使用closest确保点击到按钮任何部分都能触发
-                if (e.target.closest('.delete-bill')) {
-                    const button = e.target.closest('.delete-bill');
-                    const id = button.dataset.id;
+                // 删除账单 - 修复问题1：确保"未知类别"账单也能删除
+                const deleteBtn = e.target.closest('.delete-bill');
+                if (deleteBtn) {
+                    const id = deleteBtn.dataset.id;
                     if (!confirm('确定删除该账单？')) return;
 
-                    // 删除账单
+                    // 删除账单 - 修复问题1：不需要检查类别是否存在，直接根据id删除
                     const bills = getBills().filter(b => b.id !== id);
                     localStorage.setItem(STORAGE.BILLS, JSON.stringify(bills));
 
@@ -922,23 +973,29 @@
                 }
             });
 
-            // 取消编辑账单
+            // 取消编辑账单（修复问题2）
             document.getElementById('cancelEditBill').addEventListener('click', function() {
                 document.getElementById('editBillModal').classList.remove('show');
+                // 重置表单以便下次打开时是干净的状态
+                resetEditBillForm();
             });
 
-            // 更新账单
+            // 更新账单（修复问题3：添加日期校验）
             document.getElementById('updateBillBtn').addEventListener('click', function() {
                 const id = document.getElementById('editBillId').value;
                 const type = document.getElementById('editBillType').value;
                 const categoryId = document.getElementById('editBillCategory').value;
                 const amount = parseFloat(document.getElementById('editBillAmount').value);
                 const date = document.getElementById('editBillDate').value;
-
-                // 校验
+                
+                // 获取今天的日期
+                const today = new Date().toISOString().split('T')[0];
+                
+                // 校验（修复问题3：添加未来日期校验）
                 if (!categoryId) return showToast('请选择类别');
                 if (isNaN(amount) || amount < 0.01) return showToast('金额必须大于0.01元');
                 if (!date) return showToast('请选择日期');
+                if (date > today) return showToast('不能选择未来日期');
 
                 // 更新账单
                 const bills = getBills().map(b => {
@@ -953,6 +1010,8 @@
                 renderBills(document.getElementById('dateFilter').value);
                 renderStats();
                 document.getElementById('editBillModal').classList.remove('show');
+                // 重置表单以便下次打开时是干净的状态
+                resetEditBillForm();
                 showToast('账单编辑成功');
             });
         }
