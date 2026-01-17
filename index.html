@@ -518,6 +518,95 @@
         document.addEventListener('DOMContentLoaded', function() {
             // 初始化本地存储
             initStorage();
+            <script>
+// 账单数据结构：数组，每条是 {type: 'income'或'expense', category: '...', amount: ..., date: '...', note: '...'}
+let bills = [];
+
+// 页面加载时：从 localStorage 读取旧数据
+window.onload = function() {
+    const savedBills = localStorage.getItem('billsData');
+    if (savedBills) {
+        bills = JSON.parse(savedBills);
+        updateDisplay();  // 刷新显示
+    }
+};
+
+// 添加账单函数（替换你原来的 addBill 或类似函数）
+function addBill() {
+    const type = document.getElementById('type').value;  // 收入/支出 下拉
+    const category = document.getElementById('category').value;  // 分类输入
+    const amount = parseFloat(document.getElementById('amount').value);  // 金额
+    const date = document.getElementById('date').value;  // 日期
+    const note = document.getElementById('note').value;  // 备注
+
+    if (!amount || amount <= 0) {
+        alert('请输入有效金额');
+        return;
+    }
+
+    // 添加到数组
+    bills.push({ type, category, amount, date, note });
+
+    // 立即保存到 localStorage
+    localStorage.setItem('billsData', JSON.stringify(bills));
+
+    // 更新页面显示
+    updateDisplay();
+
+    // 清空输入框
+    document.getElementById('amount').value = '';
+    document.getElementById('note').value = '';
+}
+
+// 更新显示函数（计算总数 + 显示列表）
+function updateDisplay() {
+    let totalIncome = 0;
+    let totalExpense = 0;
+
+    // 计算总数
+    bills.forEach(bill => {
+        if (bill.type === 'income') {
+            totalIncome += bill.amount;
+        } else {
+            totalExpense += bill.amount;
+        }
+    });
+
+    const balance = totalIncome - totalExpense;
+
+    // 更新顶部数字
+    document.getElementById('totalIncome').textContent = totalIncome.toFixed(2);
+    document.getElementById('totalExpense').textContent = totalExpense.toFixed(2);
+    document.getElementById('balance').textContent = balance.toFixed(2);
+
+    // 更新近期账单列表
+    const list = document.getElementById('billList');  // 假设你的列表是 <ul id="billList">
+    list.innerHTML = '';  // 清空
+
+    if (bills.length === 0) {
+        list.innerHTML = '<li>暂无账单数据</li>';
+    } else {
+        bills.reverse().forEach(bill => {  // 最新在前
+            const li = document.createElement('li');
+            li.innerHTML = `
+                <strong>${bill.type === 'income' ? '+' : '-'} ${bill.amount.toFixed(2)}</strong> 
+                ${bill.category} (${bill.date}) 
+                <small>${bill.note}</small>
+            `;
+            list.appendChild(li);
+        });
+    }
+}
+
+// 可选：加一个清除所有数据按钮（测试用）
+function clearAllData() {
+    if (confirm('确定清除所有账单数据？')) {
+        bills = [];
+        localStorage.removeItem('billsData');
+        updateDisplay();
+    }
+}
+</script>
 
             // 设置今日日期（关键修复：每次页面加载都强制更新）
             const today = getTodayDate();
@@ -1069,5 +1158,6 @@
     </script>
 </body>
 </html>
+
 
 
