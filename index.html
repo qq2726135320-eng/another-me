@@ -35,6 +35,12 @@
             font-weight: 600;
         }
 
+        .navbar-actions {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+        }
+
         /* 通用按钮样式 */
         button {
             cursor: pointer;
@@ -312,6 +318,28 @@
             justify-content: center;
             box-shadow: 0 2px 10px rgba(0,122,255,0.3);
         }
+
+        /* 导入导出按钮样式 */
+        .btn-import {
+            background-color: #5ac8fa;
+        }
+
+        .btn-import:hover {
+            background-color: #4aadde;
+        }
+
+        .btn-export {
+            background-color: #34c759;
+        }
+
+        .btn-export:hover {
+            background-color: #2ca54d;
+        }
+
+        /* 隐藏的文件输入框 */
+        .hidden-file-input {
+            display: none;
+        }
     </style>
 <!-- PWA 基本设置 -->
 <link rel="manifest" href="site.webmanifest">
@@ -324,8 +352,15 @@
     <!-- 导航栏 -->
     <div class="navbar">
         <h1>账单</h1>
-        <button id="categoryBtn">分类</button>
+        <div class="navbar-actions">
+            <button id="importBtn" class="btn-import">导入</button>
+            <button id="exportBtn" class="btn-export">导出</button>
+            <button id="categoryBtn">分类</button>
+        </div>
     </div>
+
+    <!-- 隐藏的文件输入框用于导入 -->
+    <input type="file" id="importFileInput" class="hidden-file-input" accept=".json">
 
     <!-- 统计卡片 -->
     <div class="stats">
@@ -570,6 +605,83 @@
             return JSON.parse(localStorage.getItem(STORAGE.CATEGORY_BUDGETS) || '{}');
         }
 
+        // 导出所有数据为JSON文件
+        function exportData() {
+            const data = {
+                bills: getBills(),
+                categories: getCategories(),
+                categoryBudgets: getCategoryBudgets(),
+                exportDate: new Date().toISOString(),
+                version: '1.0'
+            };
+
+            const dataStr = JSON.stringify(data, null, 2);
+            const dataBlob = new Blob([dataStr], { type: 'application/json' });
+            
+            // 创建下载链接
+            const url = URL.createObjectURL(dataBlob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = `账单数据_${new Date().toISOString().split('T')[0]}.json`;
+            
+            // 触发下载
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            URL.revokeObjectURL(url);
+            
+            showToast('数据导出成功');
+        }
+
+        // 导入数据
+        function importData() {
+            const fileInput = document.getElementById('importFileInput');
+            fileInput.click();
+        }
+
+        // 处理导入的文件
+        function handleImportFile(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const importedData = JSON.parse(e.target.result);
+                    
+                    // 验证导入的数据格式
+                    if (!importedData.bills || !importedData.categories || !importedData.categoryBudgets) {
+                        showToast('导入失败：文件格式不正确');
+                        return;
+                    }
+
+                    // 确认是否覆盖现有数据
+                    if (confirm('导入数据将覆盖现有数据，确定要继续吗？')) {
+                        // 保存导入的数据
+                        localStorage.setItem(STORAGE.BILLS, JSON.stringify(importedData.bills));
+                        localStorage.setItem(STORAGE.CATEGORIES, JSON.stringify(importedData.categories));
+                        localStorage.setItem(STORAGE.CATEGORY_BUDGETS, JSON.stringify(importedData.categoryBudgets));
+                        
+                        // 重新渲染所有数据
+                        renderCategories();
+                        renderCategoryBudgets();
+                        renderBills();
+                        renderStats();
+                        
+                        showToast('数据导入成功');
+                    }
+                } catch (error) {
+                    console.error('导入失败:', error);
+                    showToast('导入失败：文件解析错误');
+                }
+                
+                // 清空文件输入框，允许重复导入相同文件
+                event.target.value = '';
+            };
+            
+            reader.readAsText(file);
+        }
+
         // 重置添加账单表单（修复问题2）
         function resetAddBillForm() {
             const today = getTodayDate();
@@ -773,6 +885,16 @@
 
         // 绑定所有事件（核心：直接绑定，无委托冲突）
         function bindAllEvents() {
+            // ========== 导入导出功能 ==========
+            // 导出按钮
+            document.getElementById('exportBtn').addEventListener('click', exportData);
+            
+            // 导入按钮
+            document.getElementById('importBtn').addEventListener('click', importData);
+            
+            // 文件输入框变化时触发导入
+            document.getElementById('importFileInput').addEventListener('change', handleImportFile);
+
             // ========== 基础按钮 ==========
             // 显示/隐藏类别管理卡片
             document.getElementById('categoryBtn').addEventListener('click', function() {
@@ -1068,7 +1190,3 @@
     </script>
 </body>
 </html>
-
-
-
-
