@@ -54,13 +54,13 @@
             z-index: -1;
         }
 
-        /* 导航栏 - 延伸至屏幕最顶部 */
+        /* 导航栏 - 延伸至屏幕最顶部，使用 safeAreaInsets 动态计算 */
         .navbar {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            padding: 16px 20px;
-            padding-top: max(16px, env(safe-area-inset-top)); /* 调整顶部内边距 */
+            padding: 12px 20px;
+            padding-top: calc(12px + env(safe-area-inset-top)); /* 动态计算顶部内边距 */
             position: fixed;
             top: 0;
             left: 0;
@@ -68,18 +68,18 @@
             z-index: 100;
             backdrop-filter: blur(var(--blur-intensity));
             -webkit-backdrop-filter: blur(var(--blur-intensity));
-            background: var(--nav-bg);
+            background: var(--bg-color); /* 使用页面主背景色 */
             border-bottom: 1px solid rgba(0, 0, 0, 0.05);
             box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
-            height: auto; /* 改为自动高度 */
-            min-height: 60px; /* 最小高度 */
-            transform: translateY(0); /* 初始位置 */
-            transition: transform 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94); /* 平滑动画 */
+            height: auto;
+            min-height: 60px;
+            transform: translateY(0);
+            transition: transform 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
         }
 
         /* 隐藏状态 */
         .navbar.hidden {
-            transform: translateY(-100%); /* 向上滑出屏幕 */
+            transform: translateY(-100%);
         }
 
         .navbar h1 {
@@ -87,23 +87,23 @@
             font-weight: 700;
             letter-spacing: -0.5px;
             color: var(--text-primary);
-            margin-top: env(safe-area-inset-top); /* 与状态栏保持安全距离 */
-            padding-top: 8px; /* 额外内边距 */
+            margin-top: 0;
+            padding-top: 0;
         }
 
         .navbar-actions {
             display: flex;
             gap: 10px;
             align-items: center;
-            margin-top: env(safe-area-inset-top); /* 与状态栏保持安全距离 */
-            padding-top: 8px; /* 额外内边距 */
+            margin-top: 0;
+            padding-top: 0;
         }
 
         /* 主内容区 - 调整顶部内边距 */
         .main-content {
-            margin-top: calc(60px + env(safe-area-inset-top) + 20px); /* 增加安全区域高度 */
+            margin-top: calc(60px + env(safe-area-inset-top) + 20px);
             padding-top: 10px;
-            transition: margin-top 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94); /* 平滑动画 */
+            transition: margin-top 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
         }
 
         /* 导航栏隐藏时调整主内容 */
@@ -111,42 +111,42 @@
             margin-top: 20px;
         }
 
-        /* 修改后的统计卡片区域 - 关闭横向滑动，三列并排显示 */
+        /* 修改后的统计卡片区域 */
         .stats-container {
             padding: 0 20px;
             margin: 20px 0;
-            height: 140px;
+            height: 120px; /* 调整高度 */
             position: relative;
-            overflow: hidden; /* 关闭横向滑动溢出 */
+            overflow: hidden;
         }
 
         .stats-scroll {
             display: flex;
-            overflow: hidden; /* 关闭横向滑动 */
-            gap: 12px;
+            overflow: hidden;
+            gap: 8px; /* 减小间距 */
             padding: 8px 0;
-            justify-content: space-between; /* 三列均匀分布 */
+            justify-content: space-between;
             width: 100%;
         }
 
         .stat-card {
-            flex: 1; /* 等宽分布 */
-            min-width: 0; /* 防止内容挤压溢出 */
-            max-width: calc((100% - 24px) / 3); /* 三列等宽，减去间距 */
-            width: auto; /* 自动宽度 */
-            height: 105px;
+            flex: 1;
+            min-width: 0;
+            max-width: calc((100% - 16px) / 3);
+            width: auto;
+            height: 90px; /* 调整高度 */
             background: var(--card-bg);
             border-radius: 18px;
-            padding: 20px 12px; /* 增加内边距 */
+            padding: 12px 8px; /* 统一内边距 */
             backdrop-filter: blur(var(--blur-intensity));
             -webkit-backdrop-filter: blur(var(--blur-intensity));
             border: 1px solid rgba(0, 0, 0, 0.05);
             box-shadow: var(--shadow-light);
             display: flex;
             flex-direction: column;
-            justify-content: center; /* 垂直居中 */
-            align-items: center; /* 水平居中 */
-            text-align: center; /* 文字居中对齐 */
+            justify-content: center;
+            align-items: center;
+            text-align: center;
             transition: transform 0.2s ease, box-shadow 0.2s ease;
         }
 
@@ -155,17 +155,17 @@
         }
 
         .stat-card .label {
-            font-size: 12px;
-            color: var(--text-secondary);
+            font-size: 12px; /* 保持12pt */
+            color: #86868B; /* 中灰色 */
             font-weight: 500;
-            margin-bottom: 8px; /* 增加标签与数值间距 */
+            margin-bottom: 8px;
             width: 100%;
             text-align: center;
         }
 
         .stat-card .value {
-            font-size: 24px;
-            font-weight: 700;
+            font-size: 16px; /* 调整为16pt */
+            font-weight: 700; /* 保持加粗 */
             letter-spacing: -0.5px;
             width: 100%;
             text-align: center;
@@ -271,6 +271,46 @@
             justify-content: space-between;
             font-size: 13px;
             color: var(--text-secondary);
+        }
+
+        /* 预算项添加侧滑删除 */
+        .budget-progress-wrapper {
+            position: relative;
+            overflow: hidden;
+            border-radius: 12px;
+            margin: 8px 0;
+            background: var(--card-bg);
+            border: 1px solid rgba(0, 0, 0, 0.05);
+            transition: transform 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+        }
+
+        .budget-progress-wrapper.swiping {
+            transform: translateX(-80px);
+        }
+
+        /* 预算删除按钮 */
+        .budget-delete-action {
+            position: absolute;
+            right: 0;
+            top: 0;
+            bottom: 0;
+            background: var(--danger-color); /* 珊瑚红 */
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0 20px;
+            transform: translateX(100%);
+            transition: transform 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+            font-weight: 600;
+            font-size: 14px;
+            border-left: 1px solid rgba(255, 255, 255, 0.3);
+            min-width: 80px;
+            border-radius: 0 12px 12px 0;
+        }
+
+        .budget-progress-wrapper.swiping .budget-delete-action {
+            transform: translateX(0);
         }
 
         /* 列表样式 */
@@ -662,12 +702,7 @@
             .navbar {
                 padding-left: max(20px, env(safe-area-inset-left));
                 padding-right: max(20px, env(safe-area-inset-right));
-                padding-top: max(16px, env(safe-area-inset-top));
-            }
-            
-            .navbar h1,
-            .navbar-actions {
-                margin-top: env(safe-area-inset-top);
+                padding-top: calc(12px + env(safe-area-inset-top));
             }
             
             .stats-container, .card {
@@ -679,7 +714,7 @@
             
             /* 调整卡片内数字字号 */
             .stat-card .value {
-                font-size: 26px; /* 增大字号保证视觉美观 */
+                font-size: 18px; /* 适当增大 */
             }
             
             .stat-card .label {
@@ -687,21 +722,21 @@
             }
             
             .stat-card {
-                padding: 22px 14px;
-                height: 110px;
+                padding: 14px 10px;
+                height: 100px;
             }
         }
 
         /* 针对小屏幕手机的额外调整 */
         @media only screen and (max-width: 380px) {
             .stat-card {
-                width: 110px; /* 在小屏幕上进一步缩小 */
+                width: 110px;
                 height: 95px;
-                padding: 14px;
+                padding: 12px 6px;
             }
             
             .stat-card .value {
-                font-size: 22px;
+                font-size: 16px;
             }
             
             .stat-card .label {
@@ -883,6 +918,7 @@
                     <input type="text" id="editBillNote" maxlength="50" placeholder="输入备注信息（最多50字）">
                 </div>
                 <div class="modal-actions">
+                    <button class="btn-cancel" id="deleteBillBtn">删除</button>
                     <button class="btn-cancel" id="cancelEditBill">取消</button>
                     <button id="updateBillBtn">保存</button>
                 </div>
@@ -981,6 +1017,11 @@
             
             // 初始化导航栏滚动隐藏/显示
             initNavbarScroll();
+            
+            // 初始化预算侧滑删除
+            if (document.getElementById('budgetList')) {
+                initBudgetSwipeDelete();
+            }
         });
 
         // 初始化本地存储
@@ -1071,6 +1112,121 @@
                 if (!navbarVisible) {
                     navbar.classList.remove('hidden');
                     navbarVisible = true;
+                }
+            });
+        }
+
+        // 初始化预算侧滑删除功能
+        function initBudgetSwipeDelete() {
+            const budgetList = document.getElementById('budgetList');
+            if (!budgetList) return;
+            
+            let touchStartX = 0;
+            let touchEndX = 0;
+            let currentSwipeItem = null;
+            let isSwiping = false;
+            
+            budgetList.addEventListener('touchstart', function(e) {
+                const listItem = e.target.closest('.budget-progress-wrapper');
+                if (!listItem) return;
+                
+                touchStartX = e.touches[0].clientX;
+                currentSwipeItem = listItem;
+                isSwiping = false;
+                
+                // 移除其他项目的滑动状态
+                document.querySelectorAll('.budget-progress-wrapper').forEach(item => {
+                    if (item !== listItem && item.classList.contains('swiping')) {
+                        item.classList.remove('swiping');
+                        item.style.transform = 'translateX(0)';
+                        const deleteBtn = item.querySelector('.budget-delete-action');
+                        if (deleteBtn) deleteBtn.style.transform = 'translateX(100%)';
+                    }
+                });
+            }, { passive: true });
+            
+            budgetList.addEventListener('touchmove', function(e) {
+                if (!currentSwipeItem) return;
+                
+                touchEndX = e.touches[0].clientX;
+                const diffX = touchStartX - touchEndX;
+                
+                // 检测到水平滑动
+                if (Math.abs(diffX) > 5) {
+                    isSwiping = true;
+                    e.preventDefault();
+                    
+                    // 添加滑动状态类
+                    if (!currentSwipeItem.classList.contains('swiping')) {
+                        currentSwipeItem.classList.add('swiping');
+                    }
+                    
+                    const translateX = Math.min(diffX, 80);
+                    currentSwipeItem.style.transform = `translateX(-${translateX}px)`;
+                    
+                    const deleteBtn = currentSwipeItem.querySelector('.budget-delete-action');
+                    if (deleteBtn) {
+                        const deleteTranslate = Math.max(0, translateX - 80);
+                        deleteBtn.style.transform = `translateX(${deleteTranslate}px)`;
+                    }
+                }
+            }, { passive: false });
+            
+            budgetList.addEventListener('touchend', function() {
+                if (!currentSwipeItem) return;
+                
+                const diffX = touchStartX - touchEndX;
+                
+                if (isSwiping) {
+                    if (diffX > 40) {
+                        // 滑动超过40px，保持删除按钮显示状态
+                        currentSwipeItem.classList.add('swiping');
+                        currentSwipeItem.style.transform = 'translateX(-80px)';
+                        const deleteBtn = currentSwipeItem.querySelector('.budget-delete-action');
+                        if (deleteBtn) deleteBtn.style.transform = 'translateX(0)';
+                    } else {
+                        // 滑动不足，恢复原状
+                        currentSwipeItem.classList.remove('swiping');
+                        currentSwipeItem.style.transform = 'translateX(0)';
+                        const deleteBtn = currentSwipeItem.querySelector('.budget-delete-action');
+                        if (deleteBtn) deleteBtn.style.transform = 'translateX(100%)';
+                    }
+                }
+                
+                currentSwipeItem = null;
+                isSwiping = false;
+            });
+            
+            // 绑定删除按钮事件
+            budgetList.addEventListener('click', function(e) {
+                if (e.target.classList.contains('budget-delete-action')) {
+                    e.stopPropagation();
+                    const categoryId = e.target.dataset.categoryId;
+                    
+                    if (!confirm('确定删除该预算项吗？')) return;
+                    
+                    // 删除预算
+                    const budgets = getCategoryBudgets();
+                    if (budgets[categoryId]) {
+                        delete budgets[categoryId];
+                        localStorage.setItem(STORAGE.CATEGORY_BUDGETS, JSON.stringify(budgets));
+                        
+                        // 重新渲染预算列表
+                        renderCategoryBudgets();
+                        showToast('预算删除成功');
+                    }
+                }
+            });
+            
+            // 点击其他地方取消侧滑
+            document.addEventListener('click', function(e) {
+                if (!e.target.closest('.budget-progress-wrapper') && !e.target.closest('.budget-delete-action')) {
+                    document.querySelectorAll('.budget-progress-wrapper.swiping').forEach(item => {
+                        item.classList.remove('swiping');
+                        item.style.transform = 'translateX(0)';
+                        const deleteBtn = item.querySelector('.budget-delete-action');
+                        if (deleteBtn) deleteBtn.style.transform = 'translateX(100%)';
+                    });
                 }
             });
         }
@@ -1214,17 +1370,31 @@
                 
                 if (isSwiping) {
                     if (diffX > 40) {
-                        // 滑动超过40px，保持删除按钮显示状态
+                        // 滑动超过40px，保持删除按钮显示状态，隐藏编辑按钮
                         currentSwipeItem.classList.add('swiping');
                         currentSwipeItem.style.transform = 'translateX(-80px)';
                         const deleteBtn = currentSwipeItem.querySelector('.delete-action');
                         if (deleteBtn) deleteBtn.style.transform = 'translateX(0)';
+                        
+                        // 隐藏编辑按钮
+                        const editBtn = currentSwipeItem.querySelector('.edit-bill');
+                        if (editBtn) {
+                            editBtn.style.opacity = '0';
+                            editBtn.style.transform = 'translateX(10px)';
+                        }
                     } else {
-                        // 滑动不足，恢复原状
+                        // 滑动不足，恢复原状，显示编辑按钮
                         currentSwipeItem.classList.remove('swiping');
                         currentSwipeItem.style.transform = 'translateX(0)';
                         const deleteBtn = currentSwipeItem.querySelector('.delete-action');
                         if (deleteBtn) deleteBtn.style.transform = 'translateX(100%)';
+                        
+                        // 显示编辑按钮
+                        const editBtn = currentSwipeItem.querySelector('.edit-bill');
+                        if (editBtn) {
+                            editBtn.style.opacity = '1';
+                            editBtn.style.transform = 'translateX(0)';
+                        }
                     }
                 }
                 
@@ -1240,8 +1410,127 @@
                         item.style.transform = 'translateX(0)';
                         const deleteBtn = item.querySelector('.delete-action');
                         if (deleteBtn) deleteBtn.style.transform = 'translateX(100%)';
+                        // 恢复编辑按钮显示
+                        const editBtn = item.querySelector('.edit-bill');
+                        if (editBtn) {
+                            editBtn.style.opacity = '1';
+                            editBtn.style.transform = 'translateX(0)';
+                        }
                     });
                 }
+            });
+        }
+
+        // 修复编辑按钮事件绑定问题
+        function bindBillEditEvents() {
+            // 使用事件委托绑定编辑按钮事件
+            document.getElementById('billList').addEventListener('click', function(e) {
+                if (e.target.classList.contains('edit-bill')) {
+                    const billId = e.target.dataset.id;
+                    openEditBillModal(billId);
+                }
+            });
+        }
+
+        // 打开编辑账单模态框
+        function openEditBillModal(billId) {
+            const bills = getBills();
+            const categories = getCategories();
+            const bill = bills.find(b => b.id === billId);
+            
+            if (!bill) {
+                showToast('未找到该账单');
+                return;
+            }
+            
+            // 填充表单数据
+            document.getElementById('editBillId').value = bill.id;
+            document.getElementById('editBillType').value = bill.type;
+            document.getElementById('editBillAmount').value = bill.amount;
+            document.getElementById('editBillDate').value = bill.date;
+            document.getElementById('editBillNote').value = bill.note || '';
+            
+            // 填充分类下拉框
+            const editBillCategory = document.getElementById('editBillCategory');
+            editBillCategory.innerHTML = '';
+            categories.forEach(cat => {
+                const option = document.createElement('option');
+                option.value = cat.id;
+                option.textContent = cat.name;
+                if (cat.id === bill.categoryId) {
+                    option.selected = true;
+                }
+                editBillCategory.appendChild(option);
+            });
+            
+            // 显示模态框
+            document.getElementById('editBillModal').classList.add('show');
+        }
+
+        // 绑定编辑账单表单事件
+        function bindEditBillEvents() {
+            // 更新账单
+            document.getElementById('updateBillBtn').addEventListener('click', function() {
+                const billId = document.getElementById('editBillId').value;
+                const type = document.getElementById('editBillType').value;
+                const categoryId = document.getElementById('editBillCategory').value;
+                const amount = parseFloat(document.getElementById('editBillAmount').value);
+                const date = document.getElementById('editBillDate').value;
+                const note = document.getElementById('editBillNote').value.trim();
+                
+                const today = getTodayDate();
+                
+                if (!categoryId) return showToast('请选择类别');
+                if (isNaN(amount) || amount < 0.01) return showToast('金额必须大于0.01元');
+                if (!date) return showToast('请选择日期');
+                if (date > today) return showToast('不能选择未来日期');
+                
+                const bills = getBills();
+                const billIndex = bills.findIndex(b => b.id === billId);
+                
+                if (billIndex === -1) {
+                    showToast('账单不存在');
+                    return;
+                }
+                
+                // 更新账单信息
+                bills[billIndex] = {
+                    ...bills[billIndex],
+                    type,
+                    categoryId,
+                    amount,
+                    date,
+                    note: note || ''
+                };
+                
+                localStorage.setItem(STORAGE.BILLS, JSON.stringify(bills));
+                
+                // 重新渲染
+                renderBills(document.getElementById('dateFilter').value);
+                renderStats();
+                document.getElementById('editBillModal').classList.remove('show');
+                showToast('账单更新成功');
+            });
+            
+            // 删除账单（编辑模式）
+            document.getElementById('deleteBillBtn').addEventListener('click', function() {
+                const billId = document.getElementById('editBillId').value;
+                
+                if (!confirm('确定删除该账单？')) return;
+                
+                const bills = getBills().filter(b => b.id !== billId);
+                localStorage.setItem(STORAGE.BILLS, JSON.stringify(bills));
+                
+                // 重新渲染
+                renderBills(document.getElementById('dateFilter').value);
+                renderStats();
+                document.getElementById('editBillModal').classList.remove('show');
+                showToast('账单删除成功');
+            });
+            
+            // 取消编辑
+            document.getElementById('cancelEditBill').addEventListener('click', function() {
+                document.getElementById('editBillModal').classList.remove('show');
             });
         }
 
@@ -1312,7 +1601,7 @@
             });
         }
 
-        // 渲染类别预算 - 圆形进度条
+        // 渲染类别预算 - 圆形进度条（添加侧滑删除）
         function renderCategoryBudgets() {
             const budgets = getCategoryBudgets();
             const categories = getCategories();
@@ -1333,28 +1622,34 @@
                 const amount = parseFloat(budget.amount);
                 const remaining = amount - used;
                 const progress = Math.min(100, Math.round((used / amount) * 100));
-                const progressDeg = (progress * 360) / 100;
 
-                const item = document.createElement('div');
-                item.className = 'budget-progress-item';
-                item.innerHTML = `
-                    <div class="budget-progress-circle">
-                        <div class="budget-progress-bg" style="background: conic-gradient(${remaining < 0 ? '#FF3B30' : '#34C759'} 0% ${progress}%, #E5E5EA ${progress}% 100%)">
-                            <div class="budget-progress-overlay">
-                                ${progress}%
+                const wrapper = document.createElement('div');
+                wrapper.className = 'budget-progress-wrapper';
+                wrapper.dataset.categoryId = cat.id;
+                
+                wrapper.innerHTML = `
+                    <div class="budget-progress-item">
+                        <div class="budget-progress-circle">
+                            <div class="budget-progress-bg" style="background: conic-gradient(${remaining < 0 ? '#FF3B30' : '#34C759'} 0% ${progress}%, #E5E5EA ${progress}% 100%)">
+                                <div class="budget-progress-overlay">
+                                    ${progress}%
+                                </div>
+                            </div>
+                        </div>
+                        <div class="budget-info">
+                            <div class="name">${cat.name}</div>
+                            <div class="details">
+                                <span>已用: ¥${used.toFixed(2)}</span>
+                                <span>${remaining < 0 ? '超支: ¥' + Math.abs(remaining).toFixed(2) : '剩余: ¥' + remaining.toFixed(2)}</span>
+                                <span>预算: ¥${amount.toFixed(2)}</span>
                             </div>
                         </div>
                     </div>
-                    <div class="budget-info">
-                        <div class="name">${cat.name}</div>
-                        <div class="details">
-                            <span>已用: ¥${used.toFixed(2)}</span>
-                            <span>${remaining < 0 ? '超支: ¥' + Math.abs(remaining).toFixed(2) : '剩余: ¥' + remaining.toFixed(2)}</span>
-                            <span>预算: ¥${amount.toFixed(2)}</span>
-                        </div>
+                    <div class="budget-delete-action" data-category-id="${cat.id}">
+                        删除
                     </div>
                 `;
-                budgetList.appendChild(item);
+                budgetList.appendChild(wrapper);
             });
         }
 
@@ -1652,6 +1947,10 @@
                     }
                 });
             });
+
+            // 绑定编辑账单相关事件
+            bindBillEditEvents();
+            bindEditBillEvents();
         }
     </script>
 </body>
