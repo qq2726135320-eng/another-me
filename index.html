@@ -54,13 +54,13 @@
             z-index: -1;
         }
 
-        /* 导航栏 - iOS 17毛玻璃效果，延伸到顶部 */
+        /* 导航栏 - 延伸至屏幕最顶部 */
         .navbar {
             display: flex;
             justify-content: space-between;
             align-items: center;
             padding: 16px 20px;
-            padding-top: max(60px, env(safe-area-inset-top));
+            padding-top: max(16px, env(safe-area-inset-top)); /* 调整顶部内边距 */
             position: fixed;
             top: 0;
             left: 0;
@@ -71,7 +71,15 @@
             background: var(--nav-bg);
             border-bottom: 1px solid rgba(0, 0, 0, 0.05);
             box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
-            height: 120px;
+            height: auto; /* 改为自动高度 */
+            min-height: 60px; /* 最小高度 */
+            transform: translateY(0); /* 初始位置 */
+            transition: transform 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94); /* 平滑动画 */
+        }
+
+        /* 隐藏状态 */
+        .navbar.hidden {
+            transform: translateY(-100%); /* 向上滑出屏幕 */
         }
 
         .navbar h1 {
@@ -79,59 +87,66 @@
             font-weight: 700;
             letter-spacing: -0.5px;
             color: var(--text-primary);
-            margin-top: 20px;
+            margin-top: env(safe-area-inset-top); /* 与状态栏保持安全距离 */
+            padding-top: 8px; /* 额外内边距 */
         }
 
         .navbar-actions {
             display: flex;
             gap: 10px;
             align-items: center;
+            margin-top: env(safe-area-inset-top); /* 与状态栏保持安全距离 */
+            padding-top: 8px; /* 额外内边距 */
+        }
+
+        /* 主内容区 - 调整顶部内边距 */
+        .main-content {
+            margin-top: calc(60px + env(safe-area-inset-top) + 20px); /* 增加安全区域高度 */
+            padding-top: 10px;
+            transition: margin-top 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94); /* 平滑动画 */
+        }
+
+        /* 导航栏隐藏时调整主内容 */
+        .navbar.hidden + .main-content {
             margin-top: 20px;
         }
 
-        /* 主内容区 - 添加顶部内边距避免被导航栏遮挡 */
-        .main-content {
-            margin-top: 120px;
-            padding-top: 10px;
-        }
-
-        /* 统计卡片 - 横向滑动组 (缩小比例) */
+        /* 修改后的统计卡片区域 - 关闭横向滑动，三列并排显示 */
         .stats-container {
             padding: 0 20px;
             margin: 20px 0;
-            height: 140px; /* 从160px缩小到140px */
+            height: 140px;
             position: relative;
+            overflow: hidden; /* 关闭横向滑动溢出 */
         }
 
         .stats-scroll {
             display: flex;
-            overflow-x: auto;
-            gap: 12px; /* 从16px缩小到12px */
-            padding: 8px 0; /* 从10px缩小到8px */
-            scroll-snap-type: x mandatory;
-            -webkit-overflow-scrolling: touch;
-            scrollbar-width: none;
-        }
-
-        .stats-scroll::-webkit-scrollbar {
-            display: none;
+            overflow: hidden; /* 关闭横向滑动 */
+            gap: 12px;
+            padding: 8px 0;
+            justify-content: space-between; /* 三列均匀分布 */
+            width: 100%;
         }
 
         .stat-card {
-            flex: 0 0 auto;
-            width: 120px; /* 从140px缩小到120px */
-            height: 105px; /* 从120px缩小到105px */
+            flex: 1; /* 等宽分布 */
+            min-width: 0; /* 防止内容挤压溢出 */
+            max-width: calc((100% - 24px) / 3); /* 三列等宽，减去间距 */
+            width: auto; /* 自动宽度 */
+            height: 105px;
             background: var(--card-bg);
-            border-radius: 18px; /* 从20px缩小到18px */
-            padding: 16px; /* 从20px缩小到16px */
+            border-radius: 18px;
+            padding: 20px 12px; /* 增加内边距 */
             backdrop-filter: blur(var(--blur-intensity));
             -webkit-backdrop-filter: blur(var(--blur-intensity));
             border: 1px solid rgba(0, 0, 0, 0.05);
             box-shadow: var(--shadow-light);
             display: flex;
             flex-direction: column;
-            justify-content: space-between;
-            scroll-snap-align: start;
+            justify-content: center; /* 垂直居中 */
+            align-items: center; /* 水平居中 */
+            text-align: center; /* 文字居中对齐 */
             transition: transform 0.2s ease, box-shadow 0.2s ease;
         }
 
@@ -140,23 +155,36 @@
         }
 
         .stat-card .label {
-            font-size: 12px; /* 从13px缩小到12px */
+            font-size: 12px;
             color: var(--text-secondary);
             font-weight: 500;
+            margin-bottom: 8px; /* 增加标签与数值间距 */
+            width: 100%;
+            text-align: center;
         }
 
         .stat-card .value {
-            font-size: 24px; /* 从28px缩小到24px */
+            font-size: 24px;
             font-weight: 700;
             letter-spacing: -0.5px;
+            width: 100%;
+            text-align: center;
         }
 
-        .stat-card .value.positive {
-            color: var(--success-color);
+        /* 收入、结余设为绿色 */
+        .stat-card .value.positive,
+        #totalBalance.positive {
+            color: var(--success-color) !important;
         }
 
+        /* 支出设为红色 */
         .stat-card .value.negative {
-            color: var(--danger-color);
+            color: var(--danger-color) !important;
+        }
+
+        /* 结余为负数时设为红色 */
+        #totalBalance.negative {
+            color: var(--danger-color) !important;
         }
 
         /* 主卡片样式 */
@@ -289,7 +317,18 @@
             transition: transform 0.3s ease;
         }
 
-        /* 滑动删除 - 改进版，删除图标改为文字按钮 */
+        /* 编辑按钮样式 */
+        .edit-bill {
+            background: var(--primary-color); /* 蓝色背景 */
+            color: white;
+            border: none;
+            min-width: 60px;
+            text-align: center;
+            opacity: 1; /* 默认显示 */
+            transition: opacity 0.3s ease, transform 0.3s ease; /* 平滑过渡动画 */
+        }
+
+        /* 滑动删除 - 改进版，删除按钮为红色背景 */
         .list-item-wrapper {
             position: relative;
             overflow: hidden;
@@ -297,6 +336,13 @@
             margin: 8px 0;
             background: var(--card-bg);
             border: 1px solid rgba(0, 0, 0, 0.05);
+            transition: transform 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94); /* 平滑过渡动画 */
+        }
+
+        /* 侧滑时隐藏编辑按钮 */
+        .list-item-wrapper.swiping .edit-bill {
+            opacity: 0;
+            transform: translateX(10px); /* 轻微右移消失效果 */
         }
 
         .delete-action {
@@ -304,24 +350,29 @@
             right: 0;
             top: 0;
             bottom: 0;
-            background: rgba(255, 59, 48, 0.1);
-            color: var(--danger-color);
+            background: var(--danger-color); /* 红色背景 */
+            color: white; /* 白色文字 */
             display: flex;
             align-items: center;
             justify-content: center;
             padding: 0 20px;
             transform: translateX(100%);
-            transition: transform 0.3s ease;
+            transition: transform 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94); /* 平滑过渡动画 */
             font-weight: 600;
             font-size: 14px;
-            border-left: 1px solid rgba(255, 59, 48, 0.2);
-            min-width: 80px; /* 与编辑按钮保持相似宽度 */
+            border-left: 1px solid rgba(255, 255, 255, 0.3);
+            min-width: 80px;
+            border-radius: 0 12px 12px 0; /* 右侧圆角 */
         }
 
-        /* 编辑按钮样式（用于参考） */
-        .edit-bill, .edit-category {
-            min-width: 60px;
-            text-align: center;
+        /* 侧滑时显示删除按钮 */
+        .list-item-wrapper.swiping .delete-action {
+            transform: translateX(0);
+        }
+
+        /* 侧滑过程中 */
+        .list-item-wrapper.swiping {
+            transform: translateX(-80px); /* 固定侧滑距离 */
         }
 
         /* 按钮样式 - 移除渐变色 */
@@ -611,6 +662,12 @@
             .navbar {
                 padding-left: max(20px, env(safe-area-inset-left));
                 padding-right: max(20px, env(safe-area-inset-right));
+                padding-top: max(16px, env(safe-area-inset-top));
+            }
+            
+            .navbar h1,
+            .navbar-actions {
+                margin-top: env(safe-area-inset-top);
             }
             
             .stats-container, .card {
@@ -618,6 +675,20 @@
                 padding-right: max(20px, env(safe-area-inset-right));
                 margin-left: max(20px, env(safe-area-inset-left));
                 margin-right: max(20px, env(safe-area-inset-left));
+            }
+            
+            /* 调整卡片内数字字号 */
+            .stat-card .value {
+                font-size: 26px; /* 增大字号保证视觉美观 */
+            }
+            
+            .stat-card .label {
+                font-size: 13px;
+            }
+            
+            .stat-card {
+                padding: 22px 14px;
+                height: 110px;
             }
         }
 
@@ -907,6 +978,9 @@
             
             // 初始化滑动删除
             initSwipeDelete();
+            
+            // 初始化导航栏滚动隐藏/显示
+            initNavbarScroll();
         });
 
         // 初始化本地存储
@@ -942,6 +1016,63 @@
         // 获取类别预算
         function getCategoryBudgets() {
             return JSON.parse(localStorage.getItem(STORAGE.CATEGORY_BUDGETS) || '{}');
+        }
+
+        // 导航栏滚动隐藏/显示功能
+        function initNavbarScroll() {
+            const navbar = document.querySelector('.navbar');
+            const mainContent = document.querySelector('.main-content');
+            let lastScrollTop = 0;
+            let isScrolling = false;
+            let scrollTimeout = null;
+            
+            // 初始位置
+            let navbarVisible = true;
+            
+            window.addEventListener('scroll', function() {
+                if (!isScrolling) {
+                    window.requestAnimationFrame(function() {
+                        const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+                        
+                        // 判断滚动方向
+                        if (scrollTop > lastScrollTop && scrollTop > 100) {
+                            // 向下滚动，隐藏导航栏
+                            if (navbarVisible) {
+                                navbar.classList.add('hidden');
+                                navbarVisible = false;
+                            }
+                        } else if (scrollTop < lastScrollTop || scrollTop <= 100) {
+                            // 向上滚动或接近顶部，显示导航栏
+                            if (!navbarVisible) {
+                                navbar.classList.remove('hidden');
+                                navbarVisible = true;
+                            }
+                        }
+                        
+                        lastScrollTop = scrollTop;
+                        isScrolling = false;
+                    });
+                }
+                isScrolling = true;
+                
+                // 清除之前的定时器
+                if (scrollTimeout) {
+                    clearTimeout(scrollTimeout);
+                }
+                
+                // 设置新的定时器，防止快速滚动时频繁触发
+                scrollTimeout = setTimeout(function() {
+                    isScrolling = false;
+                }, 100);
+            });
+            
+            // 点击主内容区域时显示导航栏（如果被隐藏）
+            mainContent.addEventListener('click', function() {
+                if (!navbarVisible) {
+                    navbar.classList.remove('hidden');
+                    navbarVisible = true;
+                }
+            });
         }
 
         // 导出所有数据为JSON文件
@@ -1021,9 +1152,10 @@
             reader.readAsText(file);
         }
 
-        // 初始化滑动删除功能
+        // 初始化滑动删除功能 - 改进版
         function initSwipeDelete() {
             const billList = document.getElementById('billList');
+            let isSwiping = false;
             
             billList.addEventListener('touchstart', function(e) {
                 const listItem = e.target.closest('.list-item-wrapper');
@@ -1032,10 +1164,12 @@
                 touchStartX = e.touches[0].clientX;
                 touchStartY = e.touches[0].clientY;
                 currentSwipeItem = listItem;
+                isSwiping = false;
                 
-                // 重置所有其他项目的滑动状态
+                // 移除其他项目的滑动状态
                 document.querySelectorAll('.list-item-wrapper').forEach(item => {
-                    if (item !== listItem) {
+                    if (item !== listItem && item.classList.contains('swiping')) {
+                        item.classList.remove('swiping');
                         item.style.transform = 'translateX(0)';
                         const deleteBtn = item.querySelector('.delete-action');
                         if (deleteBtn) deleteBtn.style.transform = 'translateX(100%)';
@@ -1052,15 +1186,22 @@
                 const diffX = touchStartX - touchEndX;
                 const diffY = touchStartY - touchEndY;
                 
-                // 只处理水平滑动，且垂直滑动较少
-                if (Math.abs(diffX) > Math.abs(diffY) && diffX > 10) {
+                // 检测到水平滑动
+                if (Math.abs(diffX) > Math.abs(diffY) && diffX > 5) {
+                    isSwiping = true;
                     e.preventDefault();
-                    const translateX = Math.min(diffX, 100); // 最大滑动100px
+                    
+                    // 添加滑动状态类
+                    if (!currentSwipeItem.classList.contains('swiping')) {
+                        currentSwipeItem.classList.add('swiping');
+                    }
+                    
+                    const translateX = Math.min(diffX, 80); // 最大滑动80px
                     currentSwipeItem.style.transform = `translateX(-${translateX}px)`;
                     
                     const deleteBtn = currentSwipeItem.querySelector('.delete-action');
                     if (deleteBtn) {
-                        const deleteTranslate = Math.max(0, translateX - 100);
+                        const deleteTranslate = Math.max(0, translateX - 80);
                         deleteBtn.style.transform = `translateX(${deleteTranslate}px)`;
                     }
                 }
@@ -1071,19 +1212,36 @@
                 
                 const diffX = touchStartX - touchEndX;
                 
-                if (diffX > 60) {
-                    // 滑动超过60px，显示删除按钮
-                    currentSwipeItem.style.transform = 'translateX(-100px)';
-                    const deleteBtn = currentSwipeItem.querySelector('.delete-action');
-                    if (deleteBtn) deleteBtn.style.transform = 'translateX(0)';
-                } else {
-                    // 滑动不足，恢复原状
-                    currentSwipeItem.style.transform = 'translateX(0)';
-                    const deleteBtn = currentSwipeItem.querySelector('.delete-action');
-                    if (deleteBtn) deleteBtn.style.transform = 'translateX(100%)';
+                if (isSwiping) {
+                    if (diffX > 40) {
+                        // 滑动超过40px，保持删除按钮显示状态
+                        currentSwipeItem.classList.add('swiping');
+                        currentSwipeItem.style.transform = 'translateX(-80px)';
+                        const deleteBtn = currentSwipeItem.querySelector('.delete-action');
+                        if (deleteBtn) deleteBtn.style.transform = 'translateX(0)';
+                    } else {
+                        // 滑动不足，恢复原状
+                        currentSwipeItem.classList.remove('swiping');
+                        currentSwipeItem.style.transform = 'translateX(0)';
+                        const deleteBtn = currentSwipeItem.querySelector('.delete-action');
+                        if (deleteBtn) deleteBtn.style.transform = 'translateX(100%)';
+                    }
                 }
                 
                 currentSwipeItem = null;
+                isSwiping = false;
+            });
+            
+            // 点击其他地方取消侧滑
+            document.addEventListener('click', function(e) {
+                if (!e.target.closest('.list-item-wrapper') && !e.target.closest('.delete-action')) {
+                    document.querySelectorAll('.list-item-wrapper.swiping').forEach(item => {
+                        item.classList.remove('swiping');
+                        item.style.transform = 'translateX(0)';
+                        const deleteBtn = item.querySelector('.delete-action');
+                        if (deleteBtn) deleteBtn.style.transform = 'translateX(100%)';
+                    });
+                }
             });
         }
 
