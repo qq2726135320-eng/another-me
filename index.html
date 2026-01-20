@@ -25,84 +25,6 @@
             --shadow-medium: 0 8px 30px rgba(0, 0, 0, 0.12);
         }
 
-        /* 开屏动画容器 - 全屏显示 */
-        #splash-screen {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100vw;
-            height: 100vh;
-            background-color: #000;
-            z-index: 9999;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            transition: opacity 0.5s ease-out, visibility 0.5s ease-out;
-            overflow: hidden;
-        }
-
-        #splash-screen.hidden {
-            opacity: 0;
-            visibility: hidden;
-        }
-
-        /* 全屏视频容器 */
-        #splash-video-container {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            overflow: hidden;
-        }
-
-        /* 全屏视频 */
-        #splash-video {
-            width: 100%;
-            height: 100%;
-            object-fit: cover; /* 确保视频覆盖整个容器 */
-        }
-
-        /* 跳过按钮 */
-        #skip-splash {
-            position: absolute;
-            top: env(safe-area-inset-top, 20px);
-            right: 20px;
-            background: rgba(0, 0, 0, 0.5);
-            backdrop-filter: blur(10px);
-            -webkit-backdrop-filter: blur(10px);
-            color: white;
-            border: 1px solid rgba(255, 255, 255, 0.3);
-            border-radius: 20px;
-            padding: 8px 16px;
-            font-size: 14px;
-            font-weight: 500;
-            z-index: 10000;
-            cursor: pointer;
-            transition: all 0.3s ease;
-        }
-
-        #skip-splash:hover {
-            background: rgba(0, 0, 0, 0.7);
-        }
-
-        #skip-splash:active {
-            transform: scale(0.95);
-        }
-
-        /* 主应用内容 */
-        #app-content {
-            opacity: 0;
-            transition: opacity 0.3s ease-in;
-        }
-
-        #app-content.loaded {
-            opacity: 1;
-        }
-
         * {
             margin: 0;
             padding: 0;
@@ -803,12 +725,6 @@
                 padding: 14px 10px;
                 height: 100px;
             }
-            
-            /* 开屏动画适配 */
-            #skip-splash {
-                top: calc(env(safe-area-inset-top, 20px) + 10px);
-                right: max(20px, env(safe-area-inset-right));
-            }
         }
 
         /* 针对小屏幕手机的额外调整 */
@@ -825,12 +741,6 @@
             
             .stat-card .label {
                 font-size: 11px;
-            }
-            
-            /* 开屏动画适配 */
-            #skip-splash {
-                padding: 6px 12px;
-                font-size: 12px;
             }
         }
 
@@ -861,1254 +771,231 @@
             to { opacity: 1; transform: translateY(0); }
         }
     </style>
-    <!-- PWA 基本设置 -->
-    <link rel="manifest" href="site.webmanifest">
-    <link rel="apple-touch-icon" href="apple-touch-icon.png">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="theme-color" content="#007AFF">
+<!-- PWA 基本设置 -->
+<link rel="manifest" href="site.webmanifest">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#007AFF">
 </head>
 <body>
-    <!-- 开屏动画容器 -->
-    <div id="splash-screen">
-        <!-- 全屏视频容器 -->
-        <div id="splash-video-container">
-            <video id="splash-video" autoplay muted playsinline>
-                <source src="splash.mp4" type="video/mp4">
-                您的浏览器不支持视频标签。
-            </video>
+    <!-- 导航栏 -->
+    <div class="navbar">
+        <h1>账单管理</h1>
+        <div class="navbar-actions">
+            <button id="importBtn" class="btn-import btn-small">导入</button>
+            <button id="exportBtn" class="btn-export btn-small">导出</button>
+            <button id="categoryBtn" class="btn-small">分类</button>
         </div>
-        <!-- 跳过按钮 -->
-        <button id="skip-splash">跳过</button>
     </div>
 
-    <!-- 主应用内容容器 -->
-    <div id="app-content">
-        <!-- 导航栏 -->
-        <div class="navbar">
-            <h1>账单管理</h1>
-            <div class="navbar-actions">
-                <button id="importBtn" class="btn-import btn-small">导入</button>
-                <button id="exportBtn" class="btn-export btn-small">导出</button>
-                <button id="categoryBtn" class="btn-small">分类</button>
+    <!-- 主内容区 -->
+    <div class="main-content">
+        <!-- 隐藏的文件输入框用于导入 -->
+        <input type="file" id="importFileInput" class="hidden-file-input" accept=".json">
+
+        <!-- 统计卡片 - 横向滑动组 (已缩小) -->
+        <div class="stats-container">
+            <div class="stats-scroll" id="statsScroll">
+                <div class="stat-card">
+                    <div class="label">总收入</div>
+                    <div class="value positive" id="totalIncome">0.00</div>
+                </div>
+                <div class="stat-card">
+                    <div class="label">总支出</div>
+                    <div class="value negative" id="totalExpense">0.00</div>
+                </div>
+                <div class="stat-card">
+                    <div class="label">结余</div>
+                    <div class="value" id="totalBalance">0.00</div>
+                </div>
             </div>
         </div>
 
-        <!-- 主内容区 -->
-        <div class="main-content">
-            <!-- 隐藏的文件输入框用于导入 -->
-            <input type="file" id="importFileInput" class="hidden-file-input" accept=".json">
-
-            <!-- 统计卡片 - 横向滑动组 (已缩小) -->
-            <div class="stats-container">
-                <div class="stats-scroll" id="statsScroll">
-                    <div class="stat-card">
-                        <div class="label">总收入</div>
-                        <div class="value positive" id="totalIncome">0.00</div>
-                    </div>
-                    <div class="stat-card">
-                        <div class="label">总支出</div>
-                        <div class="value negative" id="totalExpense">0.00</div>
-                    </div>
-                    <div class="stat-card">
-                        <div class="label">结余</div>
-                        <div class="value" id="totalBalance">0.00</div>
-                    </div>
-                </div>
+        <!-- 类别预算卡片 -->
+        <div class="card">
+            <h2>
+                预算管理
+                <button class="btn-small" id="editBudgetBtn">设置预算</button>
+            </h2>
+            <div id="budgetList" class="budget-progress-container">
+                <div class="empty">暂无分类预算数据</div>
             </div>
-
-            <!-- 类别预算卡片 -->
-            <div class="card">
-                <h2>
-                    预算管理
-                    <button class="btn-small" id="editBudgetBtn">设置预算</button>
-                </h2>
-                <div id="budgetList" class="budget-progress-container">
-                    <div class="empty">暂无分类预算数据</div>
-                </div>
-            </div>
-
-            <!-- 日期筛选 + 账单列表 -->
-            <div class="card">
-                <h2>
-                    近期账单
-                    <div class="filter-section">
-                        <input type="date" id="dateFilter">
-                        <button class="btn-small" id="toggleBillListBtn">折叠</button>
-                    </div>
-                </h2>
-                <div id="billList" class="list">
-                    <div class="empty">
-                        <i>📋</i>
-                        <div>暂无账单数据</div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- 类别管理卡片（点击导航栏按钮显示/隐藏） -->
-            <div class="card" id="categoryCard" style="display: none;">
-                <h2>
-                    分类管理
-                    <button class="btn-small" id="addCategoryBtn">新增分类</button>
-                </h2>
-                <div id="categoryList" class="list">
-                    <div class="empty">暂无分类数据</div>
-                </div>
-            </div>
-
-            <!-- 添加账单模态框 -->
-            <div class="modal" id="addBillModal">
-                <div class="modal-content">
-                    <h3>添加账单</h3>
-                    <div class="form-group">
-                        <label>类型</label>
-                        <select id="billType">
-                            <option value="expense">支出</option>
-                            <option value="income">收入</option>
-                        </select>
-                    </div>
-                    <div class="form-group">
-                        <label>分类</label>
-                        <select id="billCategory">
-                            <!-- 动态填充 -->
-                        </select>
-                    </div>
-                    <div class="form-group">
-                        <label>金额（元）</label>
-                        <input type="number" id="billAmount" step="0.01" min="0.01" placeholder="输入金额">
-                    </div>
-                    <div class="form-group">
-                        <label>日期</label>
-                        <input type="date" id="billDate" max="">
-                    </div>
-                    <div class="form-group">
-                        <label>备注</label>
-                        <input type="text" id="billNote" maxlength="50" placeholder="输入备注信息（最多50字）">
-                    </div>
-                    <div class="modal-actions">
-                        <button class="btn-cancel" id="cancelAddBill">取消</button>
-                        <button id="saveBillBtn">保存</button>
-                    </div>
-                </div>
-            </div>
-
-            <!-- 编辑账单模态框 -->
-            <div class="modal" id="editBillModal">
-                <div class="modal-content">
-                    <h3>编辑账单</h3>
-                    <input type="hidden" id="editBillId">
-                    <div class="form-group">
-                        <label>类型</label>
-                        <select id="editBillType">
-                            <option value="expense">支出</option>
-                            <option value="income">收入</option>
-                        </select>
-                    </div>
-                    <div class="form-group">
-                        <label>分类</label>
-                        <select id="editBillCategory">
-                            <!-- 动态填充 -->
-                        </select>
-                    </div>
-                    <div class="form-group">
-                        <label>金额（元）</label>
-                        <input type="number" id="editBillAmount" step="0.01" min="0.01" placeholder="输入金额">
-                    </div>
-                    <div class="form-group">
-                        <label>日期</label>
-                        <input type="date" id="editBillDate" max="">
-                    </div>
-                    <div class="form-group">
-                        <label>备注</label>
-                        <input type="text" id="editBillNote" maxlength="50" placeholder="输入备注信息（最多50字）">
-                    </div>
-                    <div class="modal-actions">
-                        <button class="btn-cancel" id="deleteBillBtn">删除</button>
-                        <button class="btn-cancel" id="cancelEditBill">取消</button>
-                        <button id="updateBillBtn">保存</button>
-                    </div>
-                </div>
-            </div>
-
-            <!-- 新增类别模态框 -->
-            <div class="modal" id="addCategoryModal">
-                <div class="modal-content">
-                    <h3>新增分类</h3>
-                    <div class="form-group">
-                        <label>分类名称</label>
-                        <input type="text" id="newCategoryName" maxlength="10" placeholder="输入类别名称">
-                    </div>
-                    <div class="modal-actions">
-                        <button class="btn-cancel" id="cancelAddCategory">取消</button>
-                        <button id="saveCategoryBtn">保存</button>
-                    </div>
-                </div>
-            </div>
-
-            <!-- 设置类别预算模态框 -->
-            <div class="modal" id="setBudgetModal">
-                <div class="modal-content">
-                    <h3>设置分类预算</h3>
-                    <div class="form-group">
-                        <label>选择分类</label>
-                        <select id="budgetCategorySelect">
-                            <!-- 动态填充 -->
-                        </select>
-                    </div>
-                    <div class="form-group">
-                        <label>预算金额（元）</label>
-                        <input type="number" id="budgetAmountInput" step="0.01" min="0.01" placeholder="输入预算金额">
-                    </div>
-                    <div class="modal-actions">
-                        <button class="btn-cancel" id="cancelSetBudget">取消</button>
-                        <button id="saveBudgetBtn">保存</button>
-                    </div>
-                </div>
-            </div>
-
-            <!-- 提示框 -->
-            <div class="toast" id="toast"></div>
-
-            <!-- 底部添加按钮 (十字架已改为黑色加粗) -->
-            <button class="add-btn" id="addBillBtn">+</button>
         </div>
+
+        <!-- 日期筛选 + 账单列表 -->
+        <div class="card">
+            <h2>
+                近期账单
+                <div class="filter-section">
+                    <input type="date" id="dateFilter">
+                    <button class="btn-small" id="toggleBillListBtn">折叠</button>
+                </div>
+            </h2>
+            <div id="billList" class="list">
+                <div class="empty">
+                    <i>📋</i>
+                    <div>暂无账单数据</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 类别管理卡片（点击导航栏按钮显示/隐藏） -->
+        <div class="card" id="categoryCard" style="display: none;">
+            <h2>
+                分类管理
+                <button class="btn-small" id="addCategoryBtn">新增分类</button>
+            </h2>
+            <div id="categoryList" class="list">
+                <div class="empty">暂无分类数据</div>
+            </div>
+        </div>
+
+        <!-- 添加账单模态框 -->
+        <div class="modal" id="addBillModal">
+            <div class="modal-content">
+                <h3>添加账单</h3>
+                <div class="form-group">
+                    <label>类型</label>
+                    <select id="billType">
+                        <option value="expense">支出</option>
+                        <option value="income">收入</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>分类</label>
+                    <select id="billCategory">
+                        <!-- 动态填充 -->
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>金额（元）</label>
+                    <input type="number" id="billAmount" step="0.01" min="0.01" placeholder="输入金额">
+                </div>
+                <div class="form-group">
+                    <label>日期</label>
+                    <input type="date" id="billDate" max="">
+                </div>
+                <div class="form-group">
+                    <label>备注</label>
+                    <input type="text" id="billNote" maxlength="50" placeholder="输入备注信息（最多50字）">
+                </div>
+                <div class="modal-actions">
+                    <button class="btn-cancel" id="cancelAddBill">取消</button>
+                    <button id="saveBillBtn">保存</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 编辑账单模态框 -->
+        <div class="modal" id="editBillModal">
+            <div class="modal-content">
+                <h3>编辑账单</h3>
+                <input type="hidden" id="editBillId">
+                <div class="form-group">
+                    <label>类型</label>
+                    <select id="editBillType">
+                        <option value="expense">支出</option>
+                        <option value="income">收入</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>分类</label>
+                    <select id="editBillCategory">
+                        <!-- 动态填充 -->
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>金额（元）</label>
+                    <input type="number" id="editBillAmount" step="0.01" min="0.01" placeholder="输入金额">
+                </div>
+                <div class="form-group">
+                    <label>日期</label>
+                    <input type="date" id="editBillDate" max="">
+                </div>
+                <div class="form-group">
+                    <label>备注</label>
+                    <input type="text" id="editBillNote" maxlength="50" placeholder="输入备注信息（最多50字）">
+                </div>
+                <div class="modal-actions">
+                    <button class="btn-cancel" id="deleteBillBtn">删除</button>
+                    <button class="btn-cancel" id="cancelEditBill">取消</button>
+                    <button id="updateBillBtn">保存</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 新增类别模态框 -->
+        <div class="modal" id="addCategoryModal">
+            <div class="modal-content">
+                <h3>新增分类</h3>
+                <div class="form-group">
+                    <label>分类名称</label>
+                    <input type="text" id="newCategoryName" maxlength="10" placeholder="输入类别名称">
+                </div>
+                <div class="modal-actions">
+                    <button class="btn-cancel" id="cancelAddCategory">取消</button>
+                    <button id="saveCategoryBtn">保存</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 设置类别预算模态框 -->
+        <div class="modal" id="setBudgetModal">
+            <div class="modal-content">
+                <h3>设置分类预算</h3>
+                <div class="form-group">
+                    <label>选择分类</label>
+                    <select id="budgetCategorySelect">
+                        <!-- 动态填充 -->
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>预算金额（元）</label>
+                    <input type="number" id="budgetAmountInput" step="0.01" min="0.01" placeholder="输入预算金额">
+                </div>
+                <div class="modal-actions">
+                    <button class="btn-cancel" id="cancelSetBudget">取消</button>
+                    <button id="saveBudgetBtn">保存</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 提示框 -->
+        <div class="toast" id="toast"></div>
+
+        <!-- 底部添加按钮 (十字架已改为黑色加粗) -->
+        <button class="add-btn" id="addBillBtn">+</button>
     </div>
 
     <script>
-        // 开屏动画控制
+        // 存储键名
+        const STORAGE = {
+            BILLS: 'bills',
+            CATEGORIES: 'categories',
+            CATEGORY_BUDGETS: 'categoryBudgets'
+        };
+
+        // 滑动删除相关变量
+        let touchStartX = 0;
+        let touchStartY = 0;
+        let touchEndX = 0;
+        let touchEndY = 0;
+        let currentSwipeItem = null;
+
+        // 获取今天日期字符串（格式：YYYY-MM-DD）
+        function getTodayDate() {
+            const now = new Date();
+            const year = now.getFullYear();
+            const month = String(now.getMonth() + 1).padStart(2, '0');
+            const day = String(now.getDate()).padStart(2, '0');
+            return `${year}-${month}-${day}`;
+        }
+
+        // 初始化页面
         document.addEventListener('DOMContentLoaded', function() {
-            const splashScreen = document.getElementById('splash-screen');
-            const appContent = document.getElementById('app-content');
-            const splashVideo = document.getElementById('splash-video');
-            const skipButton = document.getElementById('skip-splash');
-            
-            // 显示开屏动画
-            splashScreen.classList.remove('hidden');
-            appContent.classList.remove('loaded');
-            
-            // 设置视频全屏显示
-            splashVideo.style.width = '100%';
-            splashVideo.style.height = '100%';
-            splashVideo.style.objectFit = 'cover';
-            
-            // 监听视频结束事件
-            splashVideo.addEventListener('ended', function() {
-                hideSplashScreen();
-            });
-            
-            // 跳过按钮点击事件
-            skipButton.addEventListener('click', function() {
-                hideSplashScreen();
-            });
-            
-            // 点击屏幕任意位置跳过
-            splashScreen.addEventListener('click', function(e) {
-                // 确保不是点击跳过按钮（跳过按钮有单独处理）
-                if (e.target !== skipButton && !skipButton.contains(e.target)) {
-                    hideSplashScreen();
-                }
-            });
-            
-            // 如果视频加载失败或无法播放，3秒后自动隐藏
-            let fallbackTimer = setTimeout(function() {
-                if (!splashScreen.classList.contains('hidden')) {
-                    console.log('视频加载超时，自动跳过开屏');
-                    hideSplashScreen();
-                }
-            }, 3000);
-            
-            // 视频加载成功时清除超时计时器
-            splashVideo.addEventListener('loadeddata', function() {
-                clearTimeout(fallbackTimer);
-                console.log('开屏视频加载成功');
-            });
-            
-            // 视频播放错误处理
-            splashVideo.addEventListener('error', function() {
-                clearTimeout(fallbackTimer);
-                console.log('开屏视频加载失败，立即跳过');
-                hideSplashScreen();
-            });
-            
-            function hideSplashScreen() {
-                clearTimeout(fallbackTimer);
-                splashScreen.classList.add('hidden');
-                setTimeout(function() {
-                    appContent.classList.add('loaded');
-                    // 初始化应用
-                    initApp();
-                }, 300);
-            }
-            
-            // 监听视频准备状态
-            splashVideo.addEventListener('canplay', function() {
-                console.log('视频可以播放了');
-                // 确保视频播放
-                splashVideo.play().catch(function(e) {
-                    console.log('自动播放失败:', e);
-                    // 如果自动播放失败，显示播放按钮
-                    splashVideo.controls = true;
-                });
-            });
-        });
-        
-        // 应用初始化函数
-        function initApp() {
-            // 存储键名
-            const STORAGE = {
-                BILLS: 'bills',
-                CATEGORIES: 'categories',
-                CATEGORY_BUDGETS: 'categoryBudgets'
-            };
-
-            // 滑动删除相关变量
-            let touchStartX = 0;
-            let touchStartY = 0;
-            let touchEndX = 0;
-            let touchEndY = 0;
-            let currentSwipeItem = null;
-
-            // 获取今天日期字符串（格式：YYYY-MM-DD）
-            function getTodayDate() {
-                const now = new Date();
-                const year = now.getFullYear();
-                const month = String(now.getMonth() + 1).padStart(2, '0');
-                const day = String(now.getDate()).padStart(2, '0');
-                return `${year}-${month}-${day}`;
-            }
-
             // 初始化本地存储
-            function initStorage() {
-                if (!localStorage.getItem(STORAGE.BILLS)) localStorage.setItem(STORAGE.BILLS, '[]');
-                if (!localStorage.getItem(STORAGE.CATEGORIES)) localStorage.setItem(STORAGE.CATEGORIES, '[]');
-                if (!localStorage.getItem(STORAGE.CATEGORY_BUDGETS)) localStorage.setItem(STORAGE.CATEGORY_BUDGETS, '{}');
-            }
-
-            // 生成唯一ID
-            function generateId() {
-                return Date.now().toString(36) + Math.random().toString(36).substr(2, 8);
-            }
-
-            // 显示提示框
-            function showToast(msg) {
-                const toast = document.getElementById('toast');
-                toast.textContent = msg;
-                toast.classList.add('show');
-                setTimeout(() => toast.classList.remove('show'), 2000);
-            }
-
-            // 获取所有类别
-            function getCategories() {
-                return JSON.parse(localStorage.getItem(STORAGE.CATEGORIES) || '[]');
-            }
-
-            // 获取所有账单
-            function getBills() {
-                return JSON.parse(localStorage.getItem(STORAGE.BILLS) || '[]');
-            }
-
-            // 获取类别预算
-            function getCategoryBudgets() {
-                return JSON.parse(localStorage.getItem(STORAGE.CATEGORY_BUDGETS) || '{}');
-            }
-
-            // 导航栏滚动隐藏/显示功能
-            function initNavbarScroll() {
-                const navbar = document.querySelector('.navbar');
-                const mainContent = document.querySelector('.main-content');
-                let lastScrollTop = 0;
-                let isScrolling = false;
-                let scrollTimeout = null;
-                
-                // 初始位置
-                let navbarVisible = true;
-                
-                window.addEventListener('scroll', function() {
-                    if (!isScrolling) {
-                        window.requestAnimationFrame(function() {
-                            const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
-                            
-                            // 判断滚动方向
-                            if (scrollTop > lastScrollTop && scrollTop > 100) {
-                                // 向下滚动，隐藏导航栏
-                                if (navbarVisible) {
-                                    navbar.classList.add('hidden');
-                                    navbarVisible = false;
-                                }
-                            } else if (scrollTop < lastScrollTop || scrollTop <= 100) {
-                                // 向上滚动或接近顶部，显示导航栏
-                                if (!navbarVisible) {
-                                    navbar.classList.remove('hidden');
-                                    navbarVisible = true;
-                                }
-                            }
-                            
-                            lastScrollTop = scrollTop;
-                            isScrolling = false;
-                        });
-                    }
-                    isScrolling = true;
-                    
-                    // 清除之前的定时器
-                    if (scrollTimeout) {
-                        clearTimeout(scrollTimeout);
-                    }
-                    
-                    // 设置新的定时器，防止快速滚动时频繁触发
-                    scrollTimeout = setTimeout(function() {
-                        isScrolling = false;
-                    }, 100);
-                });
-                
-                // 点击主内容区域时显示导航栏（如果被隐藏）
-                mainContent.addEventListener('click', function() {
-                    if (!navbarVisible) {
-                        navbar.classList.remove('hidden');
-                        navbarVisible = true;
-                    }
-                });
-            }
-
-            // 初始化预算侧滑删除功能
-            function initBudgetSwipeDelete() {
-                const budgetList = document.getElementById('budgetList');
-                if (!budgetList) return;
-                
-                let touchStartX = 0;
-                let touchEndX = 0;
-                let currentSwipeItem = null;
-                let isSwiping = false;
-                
-                budgetList.addEventListener('touchstart', function(e) {
-                    const listItem = e.target.closest('.budget-progress-wrapper');
-                    if (!listItem) return;
-                    
-                    touchStartX = e.touches[0].clientX;
-                    currentSwipeItem = listItem;
-                    isSwiping = false;
-                    
-                    // 移除其他项目的滑动状态
-                    document.querySelectorAll('.budget-progress-wrapper').forEach(item => {
-                        if (item !== listItem && item.classList.contains('swiping')) {
-                            item.classList.remove('swiping');
-                            item.style.transform = 'translateX(0)';
-                            const deleteBtn = item.querySelector('.budget-delete-action');
-                            if (deleteBtn) deleteBtn.style.transform = 'translateX(100%)';
-                        }
-                    });
-                }, { passive: true });
-                
-                budgetList.addEventListener('touchmove', function(e) {
-                    if (!currentSwipeItem) return;
-                    
-                    touchEndX = e.touches[0].clientX;
-                    const diffX = touchStartX - touchEndX;
-                    
-                    // 检测到水平滑动
-                    if (Math.abs(diffX) > 5) {
-                        isSwiping = true;
-                        e.preventDefault();
-                        
-                        // 添加滑动状态类
-                        if (!currentSwipeItem.classList.contains('swiping')) {
-                            currentSwipeItem.classList.add('swiping');
-                        }
-                        
-                        const translateX = Math.min(diffX, 80);
-                        currentSwipeItem.style.transform = `translateX(-${translateX}px)`;
-                        
-                        const deleteBtn = currentSwipeItem.querySelector('.budget-delete-action');
-                        if (deleteBtn) {
-                            const deleteTranslate = Math.max(0, translateX - 80);
-                            deleteBtn.style.transform = `translateX(${deleteTranslate}px)`;
-                        }
-                    }
-                }, { passive: false });
-                
-                budgetList.addEventListener('touchend', function() {
-                    if (!currentSwipeItem) return;
-                    
-                    const diffX = touchStartX - touchEndX;
-                    
-                    if (isSwiping) {
-                        if (diffX > 40) {
-                            // 滑动超过40px，保持删除按钮显示状态
-                            currentSwipeItem.classList.add('swiping');
-                            currentSwipeItem.style.transform = 'translateX(-80px)';
-                            const deleteBtn = currentSwipeItem.querySelector('.budget-delete-action');
-                            if (deleteBtn) deleteBtn.style.transform = 'translateX(0)';
-                        } else {
-                            // 滑动不足，恢复原状
-                            currentSwipeItem.classList.remove('swiping');
-                            currentSwipeItem.style.transform = 'translateX(0)';
-                            const deleteBtn = currentSwipeItem.querySelector('.budget-delete-action');
-                            if (deleteBtn) deleteBtn.style.transform = 'translateX(100%)';
-                        }
-                    }
-                    
-                    currentSwipeItem = null;
-                    isSwiping = false;
-                });
-                
-                // 绑定删除按钮事件
-                budgetList.addEventListener('click', function(e) {
-                    if (e.target.classList.contains('budget-delete-action')) {
-                        e.stopPropagation();
-                        const categoryId = e.target.dataset.categoryId;
-                        
-                        if (!confirm('确定删除该预算项吗？')) return;
-                        
-                        // 删除预算
-                        const budgets = getCategoryBudgets();
-                        if (budgets[categoryId]) {
-                            delete budgets[categoryId];
-                            localStorage.setItem(STORAGE.CATEGORY_BUDGETS, JSON.stringify(budgets));
-                            
-                            // 重新渲染预算列表
-                            renderCategoryBudgets();
-                            showToast('预算删除成功');
-                        }
-                    }
-                });
-                
-                // 点击其他地方取消侧滑
-                document.addEventListener('click', function(e) {
-                    if (!e.target.closest('.budget-progress-wrapper') && !e.target.closest('.budget-delete-action')) {
-                        document.querySelectorAll('.budget-progress-wrapper.swiping').forEach(item => {
-                            item.classList.remove('swiping');
-                            item.style.transform = 'translateX(0)';
-                            const deleteBtn = item.querySelector('.budget-delete-action');
-                            if (deleteBtn) deleteBtn.style.transform = 'translateX(100%)';
-                        });
-                    }
-                });
-            }
-
-            // 导出所有数据为JSON文件
-            function exportData() {
-                const data = {
-                    bills: getBills(),
-                    categories: getCategories(),
-                    categoryBudgets: getCategoryBudgets(),
-                    exportDate: new Date().toISOString(),
-                    version: '1.0'
-                };
-
-                const dataStr = JSON.stringify(data, null, 2);
-                const dataBlob = new Blob([dataStr], { type: 'application/json' });
-                
-                // 创建下载链接
-                const url = URL.createObjectURL(dataBlob);
-                const link = document.createElement('a');
-                link.href = url;
-                link.download = `账单数据_${new Date().toISOString().split('T')[0]}.json`;
-                
-                // 触发下载
-                document.body.appendChild(link);
-                link.click();
-                document.body.removeChild(link);
-                URL.revokeObjectURL(url);
-                
-                showToast('数据导出成功');
-            }
-
-            // 导入数据
-            function importData() {
-                const fileInput = document.getElementById('importFileInput');
-                fileInput.click();
-            }
-
-            // 处理导入的文件
-            function handleImportFile(event) {
-                const file = event.target.files[0];
-                if (!file) return;
-
-                const reader = new FileReader();
-                reader.onload = function(e) {
-                    try {
-                        const importedData = JSON.parse(e.target.result);
-                        
-                        // 验证导入的数据格式
-                        if (!importedData.bills || !importedData.categories || !importedData.categoryBudgets) {
-                            showToast('导入失败：文件格式不正确');
-                            return;
-                        }
-
-                        // 确认是否覆盖现有数据
-                        if (confirm('导入数据将覆盖现有数据，确定要继续吗？')) {
-                            // 保存导入的数据
-                            localStorage.setItem(STORAGE.BILLS, JSON.stringify(importedData.bills));
-                            localStorage.setItem(STORAGE.CATEGORIES, JSON.stringify(importedData.categories));
-                            localStorage.setItem(STORAGE.CATEGORY_BUDGETS, JSON.stringify(importedData.categoryBudgets));
-                            
-                            // 重新渲染所有数据
-                            renderCategories();
-                            renderCategoryBudgets();
-                            renderBills();
-                            renderStats();
-                            
-                            showToast('数据导入成功');
-                        }
-                    } catch (error) {
-                        console.error('导入失败:', error);
-                        showToast('导入失败：文件解析错误');
-                    }
-                    
-                    // 清空文件输入框，允许重复导入相同文件
-                    event.target.value = '';
-                };
-                
-                reader.readAsText(file);
-            }
-
-            // 初始化滑动删除功能 - 改进版
-            function initSwipeDelete() {
-                const billList = document.getElementById('billList');
-                let isSwiping = false;
-                
-                billList.addEventListener('touchstart', function(e) {
-                    const listItem = e.target.closest('.list-item-wrapper');
-                    if (!listItem) return;
-                    
-                    touchStartX = e.touches[0].clientX;
-                    touchStartY = e.touches[0].clientY;
-                    currentSwipeItem = listItem;
-                    isSwiping = false;
-                    
-                    // 移除其他项目的滑动状态
-                    document.querySelectorAll('.list-item-wrapper').forEach(item => {
-                        if (item !== listItem && item.classList.contains('swiping')) {
-                            item.classList.remove('swiping');
-                            item.style.transform = 'translateX(0)';
-                            const deleteBtn = item.querySelector('.delete-action');
-                            if (deleteBtn) deleteBtn.style.transform = 'translateX(100%)';
-                        }
-                    });
-                }, { passive: true });
-                
-                billList.addEventListener('touchmove', function(e) {
-                    if (!currentSwipeItem) return;
-                    
-                    touchEndX = e.touches[0].clientX;
-                    touchEndY = e.touches[0].clientY;
-                    
-                    const diffX = touchStartX - touchEndX;
-                    const diffY = touchStartY - touchEndY;
-                    
-                    // 检测到水平滑动
-                    if (Math.abs(diffX) > Math.abs(diffY) && diffX > 5) {
-                        isSwiping = true;
-                        e.preventDefault();
-                        
-                        // 添加滑动状态类
-                        if (!currentSwipeItem.classList.contains('swiping')) {
-                            currentSwipeItem.classList.add('swiping');
-                        }
-                        
-                        const translateX = Math.min(diffX, 80); // 最大滑动80px
-                        currentSwipeItem.style.transform = `translateX(-${translateX}px)`;
-                        
-                        const deleteBtn = currentSwipeItem.querySelector('.delete-action');
-                        if (deleteBtn) {
-                            const deleteTranslate = Math.max(0, translateX - 80);
-                            deleteBtn.style.transform = `translateX(${deleteTranslate}px)`;
-                        }
-                    }
-                }, { passive: false });
-                
-                billList.addEventListener('touchend', function() {
-                    if (!currentSwipeItem) return;
-                    
-                    const diffX = touchStartX - touchEndX;
-                    
-                    if (isSwiping) {
-                        if (diffX > 40) {
-                            // 滑动超过40px，保持删除按钮显示状态，隐藏编辑按钮
-                            currentSwipeItem.classList.add('swiping');
-                            currentSwipeItem.style.transform = 'translateX(-80px)';
-                            const deleteBtn = currentSwipeItem.querySelector('.delete-action');
-                            if (deleteBtn) deleteBtn.style.transform = 'translateX(0)';
-                            
-                            // 隐藏编辑按钮
-                            const editBtn = currentSwipeItem.querySelector('.edit-bill');
-                            if (editBtn) {
-                                editBtn.style.opacity = '0';
-                                editBtn.style.transform = 'translateX(10px)';
-                            }
-                        } else {
-                            // 滑动不足，恢复原状，显示编辑按钮
-                            currentSwipeItem.classList.remove('swiping');
-                            currentSwipeItem.style.transform = 'translateX(0)';
-                            const deleteBtn = currentSwipeItem.querySelector('.delete-action');
-                            if (deleteBtn) deleteBtn.style.transform = 'translateX(100%)';
-                            
-                            // 显示编辑按钮
-                            const editBtn = currentSwipeItem.querySelector('.edit-bill');
-                            if (editBtn) {
-                                editBtn.style.opacity = '1';
-                                editBtn.style.transform = 'translateX(0)';
-                            }
-                        }
-                    }
-                    
-                    currentSwipeItem = null;
-                    isSwiping = false;
-                });
-                
-                // 点击其他地方取消侧滑
-                document.addEventListener('click', function(e) {
-                    if (!e.target.closest('.list-item-wrapper') && !e.target.closest('.delete-action')) {
-                        document.querySelectorAll('.list-item-wrapper.swiping').forEach(item => {
-                            item.classList.remove('swiping');
-                            item.style.transform = 'translateX(0)';
-                            const deleteBtn = item.querySelector('.delete-action');
-                            if (deleteBtn) deleteBtn.style.transform = 'translateX(100%)';
-                            // 恢复编辑按钮显示
-                            const editBtn = item.querySelector('.edit-bill');
-                            if (editBtn) {
-                                editBtn.style.opacity = '1';
-                                editBtn.style.transform = 'translateX(0)';
-                            }
-                        });
-                    }
-                });
-            }
-
-            // 修复编辑按钮事件绑定问题
-            function bindBillEditEvents() {
-                // 使用事件委托绑定编辑按钮事件
-                document.getElementById('billList').addEventListener('click', function(e) {
-                    if (e.target.classList.contains('edit-bill')) {
-                        const billId = e.target.dataset.id;
-                        openEditBillModal(billId);
-                    }
-                });
-            }
-
-            // 打开编辑账单模态框
-            function openEditBillModal(billId) {
-                const bills = getBills();
-                const categories = getCategories();
-                const bill = bills.find(b => b.id === billId);
-                
-                if (!bill) {
-                    showToast('未找到该账单');
-                    return;
-                }
-                
-                // 填充表单数据
-                document.getElementById('editBillId').value = bill.id;
-                document.getElementById('editBillType').value = bill.type;
-                document.getElementById('editBillAmount').value = bill.amount;
-                document.getElementById('editBillDate').value = bill.date;
-                document.getElementById('editBillNote').value = bill.note || '';
-                
-                // 填充分类下拉框
-                const editBillCategory = document.getElementById('editBillCategory');
-                editBillCategory.innerHTML = '';
-                categories.forEach(cat => {
-                    const option = document.createElement('option');
-                    option.value = cat.id;
-                    option.textContent = cat.name;
-                    if (cat.id === bill.categoryId) {
-                        option.selected = true;
-                    }
-                    editBillCategory.appendChild(option);
-                });
-                
-                // 显示模态框
-                document.getElementById('editBillModal').classList.add('show');
-            }
-
-            // 绑定编辑账单表单事件
-            function bindEditBillEvents() {
-                // 更新账单
-                document.getElementById('updateBillBtn').addEventListener('click', function() {
-                    const billId = document.getElementById('editBillId').value;
-                    const type = document.getElementById('editBillType').value;
-                    const categoryId = document.getElementById('editBillCategory').value;
-                    const amount = parseFloat(document.getElementById('editBillAmount').value);
-                    const date = document.getElementById('editBillDate').value;
-                    const note = document.getElementById('editBillNote').value.trim();
-                    
-                    const today = getTodayDate();
-                    
-                    if (!categoryId) return showToast('请选择类别');
-                    if (isNaN(amount) || amount < 0.01) return showToast('金额必须大于0.01元');
-                    if (!date) return showToast('请选择日期');
-                    if (date > today) return showToast('不能选择未来日期');
-                    
-                    const bills = getBills();
-                    const billIndex = bills.findIndex(b => b.id === billId);
-                    
-                    if (billIndex === -1) {
-                        showToast('账单不存在');
-                        return;
-                    }
-                    
-                    // 更新账单信息
-                    bills[billIndex] = {
-                        ...bills[billIndex],
-                        type,
-                        categoryId,
-                        amount,
-                        date,
-                        note: note || ''
-                    };
-                    
-                    localStorage.setItem(STORAGE.BILLS, JSON.stringify(bills));
-                    
-                    // 重新渲染
-                    renderBills(document.getElementById('dateFilter').value);
-                    renderStats();
-                    document.getElementById('editBillModal').classList.remove('show');
-                    showToast('账单更新成功');
-                });
-                
-                // 删除账单（编辑模式）
-                document.getElementById('deleteBillBtn').addEventListener('click', function() {
-                    const billId = document.getElementById('editBillId').value;
-                    
-                    if (!confirm('确定删除该账单？')) return;
-                    
-                    const bills = getBills().filter(b => b.id !== billId);
-                    localStorage.setItem(STORAGE.BILLS, JSON.stringify(bills));
-                    
-                    // 重新渲染
-                    renderBills(document.getElementById('dateFilter').value);
-                    renderStats();
-                    document.getElementById('editBillModal').classList.remove('show');
-                    showToast('账单删除成功');
-                });
-                
-                // 取消编辑
-                document.getElementById('cancelEditBill').addEventListener('click', function() {
-                    document.getElementById('editBillModal').classList.remove('show');
-                });
-            }
-
-            // 重置添加账单表单
-            function resetAddBillForm() {
-                const today = getTodayDate();
-                document.getElementById('billType').value = 'expense';
-                document.getElementById('billAmount').value = '';
-                document.getElementById('billDate').value = today;
-                document.getElementById('billDate').max = today;
-                document.getElementById('billNote').value = '';
-                
-                const categories = getCategories();
-                const billCategorySelect = document.getElementById('billCategory');
-                if (categories.length > 0 && billCategorySelect.options.length > 0) {
-                    billCategorySelect.value = categories[0].id;
-                }
-            }
-
-            // 重置编辑账单表单
-            function resetEditBillForm() {
-                document.getElementById('editBillId').value = '';
-            }
-
-            // 渲染类别列表
-            function renderCategories() {
-                const categories = getCategories();
-                const categoryList = document.getElementById('categoryList');
-                const billCategory = document.getElementById('billCategory');
-                const editBillCategory = document.getElementById('editBillCategory');
-                const budgetCategorySelect = document.getElementById('budgetCategorySelect');
-
-                // 清空下拉框
-                billCategory.innerHTML = '';
-                editBillCategory.innerHTML = '';
-                budgetCategorySelect.innerHTML = '';
-
-                // 空状态
-                if (categories.length === 0) {
-                    categoryList.innerHTML = '<div class="empty">暂无类别数据</div>';
-                    return;
-                }
-
-                // 渲染类别管理列表
-                categoryList.innerHTML = '';
-                categories.forEach(cat => {
-                    // 类别管理项
-                    const item = document.createElement('div');
-                    item.className = 'list-item';
-                    item.innerHTML = `
-                        <div class="info">
-                            <div class="name">${cat.name}</div>
-                        </div>
-                        <div class="actions">
-                            <button class="btn-small edit-category" data-id="${cat.id}">编辑</button>
-                            <button class="btn-small delete-category" data-id="${cat.id}">删除</button>
-                        </div>
-                    `;
-                    categoryList.appendChild(item);
-
-                    // 填充下拉框
-                    const option = document.createElement('option');
-                    option.value = cat.id;
-                    option.textContent = cat.name;
-                    billCategory.appendChild(option.cloneNode(true));
-                    editBillCategory.appendChild(option.cloneNode(true));
-                    budgetCategorySelect.appendChild(option);
-                });
-            }
-
-            // 渲染类别预算 - 圆形进度条（添加侧滑删除）
-            function renderCategoryBudgets() {
-                const budgets = getCategoryBudgets();
-                const categories = getCategories();
-                const budgetList = document.getElementById('budgetList');
-
-                // 筛选有预算的类别
-                const budgetItems = categories.filter(cat => budgets[cat.id] && budgets[cat.id].amount > 0);
-
-                if (budgetItems.length === 0) {
-                    budgetList.innerHTML = '<div class="empty">暂无分类预算数据</div>';
-                    return;
-                }
-
-                budgetList.innerHTML = '';
-                budgetItems.forEach(cat => {
-                    const budget = budgets[cat.id];
-                    const used = parseFloat(budget.used || 0);
-                    const amount = parseFloat(budget.amount);
-                    const remaining = amount - used;
-                    const progress = Math.min(100, Math.round((used / amount) * 100));
-
-                    const wrapper = document.createElement('div');
-                    wrapper.className = 'budget-progress-wrapper';
-                    wrapper.dataset.categoryId = cat.id;
-                    
-                    wrapper.innerHTML = `
-                        <div class="budget-progress-item">
-                            <div class="budget-progress-circle">
-                                <div class="budget-progress-bg" style="background: conic-gradient(${remaining < 0 ? '#FF3B30' : '#34C759'} 0% ${progress}%, #E5E5EA ${progress}% 100%)">
-                                    <div class="budget-progress-overlay">
-                                        ${progress}%
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="budget-info">
-                                <div class="name">${cat.name}</div>
-                                <div class="details">
-                                    <span>已用: ¥${used.toFixed(2)}</span>
-                                    <span>${remaining < 0 ? '超支: ¥' + Math.abs(remaining).toFixed(2) : '剩余: ¥' + remaining.toFixed(2)}</span>
-                                    <span>预算: ¥${amount.toFixed(2)}</span>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="budget-delete-action" data-category-id="${cat.id}">
-                            删除
-                        </div>
-                    `;
-                    budgetList.appendChild(wrapper);
-                });
-            }
-
-            // 渲染账单列表 - 添加滑动删除
-            function renderBills(filterDate = '') {
-                let bills = getBills();
-                const categories = getCategories();
-                const billList = document.getElementById('billList');
-
-                // 日期筛选
-                if (filterDate) {
-                    bills = bills.filter(bill => bill.date === filterDate);
-                }
-
-                if (bills.length === 0) {
-                    billList.innerHTML = '<div class="empty"><i>📋</i><div>暂无账单数据</div></div>';
-                    return;
-                }
-
-                billList.innerHTML = '';
-                bills.forEach(bill => {
-                    const cat = categories.find(c => c.id === bill.categoryId) || { name: '未知类别' };
-                    const wrapper = document.createElement('div');
-                    wrapper.className = 'list-item-wrapper';
-                    
-                    const descText = bill.note ? `${bill.date} | ${bill.note}` : bill.date;
-                    
-                    wrapper.innerHTML = `
-                        <div class="list-item">
-                            <div class="info">
-                                <div class="name">${cat.name} ${bill.type === 'income' ? '(收入)' : '(支出)'}</div>
-                                <div class="desc">${descText}</div>
-                            </div>
-                            <div class="actions">
-                                <span style="font-weight: 700; ${bill.type === 'income' ? 'color: #34C759' : 'color: #FF3B30'}">
-                                    ${bill.type === 'income' ? '+' : '-'}¥${bill.amount.toFixed(2)}
-                                </span>
-                                <button class="btn-small edit-bill" data-id="${bill.id}">编辑</button>
-                            </div>
-                        </div>
-                        <div class="delete-action" data-id="${bill.id}">
-                            删除
-                        </div>
-                    `;
-                    billList.appendChild(wrapper);
-                });
-                
-                // 绑定删除按钮事件
-                document.querySelectorAll('.delete-action').forEach(btn => {
-                    btn.addEventListener('click', function(e) {
-                        e.stopPropagation();
-                        const id = this.dataset.id;
-                        if (!confirm('确定删除该账单？')) return;
-
-                        const bills = getBills().filter(b => b.id !== id);
-                        localStorage.setItem(STORAGE.BILLS, JSON.stringify(bills));
-
-                        renderBills(document.getElementById('dateFilter').value);
-                        renderStats();
-                        showToast('账单删除成功');
-                    });
-                });
-            }
-
-            // 渲染统计数据
-            function renderStats() {
-                const bills = getBills();
-                let income = 0, expense = 0;
-
-                bills.forEach(bill => {
-                    const amount = parseFloat(bill.amount);
-                    if (bill.type === 'income') {
-                        income += amount;
-                    } else {
-                        expense += amount;
-                    }
-                });
-
-                const balance = income - expense;
-                
-                // 更新统计卡片
-                document.getElementById('totalIncome').textContent = income.toFixed(2);
-                document.getElementById('totalExpense').textContent = expense.toFixed(2);
-                document.getElementById('totalBalance').textContent = balance.toFixed(2);
-                
-                // 更新颜色
-                document.getElementById('totalBalance').className = `value ${balance >= 0 ? 'positive' : 'negative'}`;
-
-                // 更新类别预算的已使用金额
-                updateCategoryBudgetUsed();
-            }
-
-            // 更新类别预算的已使用金额
-            function updateCategoryBudgetUsed() {
-                const bills = getBills();
-                const budgets = getCategoryBudgets();
-                const categories = getCategories();
-
-                // 重置已使用金额
-                categories.forEach(cat => {
-                    if (!budgets[cat.id]) budgets[cat.id] = { amount: 0, used: 0 };
-                    budgets[cat.id].used = 0;
-                });
-
-                // 统计支出
-                bills.forEach(bill => {
-                    if (bill.type === 'expense' && budgets[bill.categoryId]) {
-                        budgets[bill.categoryId].used += parseFloat(bill.amount);
-                    }
-                });
-
-                // 保存并重新渲染预算
-                localStorage.setItem(STORAGE.CATEGORY_BUDGETS, JSON.stringify(budgets));
-                renderCategoryBudgets();
-            }
-
-            // 绑定所有事件
-            function bindAllEvents() {
-                // ========== 导入导出功能 ==========
-                document.getElementById('exportBtn').addEventListener('click', exportData);
-                document.getElementById('importBtn').addEventListener('click', importData);
-                document.getElementById('importFileInput').addEventListener('change', handleImportFile);
-
-                // ========== 基础按钮 ==========
-                document.getElementById('categoryBtn').addEventListener('click', function() {
-                    const card = document.getElementById('categoryCard');
-                    card.style.display = card.style.display === 'none' ? 'block' : 'none';
-                });
-
-                document.getElementById('addBillBtn').addEventListener('click', function() {
-                    const categories = getCategories();
-                    if (categories.length === 0) {
-                        showToast('请先添加类别');
-                        return;
-                    }
-                    resetAddBillForm();
-                    document.getElementById('addBillModal').classList.add('show');
-                });
-
-                document.getElementById('cancelAddBill').addEventListener('click', function() {
-                    document.getElementById('addBillModal').classList.remove('show');
-                    resetAddBillForm();
-                });
-
-                document.getElementById('saveBillBtn').addEventListener('click', function() {
-                    const type = document.getElementById('billType').value;
-                    const categoryId = document.getElementById('billCategory').value;
-                    const amount = parseFloat(document.getElementById('billAmount').value);
-                    const date = document.getElementById('billDate').value;
-                    const note = document.getElementById('billNote').value.trim();
-                    
-                    const today = getTodayDate();
-                    
-                    if (!categoryId) return showToast('请选择类别');
-                    if (isNaN(amount) || amount < 0.01) return showToast('金额必须大于0.01元');
-                    if (!date) return showToast('请选择日期');
-                    if (date > today) return showToast('不能选择未来日期');
-
-                    const bills = getBills();
-                    bills.push({
-                        id: generateId(),
-                        type,
-                        categoryId,
-                        amount,
-                        date,
-                        note: note || ''
-                    });
-                    localStorage.setItem(STORAGE.BILLS, JSON.stringify(bills));
-
-                    renderBills(document.getElementById('dateFilter').value);
-                    renderStats();
-                    document.getElementById('addBillModal').classList.remove('show');
-                    resetAddBillForm();
-                    showToast('账单添加成功');
-                });
-
-                // ========== 折叠/展开账单列表 ==========
-                document.getElementById('toggleBillListBtn').addEventListener('click', function() {
-                    const billList = document.getElementById('billList');
-                    billList.classList.toggle('hidden');
-                    this.textContent = billList.classList.contains('hidden') ? '展开' : '折叠';
-                });
-
-                // ========== 类别管理 ==========
-                document.getElementById('addCategoryBtn').addEventListener('click', function() {
-                    document.getElementById('addCategoryModal').classList.add('show');
-                });
-
-                document.getElementById('cancelAddCategory').addEventListener('click', function() {
-                    document.getElementById('addCategoryModal').classList.remove('show');
-                });
-
-                document.getElementById('saveCategoryBtn').addEventListener('click', function() {
-                    const name = document.getElementById('newCategoryName').value.trim();
-                    if (!name || name.length > 10) return showToast('请输入1-10个字的类别名称');
-
-                    const categories = getCategories();
-                    if (categories.some(c => c.name === name)) return showToast('类别名称已存在');
-
-                    categories.push({ id: generateId(), name });
-                    localStorage.setItem(STORAGE.CATEGORIES, JSON.stringify(categories));
-
-                    const budgets = getCategoryBudgets();
-                    budgets[categories[categories.length - 1].id] = { amount: 0, used: 0 };
-                    localStorage.setItem(STORAGE.CATEGORY_BUDGETS, JSON.stringify(budgets));
-
-                    renderCategories();
-                    document.getElementById('addCategoryModal').classList.remove('show');
-                    document.getElementById('newCategoryName').value = '';
-                    showToast('类别添加成功');
-                });
-
-                // 编辑分类（事件委托）
-                document.getElementById('categoryList').addEventListener('click', function(e) {
-                    if (e.target.classList.contains('edit-category')) {
-                        const id = e.target.dataset.id;
-                        const categories = getCategories();
-                        const cat = categories.find(c => c.id === id);
-                        if (!cat) return;
-
-                        const newName = prompt('请输入新的分类名称', cat.name);
-                        if (!newName || newName.trim() === '' || newName.length > 10) return;
-                        if (categories.some(c => c.id !== id && c.name === newName.trim())) {
-                            return showToast('类别名称已存在');
-                        }
-
-                        const updated = categories.map(c => c.id === id ? { ...c, name: newName.trim() } : c);
-                        localStorage.setItem(STORAGE.CATEGORIES, JSON.stringify(updated));
-                        renderCategories();
-                        renderCategoryBudgets();
-                        showToast('分类编辑成功');
-                    }
-
-                    if (e.target.classList.contains('delete-category')) {
-                        const id = e.target.dataset.id;
-                        if (!confirm('确定删除该类别？关联账单将显示为未知类别')) return;
-
-                        const categories = getCategories().filter(c => c.id !== id);
-                        localStorage.setItem(STORAGE.CATEGORIES, JSON.stringify(categories));
-
-                        const budgets = getCategoryBudgets();
-                        delete budgets[id];
-                        localStorage.setItem(STORAGE.CATEGORY_BUDGETS, JSON.stringify(budgets));
-
-                        renderCategories();
-                        renderCategoryBudgets();
-                        showToast('分类删除成功');
-                    }
-                });
-
-                // ========== 预算管理 ==========
-                document.getElementById('editBudgetBtn').addEventListener('click', function() {
-                    const categories = getCategories();
-                    if (categories.length === 0) {
-                        showToast('请先添加类别');
-                        return;
-                    }
-                    document.getElementById('setBudgetModal').classList.add('show');
-                });
-
-                document.getElementById('cancelSetBudget').addEventListener('click', function() {
-                    document.getElementById('setBudgetModal').classList.remove('show');
-                });
-
-                document.getElementById('saveBudgetBtn').addEventListener('click', function() {
-                    const categoryId = document.getElementById('budgetCategorySelect').value;
-                    const amount = parseFloat(document.getElementById('budgetAmountInput').value);
-
-                    if (!categoryId) return showToast('请选择类别');
-                    if (isNaN(amount) || amount < 0.01) return showToast('预算金额必须大于0.01元');
-
-                    const budgets = getCategoryBudgets();
-                    if (!budgets[categoryId]) budgets[categoryId] = { amount: 0, used: 0 };
-                    budgets[categoryId].amount = amount;
-                    localStorage.setItem(STORAGE.CATEGORY_BUDGETS, JSON.stringify(budgets));
-
-                    renderCategoryBudgets();
-                    document.getElementById('setBudgetModal').classList.remove('show');
-                    document.getElementById('budgetAmountInput').value = '';
-                    showToast('预算设置成功');
-                });
-
-                // ========== 账单管理 ==========
-                document.getElementById('dateFilter').addEventListener('change', function() {
-                    renderBills(this.value);
-                });
-
-                // 点击模态框外部关闭
-                document.querySelectorAll('.modal').forEach(modal => {
-                    modal.addEventListener('click', function(e) {
-                        if (e.target === this) {
-                            this.classList.remove('show');
-                            if (this.id === 'addBillModal') resetAddBillForm();
-                            if (this.id === 'editBillModal') resetEditBillForm();
-                        }
-                    });
-                });
-
-                // 绑定编辑账单相关事件
-                bindBillEditEvents();
-                bindEditBillEvents();
-            }
-
-            // 初始化应用
             initStorage();
-            
             // 设置今日日期
             const today = getTodayDate();
             document.getElementById('billDate').value = today;
@@ -2135,7 +1022,786 @@
             if (document.getElementById('budgetList')) {
                 initBudgetSwipeDelete();
             }
+        });
+
+        // 初始化本地存储
+        function initStorage() {
+            if (!localStorage.getItem(STORAGE.BILLS)) localStorage.setItem(STORAGE.BILLS, '[]');
+            if (!localStorage.getItem(STORAGE.CATEGORIES)) localStorage.setItem(STORAGE.CATEGORIES, '[]');
+            if (!localStorage.getItem(STORAGE.CATEGORY_BUDGETS)) localStorage.setItem(STORAGE.CATEGORY_BUDGETS, '{}');
         }
-    </script>
-</body>
-</html>
+
+        // 生成唯一ID
+        function generateId() {
+            return Date.now().toString(36) + Math.random().toString(36).substr(2, 8);
+        }
+
+        // 显示提示框
+        function showToast(msg) {
+            const toast = document.getElementById('toast');
+            toast.textContent = msg;
+            toast.classList.add('show');
+            setTimeout(() => toast.classList.remove('show'), 2000);
+        }
+
+        // 获取所有类别
+        function getCategories() {
+            return JSON.parse(localStorage.getItem(STORAGE.CATEGORIES) || '[]');
+        }
+
+        // 获取所有账单
+        function getBills() {
+            return JSON.parse(localStorage.getItem(STORAGE.BILLS) || '[]');
+        }
+
+        // 获取类别预算
+        function getCategoryBudgets() {
+            return JSON.parse(localStorage.getItem(STORAGE.CATEGORY_BUDGETS) || '{}');
+        }
+
+        // 导航栏滚动隐藏/显示功能
+        function initNavbarScroll() {
+            const navbar = document.querySelector('.navbar');
+            const mainContent = document.querySelector('.main-content');
+            let lastScrollTop = 0;
+            let isScrolling = false;
+            let scrollTimeout = null;
+            
+            // 初始位置
+            let navbarVisible = true;
+            
+            window.addEventListener('scroll', function() {
+                if (!isScrolling) {
+                    window.requestAnimationFrame(function() {
+                        const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+                        
+                        // 判断滚动方向
+                        if (scrollTop > lastScrollTop && scrollTop > 100) {
+                            // 向下滚动，隐藏导航栏
+                            if (navbarVisible) {
+                                navbar.classList.add('hidden');
+                                navbarVisible = false;
+                            }
+                        } else if (scrollTop < lastScrollTop || scrollTop <= 100) {
+                            // 向上滚动或接近顶部，显示导航栏
+                            if (!navbarVisible) {
+                                navbar.classList.remove('hidden');
+                                navbarVisible = true;
+                            }
+                        }
+                        
+                        lastScrollTop = scrollTop;
+                        isScrolling = false;
+                    });
+                }
+                isScrolling = true;
+                
+                // 清除之前的定时器
+                if (scrollTimeout) {
+                    clearTimeout(scrollTimeout);
+                }
+                
+                // 设置新的定时器，防止快速滚动时频繁触发
+                scrollTimeout = setTimeout(function() {
+                    isScrolling = false;
+                }, 100);
+            });
+            
+            // 点击主内容区域时显示导航栏（如果被隐藏）
+            mainContent.addEventListener('click', function() {
+                if (!navbarVisible) {
+                    navbar.classList.remove('hidden');
+                    navbarVisible = true;
+                }
+            });
+        }
+
+        // 初始化预算侧滑删除功能
+        function initBudgetSwipeDelete() {
+            const budgetList = document.getElementById('budgetList');
+            if (!budgetList) return;
+            
+            let touchStartX = 0;
+            let touchEndX = 0;
+            let currentSwipeItem = null;
+            let isSwiping = false;
+            
+            budgetList.addEventListener('touchstart', function(e) {
+                const listItem = e.target.closest('.budget-progress-wrapper');
+                if (!listItem) return;
+                
+                touchStartX = e.touches[0].clientX;
+                currentSwipeItem = listItem;
+                isSwiping = false;
+                
+                // 移除其他项目的滑动状态
+                document.querySelectorAll('.budget-progress-wrapper').forEach(item => {
+                    if (item !== listItem && item.classList.contains('swiping')) {
+                        item.classList.remove('swiping');
+                        item.style.transform = 'translateX(0)';
+                        const deleteBtn = item.querySelector('.budget-delete-action');
+                        if (deleteBtn) deleteBtn.style.transform = 'translateX(100%)';
+                    }
+                });
+            }, { passive: true });
+            
+            budgetList.addEventListener('touchmove', function(e) {
+                if (!currentSwipeItem) return;
+                
+                touchEndX = e.touches[0].clientX;
+                const diffX = touchStartX - touchEndX;
+                
+                // 检测到水平滑动
+                if (Math.abs(diffX) > 5) {
+                    isSwiping = true;
+                    e.preventDefault();
+                    
+                    // 添加滑动状态类
+                    if (!currentSwipeItem.classList.contains('swiping')) {
+                        currentSwipeItem.classList.add('swiping');
+                    }
+                    
+                    const translateX = Math.min(diffX, 80);
+                    currentSwipeItem.style.transform = `translateX(-${translateX}px)`;
+                    
+                    const deleteBtn = currentSwipeItem.querySelector('.budget-delete-action');
+                    if (deleteBtn) {
+                        const deleteTranslate = Math.max(0, translateX - 80);
+                        deleteBtn.style.transform = `translateX(${deleteTranslate}px)`;
+                    }
+                }
+            }, { passive: false });
+            
+            budgetList.addEventListener('touchend', function() {
+                if (!currentSwipeItem) return;
+                
+                const diffX = touchStartX - touchEndX;
+                
+                if (isSwiping) {
+                    if (diffX > 40) {
+                        // 滑动超过40px，保持删除按钮显示状态
+                        currentSwipeItem.classList.add('swiping');
+                        currentSwipeItem.style.transform = 'translateX(-80px)';
+                        const deleteBtn = currentSwipeItem.querySelector('.budget-delete-action');
+                        if (deleteBtn) deleteBtn.style.transform = 'translateX(0)';
+                    } else {
+                        // 滑动不足，恢复原状
+                        currentSwipeItem.classList.remove('swiping');
+                        currentSwipeItem.style.transform = 'translateX(0)';
+                        const deleteBtn = currentSwipeItem.querySelector('.budget-delete-action');
+                        if (deleteBtn) deleteBtn.style.transform = 'translateX(100%)';
+                    }
+                }
+                
+                currentSwipeItem = null;
+                isSwiping = false;
+            });
+            
+            // 绑定删除按钮事件
+            budgetList.addEventListener('click', function(e) {
+                if (e.target.classList.contains('budget-delete-action')) {
+                    e.stopPropagation();
+                    const categoryId = e.target.dataset.categoryId;
+                    
+                    if (!confirm('确定删除该预算项吗？')) return;
+                    
+                    // 删除预算
+                    const budgets = getCategoryBudgets();
+                    if (budgets[categoryId]) {
+                        delete budgets[categoryId];
+                        localStorage.setItem(STORAGE.CATEGORY_BUDGETS, JSON.stringify(budgets));
+                        
+                        // 重新渲染预算列表
+                        renderCategoryBudgets();
+                        showToast('预算删除成功');
+                    }
+                }
+            });
+            
+            // 点击其他地方取消侧滑
+            document.addEventListener('click', function(e) {
+                if (!e.target.closest('.budget-progress-wrapper') && !e.target.closest('.budget-delete-action')) {
+                    document.querySelectorAll('.budget-progress-wrapper.swiping').forEach(item => {
+                        item.classList.remove('swiping');
+                        item.style.transform = 'translateX(0)';
+                        const deleteBtn = item.querySelector('.budget-delete-action');
+                        if (deleteBtn) deleteBtn.style.transform = 'translateX(100%)';
+                    });
+                }
+            });
+        }
+
+        // 导出所有数据为JSON文件
+        function exportData() {
+            const data = {
+                bills: getBills(),
+                categories: getCategories(),
+                categoryBudgets: getCategoryBudgets(),
+                exportDate: new Date().toISOString(),
+                version: '1.0'
+            };
+
+            const dataStr = JSON.stringify(data, null, 2);
+            const dataBlob = new Blob([dataStr], { type: 'application/json' });
+            
+            // 创建下载链接
+            const url = URL.createObjectURL(dataBlob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = `账单数据_${new Date().toISOString().split('T')[0]}.json`;
+            
+            // 触发下载
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            URL.revokeObjectURL(url);
+            
+            showToast('数据导出成功');
+        }
+
+        // 导入数据
+        function importData() {
+            const fileInput = document.getElementById('importFileInput');
+            fileInput.click();
+        }
+
+        // 处理导入的文件
+        function handleImportFile(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const importedData = JSON.parse(e.target.result);
+                    
+                    // 验证导入的数据格式
+                    if (!importedData.bills || !importedData.categories || !importedData.categoryBudgets) {
+                        showToast('导入失败：文件格式不正确');
+                        return;
+                    }
+
+                    // 确认是否覆盖现有数据
+                    if (confirm('导入数据将覆盖现有数据，确定要继续吗？')) {
+                        // 保存导入的数据
+                        localStorage.setItem(STORAGE.BILLS, JSON.stringify(importedData.bills));
+                        localStorage.setItem(STORAGE.CATEGORIES, JSON.stringify(importedData.categories));
+                        localStorage.setItem(STORAGE.CATEGORY_BUDGETS, JSON.stringify(importedData.categoryBudgets));
+                        
+                        // 重新渲染所有数据
+                        renderCategories();
+                        renderCategoryBudgets();
+                        renderBills();
+                        renderStats();
+                        
+                        showToast('数据导入成功');
+                    }
+                } catch (error) {
+                    console.error('导入失败:', error);
+                    showToast('导入失败：文件解析错误');
+                }
+                
+                // 清空文件输入框，允许重复导入相同文件
+                event.target.value = '';
+            };
+            
+            reader.readAsText(file);
+        }
+
+        // 初始化滑动删除功能 - 改进版
+        function initSwipeDelete() {
+            const billList = document.getElementById('billList');
+            let isSwiping = false;
+            
+            billList.addEventListener('touchstart', function(e) {
+                const listItem = e.target.closest('.list-item-wrapper');
+                if (!listItem) return;
+                
+                touchStartX = e.touches[0].clientX;
+                touchStartY = e.touches[0].clientY;
+                currentSwipeItem = listItem;
+                isSwiping = false;
+                
+                // 移除其他项目的滑动状态
+                document.querySelectorAll('.list-item-wrapper').forEach(item => {
+                    if (item !== listItem && item.classList.contains('swiping')) {
+                        item.classList.remove('swiping');
+                        item.style.transform = 'translateX(0)';
+                        const deleteBtn = item.querySelector('.delete-action');
+                        if (deleteBtn) deleteBtn.style.transform = 'translateX(100%)';
+                    }
+                });
+            }, { passive: true });
+            
+            billList.addEventListener('touchmove', function(e) {
+                if (!currentSwipeItem) return;
+                
+                touchEndX = e.touches[0].clientX;
+                touchEndY = e.touches[0].clientY;
+                
+                const diffX = touchStartX - touchEndX;
+                const diffY = touchStartY - touchEndY;
+                
+                // 检测到水平滑动
+                if (Math.abs(diffX) > Math.abs(diffY) && diffX > 5) {
+                    isSwiping = true;
+                    e.preventDefault();
+                    
+                    // 添加滑动状态类
+                    if (!currentSwipeItem.classList.contains('swiping')) {
+                        currentSwipeItem.classList.add('swiping');
+                    }
+                    
+                    const translateX = Math.min(diffX, 80); // 最大滑动80px
+                    currentSwipeItem.style.transform = `translateX(-${translateX}px)`;
+                    
+                    const deleteBtn = currentSwipeItem.querySelector('.delete-action');
+                    if (deleteBtn) {
+                        const deleteTranslate = Math.max(0, translateX - 80);
+                        deleteBtn.style.transform = `translateX(${deleteTranslate}px)`;
+                    }
+                }
+            }, { passive: false });
+            
+            billList.addEventListener('touchend', function() {
+                if (!currentSwipeItem) return;
+                
+                const diffX = touchStartX - touchEndX;
+                
+                if (isSwiping) {
+                    if (diffX > 40) {
+                        // 滑动超过40px，保持删除按钮显示状态，隐藏编辑按钮
+                        currentSwipeItem.classList.add('swiping');
+                        currentSwipeItem.style.transform = 'translateX(-80px)';
+                        const deleteBtn = currentSwipeItem.querySelector('.delete-action');
+                        if (deleteBtn) deleteBtn.style.transform = 'translateX(0)';
+                        
+                        // 隐藏编辑按钮
+                        const editBtn = currentSwipeItem.querySelector('.edit-bill');
+                        if (editBtn) {
+                            editBtn.style.opacity = '0';
+                            editBtn.style.transform = 'translateX(10px)';
+                        }
+                    } else {
+                        // 滑动不足，恢复原状，显示编辑按钮
+                        currentSwipeItem.classList.remove('swiping');
+                        currentSwipeItem.style.transform = 'translateX(0)';
+                        const deleteBtn = currentSwipeItem.querySelector('.delete-action');
+                        if (deleteBtn) deleteBtn.style.transform = 'translateX(100%)';
+                        
+                        // 显示编辑按钮
+                        const editBtn = currentSwipeItem.querySelector('.edit-bill');
+                        if (editBtn) {
+                            editBtn.style.opacity = '1';
+                            editBtn.style.transform = 'translateX(0)';
+                        }
+                    }
+                }
+                
+                currentSwipeItem = null;
+                isSwiping = false;
+            });
+            
+            // 点击其他地方取消侧滑
+            document.addEventListener('click', function(e) {
+                if (!e.target.closest('.list-item-wrapper') && !e.target.closest('.delete-action')) {
+                    document.querySelectorAll('.list-item-wrapper.swiping').forEach(item => {
+                        item.classList.remove('swiping');
+                        item.style.transform = 'translateX(0)';
+                        const deleteBtn = item.querySelector('.delete-action');
+                        if (deleteBtn) deleteBtn.style.transform = 'translateX(100%)';
+                        // 恢复编辑按钮显示
+                        const editBtn = item.querySelector('.edit-bill');
+                        if (editBtn) {
+                            editBtn.style.opacity = '1';
+                            editBtn.style.transform = 'translateX(0)';
+                        }
+                    });
+                }
+            });
+        }
+
+        // 修复编辑按钮事件绑定问题
+        function bindBillEditEvents() {
+            // 使用事件委托绑定编辑按钮事件
+            document.getElementById('billList').addEventListener('click', function(e) {
+                if (e.target.classList.contains('edit-bill')) {
+                    const billId = e.target.dataset.id;
+                    openEditBillModal(billId);
+                }
+            });
+        }
+
+        // 打开编辑账单模态框
+        function openEditBillModal(billId) {
+            const bills = getBills();
+            const categories = getCategories();
+            const bill = bills.find(b => b.id === billId);
+            
+            if (!bill) {
+                showToast('未找到该账单');
+                return;
+            }
+            
+            // 填充表单数据
+            document.getElementById('editBillId').value = bill.id;
+            document.getElementById('editBillType').value = bill.type;
+            document.getElementById('editBillAmount').value = bill.amount;
+            document.getElementById('editBillDate').value = bill.date;
+            document.getElementById('editBillNote').value = bill.note || '';
+            
+            // 填充分类下拉框
+            const editBillCategory = document.getElementById('editBillCategory');
+            editBillCategory.innerHTML = '';
+            categories.forEach(cat => {
+                const option = document.createElement('option');
+                option.value = cat.id;
+                option.textContent = cat.name;
+                if (cat.id === bill.categoryId) {
+                    option.selected = true;
+                }
+                editBillCategory.appendChild(option);
+            });
+            
+            // 显示模态框
+            document.getElementById('editBillModal').classList.add('show');
+        }
+
+        // 绑定编辑账单表单事件
+        function bindEditBillEvents() {
+            // 更新账单
+            document.getElementById('updateBillBtn').addEventListener('click', function() {
+                const billId = document.getElementById('editBillId').value;
+                const type = document.getElementById('editBillType').value;
+                const categoryId = document.getElementById('editBillCategory').value;
+                const amount = parseFloat(document.getElementById('editBillAmount').value);
+                const date = document.getElementById('editBillDate').value;
+                const note = document.getElementById('editBillNote').value.trim();
+                
+                const today = getTodayDate();
+                
+                if (!categoryId) return showToast('请选择类别');
+                if (isNaN(amount) || amount < 0.01) return showToast('金额必须大于0.01元');
+                if (!date) return showToast('请选择日期');
+                if (date > today) return showToast('不能选择未来日期');
+                
+                const bills = getBills();
+                const billIndex = bills.findIndex(b => b.id === billId);
+                
+                if (billIndex === -1) {
+                    showToast('账单不存在');
+                    return;
+                }
+                
+                // 更新账单信息
+                bills[billIndex] = {
+                    ...bills[billIndex],
+                    type,
+                    categoryId,
+                    amount,
+                    date,
+                    note: note || ''
+                };
+                
+                localStorage.setItem(STORAGE.BILLS, JSON.stringify(bills));
+                
+                // 重新渲染
+                renderBills(document.getElementById('dateFilter').value);
+                renderStats();
+                document.getElementById('editBillModal').classList.remove('show');
+                showToast('账单更新成功');
+            });
+            
+            // 删除账单（编辑模式）
+            document.getElementById('deleteBillBtn').addEventListener('click', function() {
+                const billId = document.getElementById('editBillId').value;
+                
+                if (!confirm('确定删除该账单？')) return;
+                
+                const bills = getBills().filter(b => b.id !== billId);
+                localStorage.setItem(STORAGE.BILLS, JSON.stringify(bills));
+                
+                // 重新渲染
+                renderBills(document.getElementById('dateFilter').value);
+                renderStats();
+                document.getElementById('editBillModal').classList.remove('show');
+                showToast('账单删除成功');
+            });
+            
+            // 取消编辑
+            document.getElementById('cancelEditBill').addEventListener('click', function() {
+                document.getElementById('editBillModal').classList.remove('show');
+            });
+        }
+
+        // 重置添加账单表单
+        function resetAddBillForm() {
+            const today = getTodayDate();
+            document.getElementById('billType').value = 'expense';
+            document.getElementById('billAmount').value = '';
+            document.getElementById('billDate').value = today;
+            document.getElementById('billDate').max = today;
+            document.getElementById('billNote').value = '';
+            
+            const categories = getCategories();
+            const billCategorySelect = document.getElementById('billCategory');
+            if (categories.length > 0 && billCategorySelect.options.length > 0) {
+                billCategorySelect.value = categories[0].id;
+            }
+        }
+
+        // 重置编辑账单表单
+        function resetEditBillForm() {
+            document.getElementById('editBillId').value = '';
+        }
+
+        // 渲染类别列表
+        function renderCategories() {
+            const categories = getCategories();
+            const categoryList = document.getElementById('categoryList');
+            const billCategory = document.getElementById('billCategory');
+            const editBillCategory = document.getElementById('editBillCategory');
+            const budgetCategorySelect = document.getElementById('budgetCategorySelect');
+
+            // 清空下拉框
+            billCategory.innerHTML = '';
+            editBillCategory.innerHTML = '';
+            budgetCategorySelect.innerHTML = '';
+
+            // 空状态
+            if (categories.length === 0) {
+                categoryList.innerHTML = '<div class="empty">暂无类别数据</div>';
+                return;
+            }
+
+            // 渲染类别管理列表
+            categoryList.innerHTML = '';
+            categories.forEach(cat => {
+                // 类别管理项
+                const item = document.createElement('div');
+                item.className = 'list-item';
+                item.innerHTML = `
+                    <div class="info">
+                        <div class="name">${cat.name}</div>
+                    </div>
+                    <div class="actions">
+                        <button class="btn-small edit-category" data-id="${cat.id}">编辑</button>
+                        <button class="btn-small delete-category" data-id="${cat.id}">删除</button>
+                    </div>
+                `;
+                categoryList.appendChild(item);
+
+                // 填充下拉框
+                const option = document.createElement('option');
+                option.value = cat.id;
+                option.textContent = cat.name;
+                billCategory.appendChild(option.cloneNode(true));
+                editBillCategory.appendChild(option.cloneNode(true));
+                budgetCategorySelect.appendChild(option);
+            });
+        }
+
+        // 渲染类别预算 - 圆形进度条（添加侧滑删除）
+        function renderCategoryBudgets() {
+            const budgets = getCategoryBudgets();
+            const categories = getCategories();
+            const budgetList = document.getElementById('budgetList');
+
+            // 筛选有预算的类别
+            const budgetItems = categories.filter(cat => budgets[cat.id] && budgets[cat.id].amount > 0);
+
+            if (budgetItems.length === 0) {
+                budgetList.innerHTML = '<div class="empty">暂无分类预算数据</div>';
+                return;
+            }
+
+            budgetList.innerHTML = '';
+            budgetItems.forEach(cat => {
+                const budget = budgets[cat.id];
+                const used = parseFloat(budget.used || 0);
+                const amount = parseFloat(budget.amount);
+                const remaining = amount - used;
+                const progress = Math.min(100, Math.round((used / amount) * 100));
+
+                const wrapper = document.createElement('div');
+                wrapper.className = 'budget-progress-wrapper';
+                wrapper.dataset.categoryId = cat.id;
+                
+                wrapper.innerHTML = `
+                    <div class="budget-progress-item">
+                        <div class="budget-progress-circle">
+                            <div class="budget-progress-bg" style="background: conic-gradient(${remaining < 0 ? '#FF3B30' : '#34C759'} 0% ${progress}%, #E5E5EA ${progress}% 100%)">
+                                <div class="budget-progress-overlay">
+                                    ${progress}%
+                                </div>
+                            </div>
+                        </div>
+                        <div class="budget-info">
+                            <div class="name">${cat.name}</div>
+                            <div class="details">
+                                <span>已用: ¥${used.toFixed(2)}</span>
+                                <span>${remaining < 0 ? '超支: ¥' + Math.abs(remaining).toFixed(2) : '剩余: ¥' + remaining.toFixed(2)}</span>
+                                <span>预算: ¥${amount.toFixed(2)}</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="budget-delete-action" data-category-id="${cat.id}">
+                        删除
+                    </div>
+                `;
+                budgetList.appendChild(wrapper);
+            });
+        }
+
+        // 渲染账单列表 - 添加滑动删除
+        function renderBills(filterDate = '') {
+            let bills = getBills();
+            const categories = getCategories();
+            const billList = document.getElementById('billList');
+
+            // 日期筛选
+            if (filterDate) {
+                bills = bills.filter(bill => bill.date === filterDate);
+            }
+
+            if (bills.length === 0) {
+                billList.innerHTML = '<div class="empty"><i>📋</i><div>暂无账单数据</div></div>';
+                return;
+            }
+
+            billList.innerHTML = '';
+            bills.forEach(bill => {
+                const cat = categories.find(c => c.id === bill.categoryId) || { name: '未知类别' };
+                const wrapper = document.createElement('div');
+                wrapper.className = 'list-item-wrapper';
+                
+                const descText = bill.note ? `${bill.date} | ${bill.note}` : bill.date;
+                
+                wrapper.innerHTML = `
+                    <div class="list-item">
+                        <div class="info">
+                            <div class="name">${cat.name} ${bill.type === 'income' ? '(收入)' : '(支出)'}</div>
+                            <div class="desc">${descText}</div>
+                        </div>
+                        <div class="actions">
+                            <span style="font-weight: 700; ${bill.type === 'income' ? 'color: #34C759' : 'color: #FF3B30'}">
+                                ${bill.type === 'income' ? '+' : '-'}¥${bill.amount.toFixed(2)}
+                            </span>
+                            <button class="btn-small edit-bill" data-id="${bill.id}">编辑</button>
+                        </div>
+                    </div>
+                    <div class="delete-action" data-id="${bill.id}">
+                        删除
+                    </div>
+                `;
+                billList.appendChild(wrapper);
+            });
+            
+            // 绑定删除按钮事件
+            document.querySelectorAll('.delete-action').forEach(btn => {
+                btn.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    const id = this.dataset.id;
+                    if (!confirm('确定删除该账单？')) return;
+
+                    const bills = getBills().filter(b => b.id !== id);
+                    localStorage.setItem(STORAGE.BILLS, JSON.stringify(bills));
+
+                    renderBills(document.getElementById('dateFilter').value);
+                    renderStats();
+                    showToast('账单删除成功');
+                });
+            });
+        }
+
+        // 渲染统计数据
+        function renderStats() {
+            const bills = getBills();
+            let income = 0, expense = 0;
+
+            bills.forEach(bill => {
+                const amount = parseFloat(bill.amount);
+                if (bill.type === 'income') {
+                    income += amount;
+                } else {
+                    expense += amount;
+                }
+            });
+
+            const balance = income - expense;
+            
+            // 更新统计卡片
+            document.getElementById('totalIncome').textContent = income.toFixed(2);
+            document.getElementById('totalExpense').textContent = expense.toFixed(2);
+            document.getElementById('totalBalance').textContent = balance.toFixed(2);
+            
+            // 更新颜色
+            document.getElementById('totalBalance').className = `value ${balance >= 0 ? 'positive' : 'negative'}`;
+
+            // 更新类别预算的已使用金额
+            updateCategoryBudgetUsed();
+        }
+
+        // 更新类别预算的已使用金额
+        function updateCategoryBudgetUsed() {
+            const bills = getBills();
+            const budgets = getCategoryBudgets();
+            const categories = getCategories();
+
+            // 重置已使用金额
+            categories.forEach(cat => {
+                if (!budgets[cat.id]) budgets[cat.id] = { amount: 0, used: 0 };
+                budgets[cat.id].used = 0;
+            });
+
+            // 统计支出
+            bills.forEach(bill => {
+                if (bill.type === 'expense' && budgets[bill.categoryId]) {
+                    budgets[bill.categoryId].used += parseFloat(bill.amount);
+                }
+            });
+
+            // 保存并重新渲染预算
+            localStorage.setItem(STORAGE.CATEGORY_BUDGETS, JSON.stringify(budgets));
+            renderCategoryBudgets();
+        }
+
+        // 绑定所有事件
+        function bindAllEvents() {
+            // ========== 导入导出功能 ==========
+            document.getElementById('exportBtn').addEventListener('click', exportData);
+            document.getElementById('importBtn').addEventListener('click', importData);
+            document.getElementById('importFileInput').addEventListener('change', handleImportFile);
+
+            // ========== 基础按钮 ==========
+            document.getElementById('categoryBtn').addEventListener('click', function() {
+                const card = document.getElementById('categoryCard');
+                card.style.display = card.style.display === 'none' ? 'block' : 'none';
+            });
+
+            document.getElementById('addBillBtn').addEventListener('click', function() {
+                const categories = getCategories();
+                if (categories.length === 0) {
+                    showToast('请先添加类别');
+                    return;
+                }
+                resetAddBillForm();
+                document.getElementById('addBillModal').classList.add('show');
+            });
+
+            document.getElementById('cancelAddBill').addEventListener('click', function() {
+                document.getElementById('addBillModal').classList.remove('show');
+                resetAddBillForm();
+            });
+
+            document.getElementById('saveBillBtn').addEventListener('click', function() {
+                const type = document.getElementById('billType').value;
+                const categoryId = document.getElementById('billCategory').value;
+                const amount = parseFloat(document.getElementById('billAmount').value);
+                const date = document.getElementById('billDate').value;
+                const note = document.getElementById('billNote').value.trim();
+                
+                const today = getTodayDate();
+                
+                if (!categoryId) return showToast('请选择类别');
+             if (isNaN(amount) || amount < 0.01) return showToast('金额必须大于0.01元');
