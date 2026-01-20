@@ -770,6 +770,31 @@
             from { opacity: 0; transform: translateY(20px); }
             to { opacity: 1; transform: translateY(0); }
         }
+        
+        /* 同步按钮样式 */
+        #manualSyncBtn {
+            position: fixed;
+            bottom: 100px;
+            right: 30px;
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            background: var(--primary-color);
+            color: white;
+            border: none;
+            font-size: 24px;
+            z-index: 99;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: transform 0.3s ease;
+        }
+        
+        #manualSyncBtn:active {
+            transform: scale(0.95);
+        }
     </style>
 <!-- PWA 基本设置 -->
 <link rel="manifest" href="site.webmanifest">
@@ -969,88 +994,230 @@
     </div>
 
     <script>
-        // ========================= iCloud 同步核心工具 =========================
-        // iCloud 同步核心工具（无需修改，直接复制）
+        // ========================= iCloud 同步核心工具 - 修正版 =========================
         const ICloudSync = {
-            // 数据存储键名（自定义，确保唯一，避免与其他 App 冲突）
+            // 数据存储键名
             DATA_KEY: "pocketBill_cloud_data",
             
-            // 检查当前环境是否支持 iCloud 键值存储
+            // 检查是否支持 iCloud - 改进的检测方法
             isICloudSupported() {
-                return window.safari && window.safari.extension && window.safari.extension.ubiquitousKeyValueStore;
-            },
-
-            // 读取数据（优先 iCloud，无数据则从本地存储同步到 iCloud，不支持则直接读本地）
-            async readData() {
-                // 1. 不支持 iCloud：直接返回本地存储数据
-                if (!this.isICloudSupported()) {
-                    return {
-                        bills: JSON.parse(localStorage.getItem(STORAGE.BILLS) || "[]"),
-                        categories: JSON.parse(localStorage.getItem(STORAGE.CATEGORIES) || "[]"),
-                        categoryBudgets: JSON.parse(localStorage.getItem(STORAGE.CATEGORY_BUDGETS) || "{}")
-                    };
+                // 方法1: 检查 Safari 特定的 iCloud API
+                if (window.safari && window.safari.extension && window.safari.extension.ubiquitousKeyValueStore) {
+                    console.log("检测到 Safari iCloud API");
+                    return true;
                 }
-
-                const cloudStore = window.safari.extension.ubiquitousKeyValueStore;
-                // 2. 从 iCloud 读取数据（异步回调转 Promise，适配业务逻辑）
-                return new Promise((resolve) => {
-                    cloudStore.getItem(this.DATA_KEY, (cloudData) => {
-                        const localData = {
-                            bills: JSON.parse(localStorage.getItem(STORAGE.BILLS) || "[]"),
-                            categories: JSON.parse(localStorage.getItem(STORAGE.CATEGORIES) || "[]"),
-                            categoryBudgets: JSON.parse(localStorage.getItem(STORAGE.CATEGORY_BUDGETS) || "{}")
-                        };
-                        
-                        // 3. iCloud 无数据：将本地已有数据同步到 iCloud（首次使用场景）
-                        if (!cloudData && (localData.bills.length > 0 || localData.categories.length > 0)) {
-                            this.writeData(localData);
-                            resolve(localData);
-                            return;
-                        }
-                        
-                        // 4. iCloud 有数据：返回 iCloud 数据（确保两端同步）
-                        resolve(cloudData ? JSON.parse(cloudData) : {
-                            bills: [],
-                            categories: [],
-                            categoryBudgets: {}
+                
+                // 方法2: 检查是否为 iOS Safari 环境
+                if (this.isIOS() && this.isSafari()) {
+                    console.log("检测到 iOS Safari 环境");
+                    return true;
+                }
+                
+                console.log("iCloud 不支持");
+                return false;
+            },
+            
+            // 检测 iOS 设备
+            isIOS() {
+                return /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+            },
+            
+            // 检测 Safari 浏览器
+            isSafari() {
+                return /^((?!chrome|android).)*safari/i.test(navigator.userAgent) || 
+                       (navigator.userAgent.includes('Mac') && 'ontouchend' in document);
+            },
+            
+            // 获取 iCloud 存储对象
+            getCloudStore() {
+                if (window.safari && window.safari.extension && window.safari.extension.ubiquitousKeyValueStore) {
+                    return window.safari.extension.ubiquitousKeyValueStore;
+                }
+                return null;
+            },
+            
+            // 读取数据 - 改进版
+            async readData() {
+                console.log("开始从 iCloud 读取数据");
+                
+                // 1. 首先读取本地存储作为默认值
+                const localData = {
+                    bills: JSON.parse(localStorage.getItem(STORAGE.BILLS) || "[]"),
+                    categories: JSON.parse(localStorage.getItem(STORAGE.CATEGORIES) || "[]"),
+                    categoryBudgets: JSON.parse(localStorage.getItem(STORAGE.CATEGORY_BUDGETS) || "{}"),
+                    timestamp: Date.now()
+                };
+                
+                // 2. 如果不支持 iCloud，直接返回本地数据
+                if (!this.isICloudSupported()) {
+                    console.log("iCloud 不支持，使用本地数据");
+                    return localData;
+                }
+                
+                const cloudStore = this.getCloudStore();
+                if (!cloudStore) {
+                    console.log("未获取到 cloudStore，使用本地数据");
+                    return localData;
+                }
+                
+                // 3. 从 iCloud 读取数据
+                try {
+                    return new Promise((resolve) => {
+                        cloudStore.getItem(this.DATA_KEY, (cloudData) => {
+                            console.log("从 iCloud 读取到数据:", cloudData ? "有数据" : "无数据");
+                            
+                            if (cloudData) {
+                                try {
+                                    const parsedData = JSON.parse(cloudData);
+                                    console.log("解析 iCloud 数据成功，账单数量:", parsedData.bills ? parsedData.bills.length : 0);
+                                    
+                                    // 合并数据：以 iCloud 为主，但保留本地没有冲突的数据
+                                    const mergedData = {
+                                        bills: this.mergeArrays(parsedData.bills || [], localData.bills),
+                                        categories: this.mergeArrays(parsedData.categories || [], localData.categories),
+                                        categoryBudgets: this.mergeObjects(parsedData.categoryBudgets || {}, localData.categoryBudgets),
+                                        timestamp: Math.max(parsedData.timestamp || 0, localData.timestamp)
+                                    };
+                                    
+                                    console.log("合并后账单数量:", mergedData.bills.length);
+                                    
+                                    // 保存合并后的数据回本地存储
+                                    localStorage.setItem(STORAGE.BILLS, JSON.stringify(mergedData.bills));
+                                    localStorage.setItem(STORAGE.CATEGORIES, JSON.stringify(mergedData.categories));
+                                    localStorage.setItem(STORAGE.CATEGORY_BUDGETS, JSON.stringify(mergedData.categoryBudgets));
+                                    
+                                    resolve(mergedData);
+                                } catch (error) {
+                                    console.error("解析 iCloud 数据失败:", error);
+                                    resolve(localData);
+                                }
+                            } else {
+                                // iCloud 无数据，将本地数据同步到 iCloud
+                                console.log("iCloud 无数据，同步本地数据到云端");
+                                this.writeData(localData);
+                                resolve(localData);
+                            }
                         });
                     });
-                });
+                } catch (error) {
+                    console.error("读取 iCloud 数据异常:", error);
+                    return localData;
+                }
             },
-
-            // 写入数据（同时更新 iCloud 和本地存储，本地做备份防同步延迟）
+            
+            // 合并数组（去重，保留最新）
+            mergeArrays(cloudArray, localArray) {
+                const merged = [...cloudArray];
+                const cloudIds = new Set(cloudArray.map(item => item.id));
+                
+                localArray.forEach(localItem => {
+                    if (!cloudIds.has(localItem.id)) {
+                        merged.push(localItem);
+                    }
+                });
+                
+                return merged;
+            },
+            
+            // 合并对象
+            mergeObjects(cloudObj, localObj) {
+                return { ...localObj, ...cloudObj };
+            },
+            
+            // 写入数据 - 改进版
             async writeData(data) {
-                const dataStr = JSON.stringify(data);
-                // 1. 优先更新本地存储（避免 iCloud 同步延迟导致数据不一致）
+                console.log("开始写入数据到 iCloud");
+                
+                // 1. 更新本地存储
                 localStorage.setItem(STORAGE.BILLS, JSON.stringify(data.bills));
                 localStorage.setItem(STORAGE.CATEGORIES, JSON.stringify(data.categories));
                 localStorage.setItem(STORAGE.CATEGORY_BUDGETS, JSON.stringify(data.categoryBudgets));
-
-                // 2. 支持 iCloud：同步到云端
+                
+                // 2. 添加时间戳，用于冲突解决
+                const dataWithTimestamp = {
+                    ...data,
+                    timestamp: Date.now(),
+                    lastModified: new Date().toISOString()
+                };
+                
+                const dataStr = JSON.stringify(dataWithTimestamp);
+                
+                // 3. 支持 iCloud：同步到云端
                 if (this.isICloudSupported()) {
-                    const cloudStore = window.safari.extension.ubiquitousKeyValueStore;
-                    cloudStore.setItem(this.DATA_KEY, dataStr, () => {
-                        console.log("数据已同步到 iCloud"); // 可选：调试用
-                    });
+                    const cloudStore = this.getCloudStore();
+                    if (cloudStore) {
+                        try {
+                            cloudStore.setItem(this.DATA_KEY, dataStr, () => {
+                                console.log("数据已成功写入 iCloud");
+                            });
+                        } catch (error) {
+                            console.error("写入 iCloud 失败:", error);
+                        }
+                    }
                 }
             },
-
-            // 监听 iCloud 数据变化（一端修改，另一端自动更新页面）
+            
+            // 监听 iCloud 数据变化 - 改进版
             listenCloudChange(updateCallback) {
-                if (!this.isICloudSupported()) return;
-
-                const cloudStore = window.safari.extension.ubiquitousKeyValueStore;
-                // 监听 iCloud 数据外部变更（如桌面 App 修改，Safari 端实时感知）
+                if (!this.isICloudSupported()) {
+                    console.log("iCloud 不支持，跳过监听");
+                    return;
+                }
+                
+                const cloudStore = this.getCloudStore();
+                if (!cloudStore) {
+                    console.log("未获取到 cloudStore，跳过监听");
+                    return;
+                }
+                
+                console.log("开始监听 iCloud 数据变化");
+                
+                // 监听 iCloud 数据变化
                 cloudStore.addEventListener("change", (event) => {
+                    console.log("iCloud 数据变化事件:", event.key, event.newValue ? "有数据" : "无数据");
+                    
                     if (event.key === this.DATA_KEY) {
-                        const newData = JSON.parse(event.newValue || '{"bills":[],"categories":[],"categoryBudgets":{}}');
-                        updateCallback(newData); // 触发回调，更新页面渲染
+                        try {
+                            const newData = JSON.parse(event.newValue || '{"bills":[],"categories":[],"categoryBudgets":{}}');
+                            console.log("接收到 iCloud 更新，时间戳:", newData.timestamp);
+                            
+                            // 合并本地数据
+                            const localBills = JSON.parse(localStorage.getItem(STORAGE.BILLS) || "[]");
+                            const localCategories = JSON.parse(localStorage.getItem(STORAGE.CATEGORIES) || "[]");
+                            const localBudgets = JSON.parse(localStorage.getItem(STORAGE.CATEGORY_BUDGETS) || "{}");
+                            
+                            const mergedBills = this.mergeArrays(newData.bills || [], localBills);
+                            const mergedCategories = this.mergeArrays(newData.categories || [], localCategories);
+                            const mergedBudgets = this.mergeObjects(newData.categoryBudgets || {}, localBudgets);
+                            
+                            // 更新本地存储
+                            localStorage.setItem(STORAGE.BILLS, JSON.stringify(mergedBills));
+                            localStorage.setItem(STORAGE.CATEGORIES, JSON.stringify(mergedCategories));
+                            localStorage.setItem(STORAGE.CATEGORY_BUDGETS, JSON.stringify(mergedBudgets));
+                            
+                            // 触发回调更新页面
+                            updateCallback({
+                                bills: mergedBills,
+                                categories: mergedCategories,
+                                categoryBudgets: mergedBudgets
+                            });
+                            
+                        } catch (error) {
+                            console.error("处理 iCloud 变化时出错:", error);
+                        }
                     }
                 });
+                
+                // 添加定期同步检查（每30秒）
+                setInterval(async () => {
+                    console.log("执行定期同步检查");
+                    const cloudData = await this.readData();
+                    updateCallback(cloudData);
+                }, 30000);
             }
         };
 
-        // ========================= 原有代码修改部分 =========================
+        // ========================= 原有代码 =========================
         // 存储键名
         const STORAGE = {
             BILLS: 'bills',
@@ -1076,8 +1243,11 @@
 
         // 初始化页面 - 修改为支持 iCloud
         document.addEventListener('DOMContentLoaded', async function() {
+            console.log("页面加载，开始初始化");
+            
             // 初始化本地存储
             initStorage();
+            
             // 设置今日日期
             const today = getTodayDate();
             document.getElementById('billDate').value = today;
@@ -1085,14 +1255,20 @@
             document.getElementById('dateFilter').value = today;
             document.getElementById('editBillDate').max = today;
 
-            // 步骤3：使用 iCloud 读取数据并渲染
-            const cloudData = await ICloudSync.readData();
-            
-            // 如果 iCloud 有数据，更新本地存储
-            if (cloudData.bills && cloudData.categories && cloudData.categoryBudgets) {
-                localStorage.setItem(STORAGE.BILLS, JSON.stringify(cloudData.bills));
-                localStorage.setItem(STORAGE.CATEGORIES, JSON.stringify(cloudData.categories));
-                localStorage.setItem(STORAGE.CATEGORY_BUDGETS, JSON.stringify(cloudData.categoryBudgets));
+            // 步骤1：使用 iCloud 读取数据并渲染
+            try {
+                console.log("开始从 iCloud 读取数据");
+                const cloudData = await ICloudSync.readData();
+                console.log("iCloud 数据读取完成，账单数量:", cloudData.bills.length);
+                
+                // 更新本地存储
+                if (cloudData.bills && cloudData.categories && cloudData.categoryBudgets) {
+                    localStorage.setItem(STORAGE.BILLS, JSON.stringify(cloudData.bills));
+                    localStorage.setItem(STORAGE.CATEGORIES, JSON.stringify(cloudData.categories));
+                    localStorage.setItem(STORAGE.CATEGORY_BUDGETS, JSON.stringify(cloudData.categoryBudgets));
+                }
+            } catch (error) {
+                console.error("读取 iCloud 数据失败:", error);
             }
 
             // 渲染所有数据
@@ -1117,17 +1293,50 @@
             
             // 步骤3：监听 iCloud 变化，自动更新页面
             ICloudSync.listenCloudChange((newData) => {
-                // 更新本地存储
-                localStorage.setItem(STORAGE.BILLS, JSON.stringify(newData.bills));
-                localStorage.setItem(STORAGE.CATEGORIES, JSON.stringify(newData.categories));
-                localStorage.setItem(STORAGE.CATEGORY_BUDGETS, JSON.stringify(newData.categoryBudgets));
+                console.log("接收到 iCloud 更新回调，账单数量:", newData.bills.length);
                 
-                // 重新渲染页面
+                // 更新页面
                 renderCategories();
                 renderCategoryBudgets();
                 renderBills();
                 renderStats();
+                
+                // 显示同步提示
+                showToast('数据已从云端更新');
             });
+            
+            // 添加手动同步按钮
+            const syncBtn = document.createElement('button');
+            syncBtn.id = 'manualSyncBtn';
+            syncBtn.textContent = '↻';
+            syncBtn.title = '手动同步';
+            syncBtn.addEventListener('click', async () => {
+                syncBtn.style.transform = 'rotate(360deg)';
+                syncBtn.style.transition = 'transform 0.5s';
+                
+                try {
+                    showToast('正在同步...');
+                    const cloudData = await ICloudSync.readData();
+                    localStorage.setItem(STORAGE.BILLS, JSON.stringify(cloudData.bills));
+                    localStorage.setItem(STORAGE.CATEGORIES, JSON.stringify(cloudData.categories));
+                    localStorage.setItem(STORAGE.CATEGORY_BUDGETS, JSON.stringify(cloudData.categoryBudgets));
+                    
+                    renderCategories();
+                    renderCategoryBudgets();
+                    renderBills();
+                    renderStats();
+                    
+                    showToast('手动同步成功');
+                } catch (error) {
+                    console.error("手动同步失败:", error);
+                    showToast('同步失败');
+                }
+                
+                setTimeout(() => {
+                    syncBtn.style.transform = 'rotate(0deg)';
+                }, 500);
+            });
+            document.body.appendChild(syncBtn);
         });
 
         // 初始化本地存储
@@ -1150,23 +1359,24 @@
             setTimeout(() => toast.classList.remove('show'), 2000);
         }
 
-        // 获取所有类别 - 保持原样
+        // 获取所有类别
         function getCategories() {
             return JSON.parse(localStorage.getItem(STORAGE.CATEGORIES) || '[]');
         }
 
-        // 获取所有账单 - 保持原样
+        // 获取所有账单
         function getBills() {
             return JSON.parse(localStorage.getItem(STORAGE.BILLS) || '[]');
         }
 
-        // 获取类别预算 - 保持原样
+        // 获取类别预算
         function getCategoryBudgets() {
             return JSON.parse(localStorage.getItem(STORAGE.CATEGORY_BUDGETS) || '{}');
         }
 
         // 保存所有数据到 iCloud
         async function saveAllDataToCloud() {
+            console.log("保存所有数据到云端");
             const data = {
                 bills: getBills(),
                 categories: getCategories(),
@@ -1183,7 +1393,6 @@
             let isScrolling = false;
             let scrollTimeout = null;
             
-            // 初始位置
             let navbarVisible = true;
             
             window.addEventListener('scroll', function() {
@@ -1191,15 +1400,12 @@
                     window.requestAnimationFrame(function() {
                         const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
                         
-                        // 判断滚动方向
                         if (scrollTop > lastScrollTop && scrollTop > 100) {
-                            // 向下滚动，隐藏导航栏
                             if (navbarVisible) {
                                 navbar.classList.add('hidden');
                                 navbarVisible = false;
                             }
                         } else if (scrollTop < lastScrollTop || scrollTop <= 100) {
-                            // 向上滚动或接近顶部，显示导航栏
                             if (!navbarVisible) {
                                 navbar.classList.remove('hidden');
                                 navbarVisible = true;
@@ -1212,18 +1418,15 @@
                 }
                 isScrolling = true;
                 
-                // 清除之前的定时器
                 if (scrollTimeout) {
                     clearTimeout(scrollTimeout);
                 }
                 
-                // 设置新的定时器，防止快速滚动时频繁触发
                 scrollTimeout = setTimeout(function() {
                     isScrolling = false;
                 }, 100);
             });
             
-            // 点击主内容区域时显示导航栏（如果被隐藏）
             mainContent.addEventListener('click', function() {
                 if (!navbarVisible) {
                     navbar.classList.remove('hidden');
@@ -1250,7 +1453,6 @@
                 currentSwipeItem = listItem;
                 isSwiping = false;
                 
-                // 移除其他项目的滑动状态
                 document.querySelectorAll('.budget-progress-wrapper').forEach(item => {
                     if (item !== listItem && item.classList.contains('swiping')) {
                         item.classList.remove('swiping');
@@ -1267,12 +1469,10 @@
                 touchEndX = e.touches[0].clientX;
                 const diffX = touchStartX - touchEndX;
                 
-                // 检测到水平滑动
                 if (Math.abs(diffX) > 5) {
                     isSwiping = true;
                     e.preventDefault();
                     
-                    // 添加滑动状态类
                     if (!currentSwipeItem.classList.contains('swiping')) {
                         currentSwipeItem.classList.add('swiping');
                     }
@@ -1295,13 +1495,11 @@
                 
                 if (isSwiping) {
                     if (diffX > 40) {
-                        // 滑动超过40px，保持删除按钮显示状态
                         currentSwipeItem.classList.add('swiping');
                         currentSwipeItem.style.transform = 'translateX(-80px)';
                         const deleteBtn = currentSwipeItem.querySelector('.budget-delete-action');
                         if (deleteBtn) deleteBtn.style.transform = 'translateX(0)';
                     } else {
-                        // 滑动不足，恢复原状
                         currentSwipeItem.classList.remove('swiping');
                         currentSwipeItem.style.transform = 'translateX(0)';
                         const deleteBtn = currentSwipeItem.querySelector('.budget-delete-action');
@@ -1313,7 +1511,6 @@
                 isSwiping = false;
             });
             
-            // 绑定删除按钮事件
             budgetList.addEventListener('click', function(e) {
                 if (e.target.classList.contains('budget-delete-action')) {
                     e.stopPropagation();
@@ -1321,23 +1518,19 @@
                     
                     if (!confirm('确定删除该预算项吗？')) return;
                     
-                    // 删除预算
                     const budgets = getCategoryBudgets();
                     if (budgets[categoryId]) {
                         delete budgets[categoryId];
                         localStorage.setItem(STORAGE.CATEGORY_BUDGETS, JSON.stringify(budgets));
                         
-                        // 同步到 iCloud
                         saveAllDataToCloud();
                         
-                        // 重新渲染预算列表
                         renderCategoryBudgets();
                         showToast('预算删除成功');
                     }
                 }
             });
             
-            // 点击其他地方取消侧滑
             document.addEventListener('click', function(e) {
                 if (!e.target.closest('.budget-progress-wrapper') && !e.target.closest('.budget-delete-action')) {
                     document.querySelectorAll('.budget-progress-wrapper.swiping').forEach(item => {
@@ -1363,13 +1556,11 @@
             const dataStr = JSON.stringify(data, null, 2);
             const dataBlob = new Blob([dataStr], { type: 'application/json' });
             
-            // 创建下载链接
             const url = URL.createObjectURL(dataBlob);
             const link = document.createElement('a');
             link.href = url;
             link.download = `账单数据_${new Date().toISOString().split('T')[0]}.json`;
             
-            // 触发下载
             document.body.appendChild(link);
             link.click();
             document.body.removeChild(link);
@@ -1394,23 +1585,18 @@
                 try {
                     const importedData = JSON.parse(e.target.result);
                     
-                    // 验证导入的数据格式
                     if (!importedData.bills || !importedData.categories || !importedData.categoryBudgets) {
                         showToast('导入失败：文件格式不正确');
                         return;
                     }
 
-                    // 确认是否覆盖现有数据
                     if (confirm('导入数据将覆盖现有数据，确定要继续吗？')) {
-                        // 保存导入的数据到本地存储
                         localStorage.setItem(STORAGE.BILLS, JSON.stringify(importedData.bills));
                         localStorage.setItem(STORAGE.CATEGORIES, JSON.stringify(importedData.categories));
                         localStorage.setItem(STORAGE.CATEGORY_BUDGETS, JSON.stringify(importedData.categoryBudgets));
                         
-                        // 同步到 iCloud
                         await saveAllDataToCloud();
                         
-                        // 重新渲染所有数据
                         renderCategories();
                         renderCategoryBudgets();
                         renderBills();
@@ -1423,14 +1609,13 @@
                     showToast('导入失败：文件解析错误');
                 }
                 
-                // 清空文件输入框，允许重复导入相同文件
                 event.target.value = '';
             };
             
             reader.readAsText(file);
         }
 
-        // 初始化滑动删除功能 - 改进版
+        // 初始化滑动删除功能
         function initSwipeDelete() {
             const billList = document.getElementById('billList');
             let isSwiping = false;
@@ -1444,7 +1629,6 @@
                 currentSwipeItem = listItem;
                 isSwiping = false;
                 
-                // 移除其他项目的滑动状态
                 document.querySelectorAll('.list-item-wrapper').forEach(item => {
                     if (item !== listItem && item.classList.contains('swiping')) {
                         item.classList.remove('swiping');
@@ -1464,17 +1648,15 @@
                 const diffX = touchStartX - touchEndX;
                 const diffY = touchStartY - touchEndY;
                 
-                // 检测到水平滑动
                 if (Math.abs(diffX) > Math.abs(diffY) && diffX > 5) {
                     isSwiping = true;
                     e.preventDefault();
                     
-                    // 添加滑动状态类
                     if (!currentSwipeItem.classList.contains('swiping')) {
                         currentSwipeItem.classList.add('swiping');
                     }
                     
-                    const translateX = Math.min(diffX, 80); // 最大滑动80px
+                    const translateX = Math.min(diffX, 80);
                     currentSwipeItem.style.transform = `translateX(-${translateX}px)`;
                     
                     const deleteBtn = currentSwipeItem.querySelector('.delete-action');
@@ -1492,26 +1674,22 @@
                 
                 if (isSwiping) {
                     if (diffX > 40) {
-                        // 滑动超过40px，保持删除按钮显示状态，隐藏编辑按钮
                         currentSwipeItem.classList.add('swiping');
                         currentSwipeItem.style.transform = 'translateX(-80px)';
                         const deleteBtn = currentSwipeItem.querySelector('.delete-action');
                         if (deleteBtn) deleteBtn.style.transform = 'translateX(0)';
                         
-                        // 隐藏编辑按钮
                         const editBtn = currentSwipeItem.querySelector('.edit-bill');
                         if (editBtn) {
                             editBtn.style.opacity = '0';
                             editBtn.style.transform = 'translateX(10px)';
                         }
                     } else {
-                        // 滑动不足，恢复原状，显示编辑按钮
                         currentSwipeItem.classList.remove('swiping');
                         currentSwipeItem.style.transform = 'translateX(0)';
                         const deleteBtn = currentSwipeItem.querySelector('.delete-action');
                         if (deleteBtn) deleteBtn.style.transform = 'translateX(100%)';
                         
-                        // 显示编辑按钮
                         const editBtn = currentSwipeItem.querySelector('.edit-bill');
                         if (editBtn) {
                             editBtn.style.opacity = '1';
@@ -1524,7 +1702,6 @@
                 isSwiping = false;
             });
             
-            // 点击其他地方取消侧滑
             document.addEventListener('click', function(e) {
                 if (!e.target.closest('.list-item-wrapper') && !e.target.closest('.delete-action')) {
                     document.querySelectorAll('.list-item-wrapper.swiping').forEach(item => {
@@ -1532,7 +1709,6 @@
                         item.style.transform = 'translateX(0)';
                         const deleteBtn = item.querySelector('.delete-action');
                         if (deleteBtn) deleteBtn.style.transform = 'translateX(100%)';
-                        // 恢复编辑按钮显示
                         const editBtn = item.querySelector('.edit-bill');
                         if (editBtn) {
                             editBtn.style.opacity = '1';
@@ -1545,7 +1721,6 @@
 
         // 修复编辑按钮事件绑定问题
         function bindBillEditEvents() {
-            // 使用事件委托绑定编辑按钮事件
             document.getElementById('billList').addEventListener('click', function(e) {
                 if (e.target.classList.contains('edit-bill')) {
                     const billId = e.target.dataset.id;
@@ -1565,14 +1740,12 @@
                 return;
             }
             
-            // 填充表单数据
             document.getElementById('editBillId').value = bill.id;
             document.getElementById('editBillType').value = bill.type;
             document.getElementById('editBillAmount').value = bill.amount;
             document.getElementById('editBillDate').value = bill.date;
             document.getElementById('editBillNote').value = bill.note || '';
             
-            // 填充分类下拉框
             const editBillCategory = document.getElementById('editBillCategory');
             editBillCategory.innerHTML = '';
             categories.forEach(cat => {
@@ -1585,13 +1758,11 @@
                 editBillCategory.appendChild(option);
             });
             
-            // 显示模态框
             document.getElementById('editBillModal').classList.add('show');
         }
 
         // 绑定编辑账单表单事件
         function bindEditBillEvents() {
-            // 更新账单
             document.getElementById('updateBillBtn').addEventListener('click', async function() {
                 const billId = document.getElementById('editBillId').value;
                 const type = document.getElementById('editBillType').value;
@@ -1615,7 +1786,6 @@
                     return;
                 }
                 
-                // 更新账单信息
                 bills[billIndex] = {
                     ...bills[billIndex],
                     type,
@@ -1627,17 +1797,14 @@
                 
                 localStorage.setItem(STORAGE.BILLS, JSON.stringify(bills));
                 
-                // 同步到 iCloud
                 await saveAllDataToCloud();
                 
-                // 重新渲染
                 renderBills(document.getElementById('dateFilter').value);
                 renderStats();
                 document.getElementById('editBillModal').classList.remove('show');
                 showToast('账单更新成功');
             });
             
-            // 删除账单（编辑模式）
             document.getElementById('deleteBillBtn').addEventListener('click', async function() {
                 const billId = document.getElementById('editBillId').value;
                 
@@ -1646,17 +1813,14 @@
                 const bills = getBills().filter(b => b.id !== billId);
                 localStorage.setItem(STORAGE.BILLS, JSON.stringify(bills));
                 
-                // 同步到 iCloud
                 await saveAllDataToCloud();
                 
-                // 重新渲染
                 renderBills(document.getElementById('dateFilter').value);
                 renderStats();
                 document.getElementById('editBillModal').classList.remove('show');
                 showToast('账单删除成功');
             });
             
-            // 取消编辑
             document.getElementById('cancelEditBill').addEventListener('click', function() {
                 document.getElementById('editBillModal').classList.remove('show');
             });
@@ -1691,21 +1855,17 @@
             const editBillCategory = document.getElementById('editBillCategory');
             const budgetCategorySelect = document.getElementById('budgetCategorySelect');
 
-            // 清空下拉框
             billCategory.innerHTML = '';
             editBillCategory.innerHTML = '';
             budgetCategorySelect.innerHTML = '';
 
-            // 空状态
             if (categories.length === 0) {
                 categoryList.innerHTML = '<div class="empty">暂无类别数据</div>';
                 return;
             }
 
-            // 渲染类别管理列表
             categoryList.innerHTML = '';
             categories.forEach(cat => {
-                // 类别管理项
                 const item = document.createElement('div');
                 item.className = 'list-item';
                 item.innerHTML = `
@@ -1719,7 +1879,6 @@
                 `;
                 categoryList.appendChild(item);
 
-                // 填充下拉框
                 const option = document.createElement('option');
                 option.value = cat.id;
                 option.textContent = cat.name;
@@ -1729,13 +1888,12 @@
             });
         }
 
-        // 渲染类别预算 - 圆形进度条（添加侧滑删除）
+        // 渲染类别预算
         function renderCategoryBudgets() {
             const budgets = getCategoryBudgets();
             const categories = getCategories();
             const budgetList = document.getElementById('budgetList');
 
-            // 筛选有预算的类别
             const budgetItems = categories.filter(cat => budgets[cat.id] && budgets[cat.id].amount > 0);
 
             if (budgetItems.length === 0) {
@@ -1781,13 +1939,12 @@
             });
         }
 
-        // 渲染账单列表 - 添加滑动删除
+        // 渲染账单列表
         function renderBills(filterDate = '') {
             let bills = getBills();
             const categories = getCategories();
             const billList = document.getElementById('billList');
 
-            // 日期筛选
             if (filterDate) {
                 bills = bills.filter(bill => bill.date === filterDate);
             }
@@ -1825,7 +1982,6 @@
                 billList.appendChild(wrapper);
             });
             
-            // 绑定删除按钮事件
             document.querySelectorAll('.delete-action').forEach(btn => {
                 btn.addEventListener('click', async function(e) {
                     e.stopPropagation();
@@ -1835,7 +1991,6 @@
                     const bills = getBills().filter(b => b.id !== id);
                     localStorage.setItem(STORAGE.BILLS, JSON.stringify(bills));
                     
-                    // 同步到 iCloud
                     await saveAllDataToCloud();
 
                     renderBills(document.getElementById('dateFilter').value);
@@ -1861,15 +2016,12 @@
 
             const balance = income - expense;
             
-            // 更新统计卡片
             document.getElementById('totalIncome').textContent = income.toFixed(2);
             document.getElementById('totalExpense').textContent = expense.toFixed(2);
             document.getElementById('totalBalance').textContent = balance.toFixed(2);
             
-            // 更新颜色
             document.getElementById('totalBalance').className = `value ${balance >= 0 ? 'positive' : 'negative'}`;
 
-            // 更新类别预算的已使用金额
             updateCategoryBudgetUsed();
         }
 
@@ -1879,32 +2031,27 @@
             const budgets = getCategoryBudgets();
             const categories = getCategories();
 
-            // 重置已使用金额
             categories.forEach(cat => {
                 if (!budgets[cat.id]) budgets[cat.id] = { amount: 0, used: 0 };
                 budgets[cat.id].used = 0;
             });
 
-            // 统计支出
             bills.forEach(bill => {
                 if (bill.type === 'expense' && budgets[bill.categoryId]) {
                     budgets[bill.categoryId].used += parseFloat(bill.amount);
                 }
             });
 
-            // 保存并重新渲染预算
             localStorage.setItem(STORAGE.CATEGORY_BUDGETS, JSON.stringify(budgets));
             renderCategoryBudgets();
         }
 
         // 绑定所有事件
         function bindAllEvents() {
-            // ========== 导入导出功能 ==========
             document.getElementById('exportBtn').addEventListener('click', exportData);
             document.getElementById('importBtn').addEventListener('click', importData);
             document.getElementById('importFileInput').addEventListener('change', handleImportFile);
 
-            // ========== 基础按钮 ==========
             document.getElementById('categoryBtn').addEventListener('click', function() {
                 const card = document.getElementById('categoryCard');
                 card.style.display = card.style.display === 'none' ? 'block' : 'none';
@@ -1950,7 +2097,6 @@
                 });
                 localStorage.setItem(STORAGE.BILLS, JSON.stringify(bills));
                 
-                // 同步到 iCloud
                 await saveAllDataToCloud();
 
                 renderBills(document.getElementById('dateFilter').value);
@@ -1960,14 +2106,12 @@
                 showToast('账单添加成功');
             });
 
-            // ========== 折叠/展开账单列表 ==========
             document.getElementById('toggleBillListBtn').addEventListener('click', function() {
                 const billList = document.getElementById('billList');
                 billList.classList.toggle('hidden');
                 this.textContent = billList.classList.contains('hidden') ? '展开' : '折叠';
             });
 
-            // ========== 类别管理 ==========
             document.getElementById('addCategoryBtn').addEventListener('click', function() {
                 document.getElementById('addCategoryModal').classList.add('show');
             });
@@ -1990,7 +2134,6 @@
                 budgets[categories[categories.length - 1].id] = { amount: 0, used: 0 };
                 localStorage.setItem(STORAGE.CATEGORY_BUDGETS, JSON.stringify(budgets));
                 
-                // 同步到 iCloud
                 await saveAllDataToCloud();
 
                 renderCategories();
@@ -1999,7 +2142,6 @@
                 showToast('类别添加成功');
             });
 
-            // 编辑分类（事件委托）
             document.getElementById('categoryList').addEventListener('click', async function(e) {
                 if (e.target.classList.contains('edit-category')) {
                     const id = e.target.dataset.id;
@@ -2016,7 +2158,6 @@
                     const updated = categories.map(c => c.id === id ? { ...c, name: newName.trim() } : c);
                     localStorage.setItem(STORAGE.CATEGORIES, JSON.stringify(updated));
                     
-                    // 同步到 iCloud
                     await saveAllDataToCloud();
                     
                     renderCategories();
@@ -2035,7 +2176,6 @@
                     delete budgets[id];
                     localStorage.setItem(STORAGE.CATEGORY_BUDGETS, JSON.stringify(budgets));
                     
-                    // 同步到 iCloud
                     await saveAllDataToCloud();
 
                     renderCategories();
@@ -2044,7 +2184,6 @@
                 }
             });
 
-            // ========== 预算管理 ==========
             document.getElementById('editBudgetBtn').addEventListener('click', function() {
                 const categories = getCategories();
                 if (categories.length === 0) {
@@ -2070,7 +2209,6 @@
                 budgets[categoryId].amount = amount;
                 localStorage.setItem(STORAGE.CATEGORY_BUDGETS, JSON.stringify(budgets));
                 
-                // 同步到 iCloud
                 await saveAllDataToCloud();
 
                 renderCategoryBudgets();
@@ -2079,12 +2217,10 @@
                 showToast('预算设置成功');
             });
 
-            // ========== 账单管理 ==========
             document.getElementById('dateFilter').addEventListener('change', function() {
                 renderBills(this.value);
             });
 
-            // 点击模态框外部关闭
             document.querySelectorAll('.modal').forEach(modal => {
                 modal.addEventListener('click', function(e) {
                     if (e.target === this) {
@@ -2095,7 +2231,6 @@
                 });
             });
 
-            // 绑定编辑账单相关事件
             bindBillEditEvents();
             bindEditBillEvents();
         }
