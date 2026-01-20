@@ -1804,4 +1804,154 @@
                 const today = getTodayDate();
                 
                 if (!categoryId) return showToast('请选择类别');
-             if (isNaN(amount) || amount < 0.01) return showToast('金额必须大于0.01元');
+                if (isNaN(amount) || amount < 0.01) return showToast('金额必须大于0.01元');
+                if (!date) return showToast('请选择日期');
+                if (date > today) return showToast('不能选择未来日期');
+
+                const bills = getBills();
+                bills.push({
+                    id: generateId(),
+                    type,
+                    categoryId,
+                    amount,
+                    date,
+                    note: note || ''
+                });
+                localStorage.setItem(STORAGE.BILLS, JSON.stringify(bills));
+
+                renderBills(document.getElementById('dateFilter').value);
+                renderStats();
+                document.getElementById('addBillModal').classList.remove('show');
+                resetAddBillForm();
+                showToast('账单添加成功');
+            });
+
+            // ========== 折叠/展开账单列表 ==========
+            document.getElementById('toggleBillListBtn').addEventListener('click', function() {
+                const billList = document.getElementById('billList');
+                billList.classList.toggle('hidden');
+                this.textContent = billList.classList.contains('hidden') ? '展开' : '折叠';
+            });
+
+            // ========== 类别管理 ==========
+            document.getElementById('addCategoryBtn').addEventListener('click', function() {
+                document.getElementById('addCategoryModal').classList.add('show');
+            });
+
+            document.getElementById('cancelAddCategory').addEventListener('click', function() {
+                document.getElementById('addCategoryModal').classList.remove('show');
+            });
+
+            document.getElementById('saveCategoryBtn').addEventListener('click', function() {
+                const name = document.getElementById('newCategoryName').value.trim();
+                if (!name || name.length > 10) return showToast('请输入1-10个字的类别名称');
+
+                const categories = getCategories();
+                if (categories.some(c => c.name === name)) return showToast('类别名称已存在');
+
+                categories.push({ id: generateId(), name });
+                localStorage.setItem(STORAGE.CATEGORIES, JSON.stringify(categories));
+
+                const budgets = getCategoryBudgets();
+                budgets[categories[categories.length - 1].id] = { amount: 0, used: 0 };
+                localStorage.setItem(STORAGE.CATEGORY_BUDGETS, JSON.stringify(budgets));
+
+                renderCategories();
+                document.getElementById('addCategoryModal').classList.remove('show');
+                document.getElementById('newCategoryName').value = '';
+                showToast('类别添加成功');
+            });
+
+            // 编辑分类（事件委托）
+            document.getElementById('categoryList').addEventListener('click', function(e) {
+                if (e.target.classList.contains('edit-category')) {
+                    const id = e.target.dataset.id;
+                    const categories = getCategories();
+                    const cat = categories.find(c => c.id === id);
+                    if (!cat) return;
+
+                    const newName = prompt('请输入新的分类名称', cat.name);
+                    if (!newName || newName.trim() === '' || newName.length > 10) return;
+                    if (categories.some(c => c.id !== id && c.name === newName.trim())) {
+                        return showToast('类别名称已存在');
+                    }
+
+                    const updated = categories.map(c => c.id === id ? { ...c, name: newName.trim() } : c);
+                    localStorage.setItem(STORAGE.CATEGORIES, JSON.stringify(updated));
+                    renderCategories();
+                    renderCategoryBudgets();
+                    showToast('分类编辑成功');
+                }
+
+                if (e.target.classList.contains('delete-category')) {
+                    const id = e.target.dataset.id;
+                    if (!confirm('确定删除该类别？关联账单将显示为未知类别')) return;
+
+                    const categories = getCategories().filter(c => c.id !== id);
+                    localStorage.setItem(STORAGE.CATEGORIES, JSON.stringify(categories));
+
+                    const budgets = getCategoryBudgets();
+                    delete budgets[id];
+                    localStorage.setItem(STORAGE.CATEGORY_BUDGETS, JSON.stringify(budgets));
+
+                    renderCategories();
+                    renderCategoryBudgets();
+                    showToast('分类删除成功');
+                }
+            });
+
+            // ========== 预算管理 ==========
+            document.getElementById('editBudgetBtn').addEventListener('click', function() {
+                const categories = getCategories();
+                if (categories.length === 0) {
+                    showToast('请先添加类别');
+                    return;
+                }
+                document.getElementById('setBudgetModal').classList.add('show');
+            });
+
+            document.getElementById('cancelSetBudget').addEventListener('click', function() {
+                document.getElementById('setBudgetModal').classList.remove('show');
+            });
+
+            document.getElementById('saveBudgetBtn').addEventListener('click', function() {
+                const categoryId = document.getElementById('budgetCategorySelect').value;
+                const amount = parseFloat(document.getElementById('budgetAmountInput').value);
+
+                if (!categoryId) return showToast('请选择类别');
+                if (isNaN(amount) || amount < 0.01) return showToast('预算金额必须大于0.01元');
+
+                const budgets = getCategoryBudgets();
+                if (!budgets[categoryId]) budgets[categoryId] = { amount: 0, used: 0 };
+                budgets[categoryId].amount = amount;
+                localStorage.setItem(STORAGE.CATEGORY_BUDGETS, JSON.stringify(budgets));
+
+                renderCategoryBudgets();
+                document.getElementById('setBudgetModal').classList.remove('show');
+                document.getElementById('budgetAmountInput').value = '';
+                showToast('预算设置成功');
+            });
+
+            // ========== 账单管理 ==========
+            document.getElementById('dateFilter').addEventListener('change', function() {
+                renderBills(this.value);
+            });
+
+            // 点击模态框外部关闭
+            document.querySelectorAll('.modal').forEach(modal => {
+                modal.addEventListener('click', function(e) {
+                    if (e.target === this) {
+                        this.classList.remove('show');
+                        if (this.id === 'addBillModal') resetAddBillForm();
+                        if (this.id === 'editBillModal') resetEditBillForm();
+                    }
+                });
+            });
+
+            // 绑定编辑账单相关事件
+            bindBillEditEvents();
+            bindEditBillEvents();
+        }
+    </script>
+</body>
+</html>
