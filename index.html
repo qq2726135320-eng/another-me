@@ -770,6 +770,179 @@
             from { opacity: 0; transform: translateY(20px); }
             to { opacity: 1; transform: translateY(0); }
         }
+        
+        /* 新增：财务报表样式 - 完全复用现有样式 */
+        .report-card {
+            background: var(--card-bg);
+            border-radius: 20px;
+            padding: 24px;
+            margin: 0 20px 20px;
+            backdrop-filter: blur(var(--blur-intensity));
+            -webkit-backdrop-filter: blur(var(--blur-intensity));
+            border: 1px solid rgba(0, 0, 0, 0.05);
+            box-shadow: var(--shadow-light);
+            transition: transform 0.2s ease;
+        }
+        
+        .report-card h3 {
+            font-size: 18px;
+            font-weight: 700;
+            margin-bottom: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            color: var(--text-primary);
+        }
+        
+        .report-stats {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+        
+        .report-stat-item {
+            flex: 1;
+            min-width: 110px;
+            background: rgba(255, 255, 255, 0.5);
+            border-radius: 14px;
+            padding: 14px;
+            text-align: center;
+        }
+        
+        .report-stat-item .label {
+            font-size: 12px;
+            color: var(--text-secondary);
+            margin-bottom: 6px;
+        }
+        
+        .report-stat-item .value {
+            font-size: 16px;
+            font-weight: 700;
+        }
+        
+        .report-category-list {
+            margin-top: 15px;
+        }
+        
+        .report-category-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 0;
+            border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+        }
+        
+        .report-category-item:last-child {
+            border-bottom: none;
+        }
+        
+        .report-category-name {
+            font-weight: 600;
+            flex: 1;
+        }
+        
+        .report-category-amount {
+            font-weight: 600;
+            color: var(--danger-color);
+        }
+        
+        .report-budget-progress {
+            margin-top: 8px;
+            height: 6px;
+            background: rgba(0, 0, 0, 0.05);
+            border-radius: 3px;
+            overflow: hidden;
+        }
+        
+        .report-budget-progress-bar {
+            height: 100%;
+            background: var(--success-color);
+            border-radius: 3px;
+            transition: width 0.3s ease;
+        }
+        
+        .report-budget-progress-bar.overbudget {
+            background: var(--danger-color);
+        }
+        
+        .report-filter-section {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        
+        .report-filter-section select {
+            padding: 10px 14px;
+            border-radius: 12px;
+            border: 1.5px solid rgba(0, 0, 0, 0.1);
+            background: rgba(255, 255, 255, 0.8);
+            font-size: 14px;
+            flex: 1;
+        }
+        
+        .report-monthly-trend {
+            display: flex;
+            align-items: flex-end;
+            gap: 6px;
+            height: 120px;
+            margin: 20px 0;
+            padding: 0 10px;
+        }
+        
+        .report-trend-bar {
+            flex: 1;
+            background: var(--primary-color);
+            border-radius: 4px 4px 0 0;
+            min-height: 4px;
+            position: relative;
+        }
+        
+        .report-trend-bar-income {
+            background: var(--success-color);
+        }
+        
+        .report-trend-bar-expense {
+            background: var(--danger-color);
+        }
+        
+        .report-trend-label {
+            font-size: 10px;
+            text-align: center;
+            color: var(--text-secondary);
+            margin-top: 4px;
+            transform: rotate(-45deg);
+            transform-origin: top left;
+            white-space: nowrap;
+        }
+        
+        .report-year-summary {
+            margin-top: 20px;
+        }
+        
+        .report-year-total {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+        }
+        
+        .report-close-btn {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: rgba(120, 120, 128, 0.2);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            z-index: 1002;
+        }
     </style>
 <!-- PWA 基本设置 -->
 <link rel="manifest" href="site.webmanifest">
@@ -786,6 +959,8 @@
             <button id="importBtn" class="btn-import btn-small">导入</button>
             <button id="exportBtn" class="btn-export btn-small">导出</button>
             <button id="categoryBtn" class="btn-small">分类</button>
+            <!-- 新增：财务报表按钮 -->
+            <button id="reportBtn" class="btn-small" style="background: #8E8E93;">报表</button>
         </div>
     </div>
 
@@ -960,6 +1135,84 @@
                 </div>
             </div>
         </div>
+        
+        <!-- 新增：财务报表模态框 -->
+        <div class="modal" id="reportModal">
+            <div class="modal-content" style="max-height: 90vh; overflow-y: auto;">
+                <button class="report-close-btn" id="closeReportBtn">×</button>
+                <h3>财务报表</h3>
+                
+                <div class="report-filter-section">
+                    <select id="reportYearSelect">
+                        <!-- 动态填充年份 -->
+                    </select>
+                    <select id="reportMonthSelect">
+                        <option value="year">年度汇总</option>
+                        <!-- 动态填充月份 -->
+                    </select>
+                </div>
+                
+                <div id="monthlyReport" style="display: none;">
+                    <div class="report-card">
+                        <h3 id="reportMonthTitle">月度报告</h3>
+                        <div class="report-stats">
+                            <div class="report-stat-item">
+                                <div class="label">总收入</div>
+                                <div class="value positive" id="reportMonthIncome">0.00</div>
+                            </div>
+                            <div class="report-stat-item">
+                                <div class="label">总支出</div>
+                                <div class="value negative" id="reportMonthExpense">0.00</div>
+                            </div>
+                            <div class="report-stat-item">
+                                <div class="label">结余</div>
+                                <div class="value" id="reportMonthBalance">0.00</div>
+                            </div>
+                        </div>
+                        
+                        <h4 style="margin: 20px 0 10px 0; font-size: 16px;">分类支出</h4>
+                        <div id="reportCategoryList" class="report-category-list">
+                            <div class="empty">暂无分类数据</div>
+                        </div>
+                        
+                        <h4 style="margin: 20px 0 10px 0; font-size: 16px;">预算执行</h4>
+                        <div id="reportBudgetList" class="report-category-list">
+                            <div class="empty">暂无预算数据</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div id="yearlyReport">
+                    <div class="report-card">
+                        <h3 id="reportYearTitle">年度报告</h3>
+                        <div class="report-stats">
+                            <div class="report-stat-item">
+                                <div class="label">年收入</div>
+                                <div class="value positive" id="reportYearIncome">0.00</div>
+                            </div>
+                            <div class="report-stat-item">
+                                <div class="label">年支出</div>
+                                <div class="value negative" id="reportYearExpense">0.00</div>
+                            </div>
+                            <div class="report-stat-item">
+                                <div class="label">年结余</div>
+                                <div class="value" id="reportYearBalance">0.00</div>
+                            </div>
+                        </div>
+                        
+                        <h4 style="margin: 20px 0 10px 0; font-size: 16px;">月度趋势</h4>
+                        <div class="report-monthly-trend" id="monthlyTrendChart">
+                            <!-- 动态生成趋势图 -->
+                        </div>
+                        
+                        <h4 style="margin: 20px 0 10px 0; font-size: 16px;">年度分类统计</h4>
+                        <div id="reportYearCategoryList" class="report-category-list">
+                            <div class="empty">暂无分类数据</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
 
         <!-- 提示框 -->
         <div class="toast" id="toast"></div>
@@ -969,13 +1222,34 @@
     </div>
 
     <script>
-        // 存储键名
+        // ==================== 第一部分：月度数据自动清零功能 ====================
+        
+        // 存储键名 - 修改：增加月度隔离
         const STORAGE = {
-            BILLS: 'bills',
-            CATEGORIES: 'categories',
-            CATEGORY_BUDGETS: 'categoryBudgets'
+            BILLS: 'bills',  // 原始账单数据不变
+            CATEGORIES: 'categories',  // 分类数据不变
+            CATEGORY_BUDGETS: 'categoryBudgets',  // 预算配置不变
+            MONTHLY_STATS: 'monthly_stats_',  // 月度统计前缀，后接年月
+            MONTHLY_BUDGET_USED: 'monthly_budget_used_'  // 月度预算已用前缀，后接年月
         };
-
+        
+        // 获取当前年月标识 (YYYY-MM格式)
+        function getCurrentMonthKey() {
+            const now = new Date();
+            const year = now.getFullYear();
+            const month = String(now.getMonth() + 1).padStart(2, '0');
+            return `${year}-${month}`;
+        }
+        
+        // 获取动态存储键
+        function getMonthlyStatsKey() {
+            return STORAGE.MONTHLY_STATS + getCurrentMonthKey();
+        }
+        
+        function getMonthlyBudgetUsedKey() {
+            return STORAGE.MONTHLY_BUDGET_USED + getCurrentMonthKey();
+        }
+        
         // 滑动删除相关变量
         let touchStartX = 0;
         let touchStartY = 0;
@@ -994,41 +1268,86 @@
 
         // 初始化页面
         document.addEventListener('DOMContentLoaded', function() {
-            // 初始化本地存储
+            // 第一步：月度数据自动清零初始化
+            initMonthlyData();
+            
+            // 第二步：初始化本地存储
             initStorage();
-            // 设置今日日期
+            
+            // 第三步：设置今日日期
             const today = getTodayDate();
             document.getElementById('billDate').value = today;
             document.getElementById('billDate').max = today;
             document.getElementById('dateFilter').value = today;
             document.getElementById('editBillDate').max = today;
 
-            // 渲染所有数据
+            // 第四步：渲染所有数据
             renderCategories();
             renderCategoryBudgets();
             renderBills();
             renderStats();
 
-            // 绑定所有事件
+            // 第五步：绑定所有事件
             bindAllEvents();
             
-            // 初始化滑动删除
+            // 第六步：初始化滑动删除
             initSwipeDelete();
             
-            // 初始化导航栏滚动隐藏/显示
+            // 第七步：初始化导航栏滚动隐藏/显示
             initNavbarScroll();
             
-            // 初始化预算侧滑删除
+            // 第八步：初始化预算侧滑删除
             if (document.getElementById('budgetList')) {
                 initBudgetSwipeDelete();
             }
+            
+            // 第九步：初始化报表数据
+            initReportData();
         });
+        
+        // 月度数据自动清零初始化
+        function initMonthlyData() {
+            const currentMonthKey = getCurrentMonthKey();
+            const statsKey = getMonthlyStatsKey();
+            const budgetUsedKey = getMonthlyBudgetUsedKey();
+            
+            // 检查当前月份统计是否存在，不存在则初始化
+            if (!localStorage.getItem(statsKey)) {
+                // 初始化当月统计数据
+                const initialStats = {
+                    income: 0,
+                    expense: 0,
+                    balance: 0,
+                    month: currentMonthKey
+                };
+                localStorage.setItem(statsKey, JSON.stringify(initialStats));
+            }
+            
+            // 检查当前月份预算已用数据是否存在，不存在则初始化
+            if (!localStorage.getItem(budgetUsedKey)) {
+                // 从原始预算配置中复制结构，但重置已用金额为0
+                const originalBudgets = JSON.parse(localStorage.getItem(STORAGE.CATEGORY_BUDGETS) || '{}');
+                const monthlyBudgetUsed = {};
+                
+                // 复制预算配置，但重置已用金额为0
+                Object.keys(originalBudgets).forEach(categoryId => {
+                    monthlyBudgetUsed[categoryId] = {
+                        amount: originalBudgets[categoryId].amount || 0,
+                        used: 0  // 重置为0
+                    };
+                });
+                
+                localStorage.setItem(budgetUsedKey, JSON.stringify(monthlyBudgetUsed));
+            }
+        }
 
         // 初始化本地存储
         function initStorage() {
             if (!localStorage.getItem(STORAGE.BILLS)) localStorage.setItem(STORAGE.BILLS, '[]');
             if (!localStorage.getItem(STORAGE.CATEGORIES)) localStorage.setItem(STORAGE.CATEGORIES, '[]');
             if (!localStorage.getItem(STORAGE.CATEGORY_BUDGETS)) localStorage.setItem(STORAGE.CATEGORY_BUDGETS, '{}');
+            
+            // 月度数据已在上面的initMonthlyData中初始化
         }
 
         // 生成唯一ID
@@ -1054,9 +1373,40 @@
             return JSON.parse(localStorage.getItem(STORAGE.BILLS) || '[]');
         }
 
-        // 获取类别预算
+        // 获取类别预算配置（永久保留，不受月度清零影响）
         function getCategoryBudgets() {
             return JSON.parse(localStorage.getItem(STORAGE.CATEGORY_BUDGETS) || '{}');
+        }
+        
+        // 获取当月预算已用数据
+        function getMonthlyBudgetUsed() {
+            const key = getMonthlyBudgetUsedKey();
+            return JSON.parse(localStorage.getItem(key) || '{}');
+        }
+        
+        // 保存当月预算已用数据
+        function saveMonthlyBudgetUsed(data) {
+            const key = getMonthlyBudgetUsedKey();
+            localStorage.setItem(key, JSON.stringify(data));
+        }
+        
+        // 获取当月统计数据
+        function getMonthlyStats() {
+            const key = getMonthlyStatsKey();
+            const stats = JSON.parse(localStorage.getItem(key) || '{}');
+            // 确保有默认值
+            return {
+                income: stats.income || 0,
+                expense: stats.expense || 0,
+                balance: stats.balance || 0,
+                month: stats.month || getCurrentMonthKey()
+            };
+        }
+        
+        // 保存当月统计数据
+        function saveMonthlyStats(stats) {
+            const key = getMonthlyStatsKey();
+            localStorage.setItem(key, JSON.stringify(stats));
         }
 
         // 导航栏滚动隐藏/显示功能
@@ -1205,11 +1555,18 @@
                     
                     if (!confirm('确定删除该预算项吗？')) return;
                     
-                    // 删除预算
+                    // 删除预算（从配置中删除）
                     const budgets = getCategoryBudgets();
                     if (budgets[categoryId]) {
                         delete budgets[categoryId];
                         localStorage.setItem(STORAGE.CATEGORY_BUDGETS, JSON.stringify(budgets));
+                        
+                        // 同时删除当月预算已用数据
+                        const monthlyBudgetUsed = getMonthlyBudgetUsed();
+                        if (monthlyBudgetUsed[categoryId]) {
+                            delete monthlyBudgetUsed[categoryId];
+                            saveMonthlyBudgetUsed(monthlyBudgetUsed);
+                        }
                         
                         // 重新渲染预算列表
                         renderCategoryBudgets();
@@ -1237,9 +1594,21 @@
                 bills: getBills(),
                 categories: getCategories(),
                 categoryBudgets: getCategoryBudgets(),
+                monthlyStats: {},
+                monthlyBudgetUsed: {},
                 exportDate: new Date().toISOString(),
-                version: '1.0'
+                version: '1.1'
             };
+
+            // 收集所有月度数据
+            for (let i = 0; i < localStorage.length; i++) {
+                const key = localStorage.key(i);
+                if (key.startsWith(STORAGE.MONTHLY_STATS)) {
+                    data.monthlyStats[key] = JSON.parse(localStorage.getItem(key));
+                } else if (key.startsWith(STORAGE.MONTHLY_BUDGET_USED)) {
+                    data.monthlyBudgetUsed[key] = JSON.parse(localStorage.getItem(key));
+                }
+            }
 
             const dataStr = JSON.stringify(data, null, 2);
             const dataBlob = new Blob([dataStr], { type: 'application/json' });
@@ -1283,10 +1652,26 @@
 
                     // 确认是否覆盖现有数据
                     if (confirm('导入数据将覆盖现有数据，确定要继续吗？')) {
-                        // 保存导入的数据
+                        // 保存导入的核心数据
                         localStorage.setItem(STORAGE.BILLS, JSON.stringify(importedData.bills));
                         localStorage.setItem(STORAGE.CATEGORIES, JSON.stringify(importedData.categories));
                         localStorage.setItem(STORAGE.CATEGORY_BUDGETS, JSON.stringify(importedData.categoryBudgets));
+                        
+                        // 保存月度数据（如果存在）
+                        if (importedData.monthlyStats) {
+                            Object.keys(importedData.monthlyStats).forEach(key => {
+                                localStorage.setItem(key, JSON.stringify(importedData.monthlyStats[key]));
+                            });
+                        }
+                        
+                        if (importedData.monthlyBudgetUsed) {
+                            Object.keys(importedData.monthlyBudgetUsed).forEach(key => {
+                                localStorage.setItem(key, JSON.stringify(importedData.monthlyBudgetUsed[key]));
+                            });
+                        }
+                        
+                        // 重新初始化当月数据
+                        initMonthlyData();
                         
                         // 重新渲染所有数据
                         renderCategories();
@@ -1493,6 +1878,9 @@
                     return;
                 }
                 
+                // 获取原账单信息，用于更新月度统计
+                const oldBill = bills[billIndex];
+                
                 // 更新账单信息
                 bills[billIndex] = {
                     ...bills[billIndex],
@@ -1504,6 +1892,10 @@
                 };
                 
                 localStorage.setItem(STORAGE.BILLS, JSON.stringify(bills));
+                
+                // 更新月度统计（先减去原账单，再加上新账单）
+                updateMonthlyStatsForBill(oldBill, 'subtract');
+                updateMonthlyStatsForBill(bills[billIndex], 'add');
                 
                 // 重新渲染
                 renderBills(document.getElementById('dateFilter').value);
@@ -1518,8 +1910,23 @@
                 
                 if (!confirm('确定删除该账单？')) return;
                 
-                const bills = getBills().filter(b => b.id !== billId);
-                localStorage.setItem(STORAGE.BILLS, JSON.stringify(bills));
+                const bills = getBills();
+                const billIndex = bills.findIndex(b => b.id === billId);
+                
+                if (billIndex === -1) {
+                    showToast('账单不存在');
+                    return;
+                }
+                
+                // 获取要删除的账单，用于更新月度统计
+                const billToDelete = bills[billIndex];
+                
+                // 从账单列表中删除
+                const updatedBills = bills.filter(b => b.id !== billId);
+                localStorage.setItem(STORAGE.BILLS, JSON.stringify(updatedBills));
+                
+                // 更新月度统计（减去删除的账单）
+                updateMonthlyStatsForBill(billToDelete, 'subtract');
                 
                 // 重新渲染
                 renderBills(document.getElementById('dateFilter').value);
@@ -1532,6 +1939,70 @@
             document.getElementById('cancelEditBill').addEventListener('click', function() {
                 document.getElementById('editBillModal').classList.remove('show');
             });
+        }
+
+        // 更新月度统计数据（添加或删除账单时调用）
+        function updateMonthlyStatsForBill(bill, operation) {
+            const stats = getMonthlyStats();
+            const amount = parseFloat(bill.amount);
+            
+            // 检查账单日期是否在当前月份
+            const billDate = new Date(bill.date);
+            const currentDate = new Date();
+            const isCurrentMonth = billDate.getFullYear() === currentDate.getFullYear() && 
+                                  billDate.getMonth() === currentDate.getMonth();
+            
+            if (!isCurrentMonth) {
+                return; // 非本月账单不更新本月统计
+            }
+            
+            if (operation === 'add') {
+                if (bill.type === 'income') {
+                    stats.income += amount;
+                } else {
+                    stats.expense += amount;
+                }
+            } else if (operation === 'subtract') {
+                if (bill.type === 'income') {
+                    stats.income -= amount;
+                } else {
+                    stats.expense -= amount;
+                }
+            }
+            
+            stats.balance = stats.income - stats.expense;
+            saveMonthlyStats(stats);
+            
+            // 如果是支出账单，还需要更新预算已用数据
+            if (bill.type === 'expense') {
+                updateMonthlyBudgetUsed(bill.categoryId, amount, operation);
+            }
+        }
+        
+        // 更新月度预算已用数据
+        function updateMonthlyBudgetUsed(categoryId, amount, operation) {
+            const monthlyBudgetUsed = getMonthlyBudgetUsed();
+            const budgets = getCategoryBudgets();
+            
+            // 如果类别没有预算配置，不处理
+            if (!budgets[categoryId]) return;
+            
+            // 初始化月度预算数据（如果不存在）
+            if (!monthlyBudgetUsed[categoryId]) {
+                monthlyBudgetUsed[categoryId] = {
+                    amount: budgets[categoryId].amount || 0,
+                    used: 0
+                };
+            }
+            
+            // 更新已用金额
+            if (operation === 'add') {
+                monthlyBudgetUsed[categoryId].used += amount;
+            } else if (operation === 'subtract') {
+                monthlyBudgetUsed[categoryId].used -= amount;
+            }
+            
+            saveMonthlyBudgetUsed(monthlyBudgetUsed);
         }
 
         // 重置添加账单表单
@@ -1604,6 +2075,7 @@
         // 渲染类别预算 - 圆形进度条（添加侧滑删除）
         function renderCategoryBudgets() {
             const budgets = getCategoryBudgets();
+            const monthlyBudgetUsed = getMonthlyBudgetUsed();
             const categories = getCategories();
             const budgetList = document.getElementById('budgetList');
 
@@ -1618,7 +2090,8 @@
             budgetList.innerHTML = '';
             budgetItems.forEach(cat => {
                 const budget = budgets[cat.id];
-                const used = parseFloat(budget.used || 0);
+                const monthlyUsed = monthlyBudgetUsed[cat.id] || { used: 0 };
+                const used = parseFloat(monthlyUsed.used || 0);
                 const amount = parseFloat(budget.amount);
                 const remaining = amount - used;
                 const progress = Math.min(100, Math.round((used / amount) * 100));
@@ -1704,8 +2177,20 @@
                     const id = this.dataset.id;
                     if (!confirm('确定删除该账单？')) return;
 
-                    const bills = getBills().filter(b => b.id !== id);
-                    localStorage.setItem(STORAGE.BILLS, JSON.stringify(bills));
+                    const bills = getBills();
+                    const billIndex = bills.findIndex(b => b.id === id);
+                    
+                    if (billIndex === -1) {
+                        showToast('账单不存在');
+                        return;
+                    }
+                    
+                    const billToDelete = bills[billIndex];
+                    const updatedBills = bills.filter(b => b.id !== id);
+                    localStorage.setItem(STORAGE.BILLS, JSON.stringify(updatedBills));
+                    
+                    // 更新月度统计
+                    updateMonthlyStatsForBill(billToDelete, 'subtract');
 
                     renderBills(document.getElementById('dateFilter').value);
                     renderStats();
@@ -1716,54 +2201,15 @@
 
         // 渲染统计数据
         function renderStats() {
-            const bills = getBills();
-            let income = 0, expense = 0;
-
-            bills.forEach(bill => {
-                const amount = parseFloat(bill.amount);
-                if (bill.type === 'income') {
-                    income += amount;
-                } else {
-                    expense += amount;
-                }
-            });
-
-            const balance = income - expense;
+            const stats = getMonthlyStats();
             
             // 更新统计卡片
-            document.getElementById('totalIncome').textContent = income.toFixed(2);
-            document.getElementById('totalExpense').textContent = expense.toFixed(2);
-            document.getElementById('totalBalance').textContent = balance.toFixed(2);
+            document.getElementById('totalIncome').textContent = stats.income.toFixed(2);
+            document.getElementById('totalExpense').textContent = stats.expense.toFixed(2);
+            document.getElementById('totalBalance').textContent = stats.balance.toFixed(2);
             
             // 更新颜色
-            document.getElementById('totalBalance').className = `value ${balance >= 0 ? 'positive' : 'negative'}`;
-
-            // 更新类别预算的已使用金额
-            updateCategoryBudgetUsed();
-        }
-
-        // 更新类别预算的已使用金额
-        function updateCategoryBudgetUsed() {
-            const bills = getBills();
-            const budgets = getCategoryBudgets();
-            const categories = getCategories();
-
-            // 重置已使用金额
-            categories.forEach(cat => {
-                if (!budgets[cat.id]) budgets[cat.id] = { amount: 0, used: 0 };
-                budgets[cat.id].used = 0;
-            });
-
-            // 统计支出
-            bills.forEach(bill => {
-                if (bill.type === 'expense' && budgets[bill.categoryId]) {
-                    budgets[bill.categoryId].used += parseFloat(bill.amount);
-                }
-            });
-
-            // 保存并重新渲染预算
-            localStorage.setItem(STORAGE.CATEGORY_BUDGETS, JSON.stringify(budgets));
-            renderCategoryBudgets();
+            document.getElementById('totalBalance').className = `value ${stats.balance >= 0 ? 'positive' : 'negative'}`;
         }
 
         // 绑定所有事件
@@ -1777,6 +2223,16 @@
             document.getElementById('categoryBtn').addEventListener('click', function() {
                 const card = document.getElementById('categoryCard');
                 card.style.display = card.style.display === 'none' ? 'block' : 'none';
+            });
+            
+            // ========== 新增：财务报表按钮 ==========
+            document.getElementById('reportBtn').addEventListener('click', function() {
+                loadReportData();
+                document.getElementById('reportModal').classList.add('show');
+            });
+            
+            document.getElementById('closeReportBtn').addEventListener('click', function() {
+                document.getElementById('reportModal').classList.remove('show');
             });
 
             document.getElementById('addBillBtn').addEventListener('click', function() {
@@ -1809,15 +2265,19 @@
                 if (date > today) return showToast('不能选择未来日期');
 
                 const bills = getBills();
-                bills.push({
+                const newBill = {
                     id: generateId(),
                     type,
                     categoryId,
                     amount,
                     date,
                     note: note || ''
-                });
+                };
+                bills.push(newBill);
                 localStorage.setItem(STORAGE.BILLS, JSON.stringify(bills));
+                
+                // 更新月度统计数据
+                updateMonthlyStatsForBill(newBill, 'add');
 
                 renderBills(document.getElementById('dateFilter').value);
                 renderStats();
@@ -1855,6 +2315,11 @@
                 const budgets = getCategoryBudgets();
                 budgets[categories[categories.length - 1].id] = { amount: 0, used: 0 };
                 localStorage.setItem(STORAGE.CATEGORY_BUDGETS, JSON.stringify(budgets));
+                
+                // 同时初始化当月预算已用数据
+                const monthlyBudgetUsed = getMonthlyBudgetUsed();
+                monthlyBudgetUsed[categories[categories.length - 1].id] = { amount: 0, used: 0 };
+                saveMonthlyBudgetUsed(monthlyBudgetUsed);
 
                 renderCategories();
                 document.getElementById('addCategoryModal').classList.remove('show');
@@ -1893,6 +2358,11 @@
                     const budgets = getCategoryBudgets();
                     delete budgets[id];
                     localStorage.setItem(STORAGE.CATEGORY_BUDGETS, JSON.stringify(budgets));
+                    
+                    // 同时删除当月预算已用数据
+                    const monthlyBudgetUsed = getMonthlyBudgetUsed();
+                    delete monthlyBudgetUsed[id];
+                    saveMonthlyBudgetUsed(monthlyBudgetUsed);
 
                     renderCategories();
                     renderCategoryBudgets();
@@ -1925,6 +2395,14 @@
                 if (!budgets[categoryId]) budgets[categoryId] = { amount: 0, used: 0 };
                 budgets[categoryId].amount = amount;
                 localStorage.setItem(STORAGE.CATEGORY_BUDGETS, JSON.stringify(budgets));
+                
+                // 同时更新当月预算已用数据中的预算额度
+                const monthlyBudgetUsed = getMonthlyBudgetUsed();
+                if (!monthlyBudgetUsed[categoryId]) {
+                    monthlyBudgetUsed[categoryId] = { amount: 0, used: 0 };
+                }
+                monthlyBudgetUsed[categoryId].amount = amount;
+                saveMonthlyBudgetUsed(monthlyBudgetUsed);
 
                 renderCategoryBudgets();
                 document.getElementById('setBudgetModal').classList.remove('show');
@@ -1944,6 +2422,9 @@
                         this.classList.remove('show');
                         if (this.id === 'addBillModal') resetAddBillForm();
                         if (this.id === 'editBillModal') resetEditBillForm();
+                        if (this.id === 'reportModal') {
+                            // 报表模态框关闭时不需要特殊处理
+                        }
                     }
                 });
             });
@@ -1951,8 +2432,332 @@
             // 绑定编辑账单相关事件
             bindBillEditEvents();
             bindEditBillEvents();
+            
+            // ========== 新增：报表筛选事件 ==========
+            document.getElementById('reportYearSelect').addEventListener('change', function() {
+                updateReportMonthOptions();
+                loadReportData();
+            });
+            
+            document.getElementById('reportMonthSelect').addEventListener('change', function() {
+                loadReportData();
+            });
+        }
+        
+        // ==================== 第二部分：新增历史月度/年度财务报表功能 ====================
+        
+        // 初始化报表数据
+        function initReportData() {
+            // 初始化年份选择器
+            const yearSelect = document.getElementById('reportYearSelect');
+            const currentYear = new Date().getFullYear();
+            
+            // 生成最近5年的选项
+            for (let year = currentYear; year >= currentYear - 4; year--) {
+                const option = document.createElement('option');
+                option.value = year;
+                option.textContent = `${year}年`;
+                if (year === currentYear) {
+                    option.selected = true;
+                }
+                yearSelect.appendChild(option);
+            }
+            
+            // 初始化月份选择器
+            updateReportMonthOptions();
+        }
+        
+        // 更新报表月份选项
+        function updateReportMonthOptions() {
+            const yearSelect = document.getElementById('reportYearSelect');
+            const monthSelect = document.getElementById('reportMonthSelect');
+            const selectedYear = parseInt(yearSelect.value);
+            const currentYear = new Date().getFullYear();
+            const currentMonth = new Date().getMonth() + 1;
+            
+            // 清空现有月份选项（保留"年度汇总"）
+            const yearOption = monthSelect.options[0];
+            monthSelect.innerHTML = '';
+            monthSelect.appendChild(yearOption);
+            
+            // 生成月份选项
+            const maxMonth = (selectedYear === currentYear) ? currentMonth : 12;
+            for (let month = 1; month <= maxMonth; month++) {
+                const option = document.createElement('option');
+                option.value = month;
+                option.textContent = `${month}月`;
+                monthSelect.appendChild(option);
+            }
+            
+            // 默认选择当前月份（如果是当前年）或12月
+            if (selectedYear === currentYear) {
+                monthSelect.value = currentMonth;
+            } else {
+                monthSelect.value = 12;
+            }
+        }
+        
+        // 加载报表数据
+        function loadReportData() {
+            const yearSelect = document.getElementById('reportYearSelect');
+            const monthSelect = document.getElementById('reportMonthSelect');
+            const selectedYear = parseInt(yearSelect.value);
+            const selectedMonth = monthSelect.value;
+            
+            if (selectedMonth === 'year') {
+                // 显示年度报表，隐藏月度报表
+                document.getElementById('monthlyReport').style.display = 'none';
+                document.getElementById('yearlyReport').style.display = 'block';
+                document.getElementById('reportYearTitle').textContent = `${selectedYear}年年度报告`;
+                loadYearlyReport(selectedYear);
+            } else {
+                // 显示月度报表，隐藏年度报表
+                document.getElementById('monthlyReport').style.display = 'block';
+                document.getElementById('yearlyReport').style.display = 'none';
+                document.getElementById('reportMonthTitle').textContent = `${selectedYear}年${selectedMonth}月月度报告`;
+                loadMonthlyReport(selectedYear, parseInt(selectedMonth));
+            }
+        }
+        
+        // 加载月度报表数据
+        function loadMonthlyReport(year, month) {
+            const monthKey = `${year}-${String(month).padStart(2, '0')}`;
+            const statsKey = STORAGE.MONTHLY_STATS + monthKey;
+            const budgetUsedKey = STORAGE.MONTHLY_BUDGET_USED + monthKey;
+            
+            // 获取月度统计数据
+            const monthlyStats = JSON.parse(localStorage.getItem(statsKey) || '{"income":0,"expense":0,"balance":0}');
+            
+            // 更新月度统计显示
+            document.getElementById('reportMonthIncome').textContent = monthlyStats.income.toFixed(2);
+            document.getElementById('reportMonthExpense').textContent = monthlyStats.expense.toFixed(2);
+            document.getElementById('reportMonthBalance').textContent = monthlyStats.balance.toFixed(2);
+            document.getElementById('reportMonthBalance').className = `value ${monthlyStats.balance >= 0 ? 'positive' : 'negative'}`;
+            
+            // 获取当月账单数据用于分类统计
+            const bills = getBills();
+            const categories = getCategories();
+            const categoryList = document.getElementById('reportCategoryList');
+            
+            // 筛选当月账单
+            const monthlyBills = bills.filter(bill => {
+                const billDate = new Date(bill.date);
+                return billDate.getFullYear() === year && 
+                       billDate.getMonth() + 1 === month &&
+                       bill.type === 'expense'; // 只统计支出
+            });
+            
+            // 计算分类支出
+            const categoryExpenses = {};
+            monthlyBills.forEach(bill => {
+                const categoryId = bill.categoryId;
+                if (!categoryExpenses[categoryId]) {
+                    categoryExpenses[categoryId] = 0;
+                }
+                categoryExpenses[categoryId] += parseFloat(bill.amount);
+            });
+            
+            // 渲染分类支出列表
+            if (Object.keys(categoryExpenses).length === 0) {
+                categoryList.innerHTML = '<div class="empty">暂无分类支出数据</div>';
+            } else {
+                categoryList.innerHTML = '';
+                
+                // 按金额排序
+                const sortedCategories = Object.entries(categoryExpenses)
+                    .sort((a, b) => b[1] - a[1]);
+                
+                sortedCategories.forEach(([categoryId, amount]) => {
+                    const category = categories.find(c => c.id === categoryId) || { name: '未知类别' };
+                    
+                    const item = document.createElement('div');
+                    item.className = 'report-category-item';
+                    item.innerHTML = `
+                        <div class="report-category-name">${category.name}</div>
+                        <div class="report-category-amount">¥${amount.toFixed(2)}</div>
+                    `;
+                    categoryList.appendChild(item);
+                });
+            }
+            
+            // 加载预算执行情况
+            const monthlyBudgetUsed = JSON.parse(localStorage.getItem(budgetUsedKey) || '{}');
+            const budgets = getCategoryBudgets();
+            const budgetList = document.getElementById('reportBudgetList');
+            
+            const budgetItems = Object.keys(monthlyBudgetUsed).filter(categoryId => {
+                const budget = monthlyBudgetUsed[categoryId];
+                return budget && budget.amount > 0;
+            });
+            
+            if (budgetItems.length === 0) {
+                budgetList.innerHTML = '<div class="empty">暂无预算数据</div>';
+            } else {
+                budgetList.innerHTML = '';
+                
+                budgetItems.forEach(categoryId => {
+                    const category = categories.find(c => c.id === categoryId) || { name: '未知类别' };
+                    const budget = monthlyBudgetUsed[categoryId];
+                    const used = parseFloat(budget.used || 0);
+                    const amount = parseFloat(budget.amount);
+                    const progress = Math.min(100, Math.round((used / amount) * 100));
+                    
+                    const item = document.createElement('div');
+                    item.className = 'report-category-item';
+                    item.innerHTML = `
+                        <div>
+                            <div style="display: flex; justify-content: space-between; margin-bottom: 4px;">
+                                <div class="report-category-name">${category.name}</div>
+                                <div style="font-weight: 600; ${used > amount ? 'color: #FF3B30' : 'color: #34C759'}">
+                                    ${used > amount ? '超支' : '剩余'}: ¥${Math.abs(amount - used).toFixed(2)}
+                                </div>
+                            </div>
+                            <div style="display: flex; justify-content: space-between; font-size: 12px; color: var(--text-secondary); margin-bottom: 4px;">
+                                <span>已用: ¥${used.toFixed(2)}</span>
+                                <span>预算: ¥${amount.toFixed(2)}</span>
+                            </div>
+                            <div class="report-budget-progress">
+                                <div class="report-budget-progress-bar ${used > amount ? 'overbudget' : ''}" style="width: ${Math.min(progress, 100)}%"></div>
+                            </div>
+                        </div>
+                    `;
+                    budgetList.appendChild(item);
+                });
+            }
+        }
+        
+        // 加载年度报表数据
+        function loadYearlyReport(year) {
+            const categories = getCategories();
+            const bills = getBills();
+            
+            // 筛选年度账单
+            const yearlyBills = bills.filter(bill => {
+                const billDate = new Date(bill.date);
+                return billDate.getFullYear() === year;
+            });
+            
+            // 计算年度统计
+            let yearIncome = 0;
+            let yearExpense = 0;
+            
+            yearlyBills.forEach(bill => {
+                const amount = parseFloat(bill.amount);
+                if (bill.type === 'income') {
+                    yearIncome += amount;
+                } else {
+                    yearExpense += amount;
+                }
+            });
+            
+            const yearBalance = yearIncome - yearExpense;
+            
+            // 更新年度统计显示
+            document.getElementById('reportYearIncome').textContent = yearIncome.toFixed(2);
+            document.getElementById('reportYearExpense').textContent = yearExpense.toFixed(2);
+            document.getElementById('reportYearBalance').textContent = yearBalance.toFixed(2);
+            document.getElementById('reportYearBalance').className = `value ${yearBalance >= 0 ? 'positive' : 'negative'}`;
+            
+            // 生成月度趋势图
+            const monthlyTrend = document.getElementById('monthlyTrendChart');
+            monthlyTrend.innerHTML = '';
+            
+            const monthlyIncome = new Array(12).fill(0);
+            const monthlyExpense = new Array(12).fill(0);
+            
+            yearlyBills.forEach(bill => {
+                const billDate = new Date(bill.date);
+                const month = billDate.getMonth(); // 0-11
+                const amount = parseFloat(bill.amount);
+                
+                if (bill.type === 'income') {
+                    monthlyIncome[month] += amount;
+                } else {
+                    monthlyExpense[month] += amount;
+                }
+            });
+            
+            // 计算最大值用于比例缩放
+            const maxValue = Math.max(...monthlyIncome, ...monthlyExpense);
+            
+            // 生成趋势图
+            for (let month = 0; month < 12; month++) {
+                const monthName = `${month + 1}月`;
+                const incomeHeight = maxValue > 0 ? (monthlyIncome[month] / maxValue * 80) : 0;
+                const expenseHeight = maxValue > 0 ? (monthlyExpense[month] / maxValue * 80) : 0;
+                
+                const monthContainer = document.createElement('div');
+                monthContainer.style.display = 'flex';
+                monthContainer.style.flexDirection = 'column';
+                monthContainer.style.alignItems = 'center';
+                monthContainer.style.flex = 1;
+                monthContainer.style.height = '100%';
+                
+                // 收入柱
+                if (monthlyIncome[month] > 0) {
+                    const incomeBar = document.createElement('div');
+                    incomeBar.className = 'report-trend-bar report-trend-bar-income';
+                    incomeBar.style.height = `${incomeHeight}px`;
+                    incomeBar.style.marginBottom = '2px';
+                    incomeBar.title = `收入: ¥${monthlyIncome[month].toFixed(2)}`;
+                    monthContainer.appendChild(incomeBar);
+                }
+                
+                // 支出柱
+                if (monthlyExpense[month] > 0) {
+                    const expenseBar = document.createElement('div');
+                    expenseBar.className = 'report-trend-bar report-trend-bar-expense';
+                    expenseBar.style.height = `${expenseHeight}px`;
+                    expenseBar.title = `支出: ¥${monthlyExpense[month].toFixed(2)}`;
+                    monthContainer.appendChild(expenseBar);
+                }
+                
+                // 月份标签
+                const monthLabel = document.createElement('div');
+                monthLabel.className = 'report-trend-label';
+                monthLabel.textContent = monthName;
+                monthContainer.appendChild(monthLabel);
+                
+                monthlyTrend.appendChild(monthContainer);
+            }
+            
+            // 计算年度分类统计
+            const categoryList = document.getElementById('reportYearCategoryList');
+            const categoryExpenses = {};
+            
+            yearlyBills.forEach(bill => {
+                if (bill.type === 'expense') {
+                    const categoryId = bill.categoryId;
+                    if (!categoryExpenses[categoryId]) {
+                        categoryExpenses[categoryId] = 0;
+                    }
+                    categoryExpenses[categoryId] += parseFloat(bill.amount);
+                }
+            });
+            
+            // 渲染年度分类统计
+            if (Object.keys(categoryExpenses).length === 0) {
+                categoryList.innerHTML = '<div class="empty">暂无分类支出数据</div>';
+            } else {
+                categoryList.innerHTML = '';
+                
+                // 按金额排序
+                const sortedCategories = Object.entries(categoryExpenses)
+                    .sort((a, b) => b[1] - a[1]);
+                
+                sortedCategories.forEach(([categoryId, amount]) => {
+                    const category = categories.find(c => c.id === categoryId) || { name: '未知类别' };
+                    
+                    const item = document.createElement('div');
+                    item.className = 'report-category-item';
+                    item.innerHTML = `
+                        <div class="report-category-name">${category.name}</div>
+                        <div class="report-category-amount">¥${amount.toFixed(2)}</div>
+                    `;
+                    categoryList.appendChild(item);
+                });
+            }
         }
     </script>
 </body>
 </html>
-
