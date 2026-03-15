@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>口袋账单 · 质感重构 + 环形报表</title>
+    <title>口袋账单 · 质感重构 + 环形报表 (双bug修复)</title>
     <!-- 引入 Chart.js 轻量图表库 -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
@@ -922,10 +922,12 @@
                 });
             }
 
-            // ========== 报表功能 (环形图版本) ==========
+            // ========== 报表功能 (环形图版本 + 双bug修复) ==========
+            // 【修复bug2】每次初始化前先清空下拉框，避免重复选项
             function initReportYearSelect() {
                 const yearSelect = document.getElementById('reportYear');
                 const currentYear = new Date().getFullYear();
+                // 核心修复：清空下拉框，避免重复添加
                 yearSelect.innerHTML = '';
                 for (let y = currentYear - 2; y <= currentYear; y++) {
                     const option = document.createElement('option');
@@ -941,6 +943,15 @@
                 const month = document.getElementById('reportMonth').value;
                 const bills = getBills();
                 const categories = getCategories();
+
+                // 【可选容错】如果无账单，显示友好提示
+                if (bills.length === 0) {
+                    document.getElementById('categoryChart').innerHTML = '<p style="text-align:center;color:var(--text-secondary);padding:20px 0;">暂无任何账单数据</p>';
+                    document.getElementById('reportIncome').textContent = '0.00';
+                    document.getElementById('reportExpense').textContent = '0.00';
+                    document.getElementById('reportBalance').textContent = '0.00';
+                    return;
+                }
 
                 const filteredBills = bills.filter(bill => {
                     const billDate = new Date(bill.date);
@@ -970,7 +981,6 @@
                     categoryExpense[bill.categoryId] = (categoryExpense[bill.categoryId] || 0) + bill.amount;
                 });
 
-                const ctx = document.getElementById('categoryPieChart').getContext('2d');
                 const labels = [];
                 const data = [];
                 const backgroundColors = [
@@ -1104,30 +1114,39 @@
 
                 document.querySelectorAll('.modal').forEach(m=>{ m.addEventListener('click',function(e){ if(e.target===this) this.classList.remove('show'); }); });
 
-                // 报表事件绑定
+                // ===== 报表事件绑定 (双bug修复) =====
                 const reportModal = document.getElementById('reportModal');
                 const reportBtn = document.getElementById('reportBtn');
                 const closeReportBtn = document.getElementById('closeReportBtn');
                 const reportYear = document.getElementById('reportYear');
                 const reportMonth = document.getElementById('reportMonth');
 
+                // 【修复bug1】打开报表：重置样式后再显示
                 reportBtn.addEventListener('click', () => {
                     initReportYearSelect();
                     renderReport();
+                    // 核心修复：打开前强制重置模态框样式
+                    reportModal.style.display = 'flex';
                     reportModal.classList.add('show');
                 });
 
+                // 【修复bug1】关闭按钮：移除show并重置样式
                 closeReportBtn.addEventListener('click', (e) => {
                     e.stopPropagation();
                     reportModal.classList.remove('show');
+                    reportModal.style.display = 'none';
+                    reportModal.style.opacity = '0';
                 });
 
                 reportYear.addEventListener('change', renderReport);
                 reportMonth.addEventListener('change', renderReport);
 
+                // 【修复bug1】遮罩点击关闭：重置样式
                 reportModal.addEventListener('click', (e) => {
                     if (e.target === reportModal) {
                         reportModal.classList.remove('show');
+                        reportModal.style.display = 'none';
+                        reportModal.style.opacity = '0';
                     }
                 });
 
