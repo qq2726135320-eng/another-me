@@ -3,7 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>口袋账单 · 质感重构</title>
+    <title>口袋账单 · 质感重构 + 环形报表</title>
+    <!-- 引入 Chart.js 轻量图表库 -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         /* ---------- 设计令牌 (完全遵循开发者指令) ---------- */
         :root {
@@ -453,7 +455,7 @@
             font-size: 14px;
         }
 
-        /* 底部悬浮添加按钮 (FAB) */
+        /* 底部悬浮添加按钮 (FAB) — 已删除 font-weight:300 修复居中 */
         .add-btn {
             position: fixed;
             bottom: calc(20px + env(safe-area-inset-bottom));
@@ -465,7 +467,7 @@
             color: white;
             border: none;
             font-size: 28px;
-            font-weight: 300;
+            /* font-weight: 300;  已删除，解决+号垂直偏移 */
             box-shadow: var(--shadow-hover);
             transition: all 0.2s ease;
             z-index: 99;
@@ -497,6 +499,108 @@
         /* 辅助隐藏 */
         .hidden { display: none; }
         .hidden-file-input { display: none; }
+
+        /* ========== 报表模块专属样式 (新增环形图容器) ========== */
+        .report-content {
+            max-height: 80vh;
+            overflow-y: auto;
+            padding: var(--spacing-xl);
+            border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+        }
+
+        .report-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: var(--spacing-lg);
+        }
+        .report-header h2 {
+            font-size: 20px;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+        .close-btn {
+            width: 44px;
+            height: 44px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: transparent;
+            border: none;
+            font-size: 24px;
+            color: var(--text-primary);
+            cursor: pointer;
+            transition: opacity 0.2s;
+        }
+        .close-btn:active {
+            opacity: 0.6;
+        }
+
+        .report-filter {
+            display: flex;
+            gap: var(--spacing-md);
+            margin-bottom: var(--spacing-lg);
+        }
+        .report-filter select {
+            padding: 8px 12px;
+            background: var(--bg-card);
+            border: 1px solid var(--bg-divider);
+            border-radius: var(--radius-md);
+            color: var(--text-primary);
+            font-size: 14px;
+            appearance: none;
+            background-image: url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath fill='%238E8E93' d='M10.146.146a.5.5 0 0 1 .708 0l1 1a.5.5 0 0 1 0 .708l-1 1a.5.5 0 0 1-.708-.708L11.293 2 10.146.854a.5.5 0 0 1 0-.708zM1.854.146a.5.5 0 0 0 0 .708L.707 2l1.147 1.146a.5.5 0 1 0 .708-.708L1.707 2l1.147-1.146a.5.5 0 0 0 0-.708z'/%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 8px center;
+            padding-right: 28px;
+        }
+
+        .report-summary {
+            display: flex;
+            justify-content: space-around;
+            background: var(--bg-page);
+            border-radius: var(--radius-lg);
+            padding: var(--spacing-lg);
+            margin-bottom: var(--spacing-lg);
+        }
+        .summary-item {
+            text-align: center;
+        }
+        .summary-item .label {
+            font-size: 13px;
+            color: var(--text-secondary);
+            margin-bottom: var(--spacing-xs);
+        }
+        .summary-item .value {
+            font-size: 18px;
+            font-weight: 700;
+            font-variant-numeric: tabular-nums;
+        }
+        .summary-item .value.income { color: var(--color-success); }
+        .summary-item .value.expense { color: var(--color-danger); }
+        .summary-item .value.balance.positive { color: var(--color-success); }
+        .summary-item .value.balance.negative { color: var(--color-danger); }
+
+        .report-category h3 {
+            font-size: 16px;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: var(--spacing-md);
+        }
+
+        /* 环形图容器样式 */
+        .chart-wrapper {
+            position: relative;
+            height: 220px;
+            margin: 10px auto;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        #categoryPieChart {
+            max-width: 280px;
+            max-height: 220px;
+        }
     </style>
     <link rel="manifest" href="site.webmanifest">
     <link rel="apple-touch-icon" href="apple-touch-icon.png">
@@ -624,12 +728,54 @@
             </div>
         </div>
 
-        <!-- 报表模态框（保留功能） -->
+        <!-- 报表模态框 (带环形图) -->
         <div class="modal" id="reportModal">
-            <div class="modal-content" style="max-height:85vh;">
-                <button style="position:absolute; top:16px; right:16px; background:transparent; color:#000; font-size:24px; border:none; box-shadow:none;" id="closeReportBtn">×</button>
-                <h3>财务报表</h3>
-                <div style="padding:20px 0; text-align:center; color:var(--text-secondary);">报表功能保持不变，仅样式重构</div>
+            <div class="modal-content report-content">
+                <div class="report-header">
+                    <h2>财务报表</h2>
+                    <button id="closeReportBtn" class="close-btn">×</button>
+                </div>
+                <!-- 时间筛选区 -->
+                <div class="report-filter">
+                    <select id="reportYear"></select>
+                    <select id="reportMonth">
+                        <option value="all">全年</option>
+                        <option value="01">01月</option>
+                        <option value="02">02月</option>
+                        <option value="03">03月</option>
+                        <option value="04">04月</option>
+                        <option value="05">05月</option>
+                        <option value="06">06月</option>
+                        <option value="07">07月</option>
+                        <option value="08">08月</option>
+                        <option value="09">09月</option>
+                        <option value="10">10月</option>
+                        <option value="11">11月</option>
+                        <option value="12">12月</option>
+                    </select>
+                </div>
+                <!-- 统计概览 -->
+                <div class="report-summary">
+                    <div class="summary-item">
+                        <p class="label">总收入</p>
+                        <p class="value income" id="reportIncome">0.00</p>
+                    </div>
+                    <div class="summary-item">
+                        <p class="label">总支出</p>
+                        <p class="value expense" id="reportExpense">0.00</p>
+                    </div>
+                    <div class="summary-item">
+                        <p class="label">结余</p>
+                        <p class="value balance" id="reportBalance">0.00</p>
+                    </div>
+                </div>
+                <!-- 环形图容器 (替换原条形图) -->
+                <div class="report-category">
+                    <h3>支出分类占比</h3>
+                    <div class="chart-wrapper">
+                        <canvas id="categoryPieChart"></canvas>
+                    </div>
+                </div>
             </div>
         </div>
 
@@ -639,7 +785,7 @@
 
     <script>
         (function() {
-            // ========== 核心逻辑 (完全保留原有功能，仅视觉重构) ==========
+            // ========== 核心逻辑 ==========
             const STORAGE = {
                 BILLS: 'bills',
                 CATEGORIES: 'categories',
@@ -649,6 +795,10 @@
             };
             let currentSelectedDate = null;
             let isUserSelected = false;
+
+            // 声明全局图表实例，用于销毁旧图表
+            let categoryChart = null;
+
             function getTodayDate() { const d=new Date(); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; }
             function formatDateLabel(s) { if(!s)return ''; let [y,m,d]=s.split('-'); return `${y}年${m}月${d}日`; }
             function updateDateLabel() {
@@ -772,6 +922,129 @@
                 });
             }
 
+            // ========== 报表功能 (环形图版本) ==========
+            function initReportYearSelect() {
+                const yearSelect = document.getElementById('reportYear');
+                const currentYear = new Date().getFullYear();
+                yearSelect.innerHTML = '';
+                for (let y = currentYear - 2; y <= currentYear; y++) {
+                    const option = document.createElement('option');
+                    option.value = y;
+                    option.textContent = `${y}年`;
+                    if (y === currentYear) option.selected = true;
+                    yearSelect.appendChild(option);
+                }
+            }
+
+            function renderReport() {
+                const year = document.getElementById('reportYear').value;
+                const month = document.getElementById('reportMonth').value;
+                const bills = getBills();
+                const categories = getCategories();
+
+                const filteredBills = bills.filter(bill => {
+                    const billDate = new Date(bill.date);
+                    const billYear = billDate.getFullYear();
+                    const billMonth = String(billDate.getMonth() + 1).padStart(2, '0');
+                    if (billYear !== Number(year)) return false;
+                    if (month !== 'all' && billMonth !== month) return false;
+                    return true;
+                });
+
+                let totalIncome = 0, totalExpense = 0;
+                filteredBills.forEach(bill => {
+                    if (bill.type === 'income') totalIncome += bill.amount;
+                    else totalExpense += bill.amount;
+                });
+                const balance = totalIncome - totalExpense;
+
+                document.getElementById('reportIncome').textContent = totalIncome.toFixed(2);
+                document.getElementById('reportExpense').textContent = totalExpense.toFixed(2);
+                const balanceEl = document.getElementById('reportBalance');
+                balanceEl.textContent = balance.toFixed(2);
+                balanceEl.className = `value balance ${balance >= 0 ? 'positive' : 'negative'}`;
+
+                // 计算分类支出
+                const categoryExpense = {};
+                filteredBills.filter(b => b.type === 'expense').forEach(bill => {
+                    categoryExpense[bill.categoryId] = (categoryExpense[bill.categoryId] || 0) + bill.amount;
+                });
+
+                const ctx = document.getElementById('categoryPieChart').getContext('2d');
+                const labels = [];
+                const data = [];
+                const backgroundColors = [
+                    '#007AFF', '#34C759', '#FF9500', '#FF2D55', '#AF52DE', '#5856D6',
+                    '#00BCD4', '#FFCC00', '#8E8E93', '#FF3B30', '#4CD964', '#5AC8FA'
+                ];
+
+                Object.entries(categoryExpense).forEach(([catId, amount]) => {
+                    const cat = categories.find(c => c.id === catId);
+                    if (cat) {
+                        labels.push(cat.name);
+                        data.push(amount);
+                    }
+                });
+
+                // 销毁旧图表
+                if (categoryChart) {
+                    categoryChart.destroy();
+                }
+
+                const chartWrapper = document.querySelector('.chart-wrapper');
+                if (totalExpense === 0) {
+                    // 显示空数据提示
+                    chartWrapper.innerHTML = '<p style="text-align:center;color:var(--text-secondary);">暂无支出数据</p>';
+                } else {
+                    // 确保 canvas 存在 (可能被提示覆盖，重新创建)
+                    if (chartWrapper.querySelector('canvas') === null) {
+                        chartWrapper.innerHTML = '<canvas id="categoryPieChart"></canvas>';
+                    }
+                    const canvas = document.getElementById('categoryPieChart');
+                    if (!canvas) return;
+                    const ctx2 = canvas.getContext('2d');
+                    categoryChart = new Chart(ctx2, {
+                        type: 'doughnut', // 环形图
+                        data: {
+                            labels: labels,
+                            datasets: [{
+                                data: data,
+                                backgroundColor: backgroundColors.slice(0, labels.length),
+                                borderWidth: 0,
+                                hoverOffset: 8
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            plugins: {
+                                legend: {
+                                    position: 'bottom',
+                                    labels: {
+                                        boxWidth: 12,
+                                        padding: 15,
+                                        color: getComputedStyle(document.documentElement).getPropertyValue('--text-primary'),
+                                        font: { size: 12 }
+                                    }
+                                },
+                                tooltip: {
+                                    callbacks: {
+                                        label: function(context) {
+                                            const label = context.label || '';
+                                            const value = context.raw.toFixed(2);
+                                            const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                                            const percent = ((context.raw / total) * 100).toFixed(1);
+                                            return `${label}: ¥${value} (${percent}%)`;
+                                        }
+                                    }
+                                }
+                            },
+                            cutout: '65%' // 环形图空心大小
+                        }
+                    });
+                }
+            }
+
             // 初始化与事件绑定
             document.addEventListener('DOMContentLoaded', function(){
                 if(!localStorage.getItem(STORAGE.BILLS)) localStorage.setItem(STORAGE.BILLS,'[]');
@@ -830,9 +1103,35 @@
                 });
 
                 document.querySelectorAll('.modal').forEach(m=>{ m.addEventListener('click',function(e){ if(e.target===this) this.classList.remove('show'); }); });
-                document.getElementById('reportBtn').onclick=()=>document.getElementById('reportModal').classList.add('show');
-                document.getElementById('closeReportBtn').onclick=()=>document.getElementById('reportModal').classList.remove('show');
 
+                // 报表事件绑定
+                const reportModal = document.getElementById('reportModal');
+                const reportBtn = document.getElementById('reportBtn');
+                const closeReportBtn = document.getElementById('closeReportBtn');
+                const reportYear = document.getElementById('reportYear');
+                const reportMonth = document.getElementById('reportMonth');
+
+                reportBtn.addEventListener('click', () => {
+                    initReportYearSelect();
+                    renderReport();
+                    reportModal.classList.add('show');
+                });
+
+                closeReportBtn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    reportModal.classList.remove('show');
+                });
+
+                reportYear.addEventListener('change', renderReport);
+                reportMonth.addEventListener('change', renderReport);
+
+                reportModal.addEventListener('click', (e) => {
+                    if (e.target === reportModal) {
+                        reportModal.classList.remove('show');
+                    }
+                });
+
+                // 新增分类相关
                 document.getElementById('addCategoryBtn').onclick=()=>document.getElementById('addCategoryModal').classList.add('show');
                 document.getElementById('cancelAddCategory').onclick=()=>document.getElementById('addCategoryModal').classList.remove('show');
                 document.getElementById('saveCategoryBtn').onclick=function(){
