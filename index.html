@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>口袋账单 · 质感重构 + 环形报表 (双bug修复)</title>
+    <title>口袋账单 · 质感重构 + 环形报表 (终极修复)</title>
     <!-- 引入 Chart.js 轻量图表库 -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
@@ -370,7 +370,7 @@
             border-radius: 0 var(--radius-md) var(--radius-md) 0;
         }
 
-        /* ---------- 底部模态框 (Bottom Sheet) ---------- */
+        /* ---------- 底部模态框 (终极修复：通过z-index控制) ---------- */
         .modal {
             position: fixed;
             top: 0;
@@ -379,18 +379,19 @@
             height: 100%;
             background-color: rgba(0,0,0,0.3);
             backdrop-filter: blur(5px);
-            display: flex;
+            display: flex; /* 始终为flex，通过opacity和z-index控制显示 */
             align-items: flex-end;
             justify-content: center;
-            z-index: 1000;
-            display: none;
+            z-index: -1; /* 默认隐藏到底层 */
             opacity: 0;
-            transition: opacity 0.2s;
+            transition: opacity 0.2s, z-index 0.2s;
         }
+
         .modal.show {
-            display: flex;
+            z-index: 1000; /* 显示时置顶 */
             opacity: 1;
         }
+
         .modal-content {
             background: #FFFFFF;
             backdrop-filter: blur(20px);
@@ -922,12 +923,10 @@
                 });
             }
 
-            // ========== 报表功能 (环形图版本 + 双bug修复) ==========
-            // 【修复bug2】每次初始化前先清空下拉框，避免重复选项
+            // ========== 报表功能 (环形图版本 + 终极修复) ==========
             function initReportYearSelect() {
                 const yearSelect = document.getElementById('reportYear');
                 const currentYear = new Date().getFullYear();
-                // 核心修复：清空下拉框，避免重复添加
                 yearSelect.innerHTML = '';
                 for (let y = currentYear - 2; y <= currentYear; y++) {
                     const option = document.createElement('option');
@@ -944,7 +943,6 @@
                 const bills = getBills();
                 const categories = getCategories();
 
-                // 【可选容错】如果无账单，显示友好提示
                 if (bills.length === 0) {
                     document.getElementById('categoryChart').innerHTML = '<p style="text-align:center;color:var(--text-secondary);padding:20px 0;">暂无任何账单数据</p>';
                     document.getElementById('reportIncome').textContent = '0.00';
@@ -975,7 +973,6 @@
                 balanceEl.textContent = balance.toFixed(2);
                 balanceEl.className = `value balance ${balance >= 0 ? 'positive' : 'negative'}`;
 
-                // 计算分类支出
                 const categoryExpense = {};
                 filteredBills.filter(b => b.type === 'expense').forEach(bill => {
                     categoryExpense[bill.categoryId] = (categoryExpense[bill.categoryId] || 0) + bill.amount;
@@ -996,17 +993,15 @@
                     }
                 });
 
-                // 销毁旧图表
                 if (categoryChart) {
                     categoryChart.destroy();
+                    categoryChart = null;
                 }
 
                 const chartWrapper = document.querySelector('.chart-wrapper');
                 if (totalExpense === 0) {
-                    // 显示空数据提示
                     chartWrapper.innerHTML = '<p style="text-align:center;color:var(--text-secondary);">暂无支出数据</p>';
                 } else {
-                    // 确保 canvas 存在 (可能被提示覆盖，重新创建)
                     if (chartWrapper.querySelector('canvas') === null) {
                         chartWrapper.innerHTML = '<canvas id="categoryPieChart"></canvas>';
                     }
@@ -1014,7 +1009,7 @@
                     if (!canvas) return;
                     const ctx2 = canvas.getContext('2d');
                     categoryChart = new Chart(ctx2, {
-                        type: 'doughnut', // 环形图
+                        type: 'doughnut',
                         data: {
                             labels: labels,
                             datasets: [{
@@ -1049,9 +1044,27 @@
                                     }
                                 }
                             },
-                            cutout: '65%' // 环形图空心大小
+                            cutout: '65%'
                         }
                     });
+                }
+            }
+
+            // 统一关闭报表函数 (终极修复：清理图表、重置z-index)
+            function closeReportModal() {
+                const reportModal = document.getElementById('reportModal');
+                reportModal.classList.remove('show');
+                reportModal.style.zIndex = '-1';
+                
+                // 销毁图表实例并清空画布
+                if (categoryChart) {
+                    categoryChart.destroy();
+                    categoryChart = null;
+                }
+                const canvas = document.getElementById('categoryPieChart');
+                if (canvas) {
+                    const ctx = canvas.getContext('2d');
+                    ctx.clearRect(0, 0, canvas.width, canvas.height);
                 }
             }
 
@@ -1112,41 +1125,47 @@
                     reader.readAsText(file);
                 });
 
-                document.querySelectorAll('.modal').forEach(m=>{ m.addEventListener('click',function(e){ if(e.target===this) this.classList.remove('show'); }); });
+                // 统一处理非报表模态框的关闭（确保它们也使用z-index控制）
+                document.querySelectorAll('.modal').forEach(modal => {
+                    if (modal.id !== 'reportModal') {
+                        modal.addEventListener('click', function(e) {
+                            if (e.target === this) {
+                                this.classList.remove('show');
+                                this.style.zIndex = '-1';
+                            }
+                        });
+                    }
+                });
 
-                // ===== 报表事件绑定 (双bug修复) =====
+                // ===== 报表事件绑定 (终极修复) =====
                 const reportModal = document.getElementById('reportModal');
                 const reportBtn = document.getElementById('reportBtn');
                 const closeReportBtn = document.getElementById('closeReportBtn');
                 const reportYear = document.getElementById('reportYear');
                 const reportMonth = document.getElementById('reportMonth');
 
-                // 【修复bug1】打开报表：重置样式后再显示
+                // 打开报表
                 reportBtn.addEventListener('click', () => {
                     initReportYearSelect();
                     renderReport();
-                    // 核心修复：打开前强制重置模态框样式
-                    reportModal.style.display = 'flex';
+                    // 通过z-index+opacity显示，不修改display
                     reportModal.classList.add('show');
+                    reportModal.style.zIndex = '1000';
                 });
 
-                // 【修复bug1】关闭按钮：移除show并重置样式
+                // 关闭按钮
                 closeReportBtn.addEventListener('click', (e) => {
                     e.stopPropagation();
-                    reportModal.classList.remove('show');
-                    reportModal.style.display = 'none';
-                    reportModal.style.opacity = '0';
+                    closeReportModal();
                 });
 
                 reportYear.addEventListener('change', renderReport);
                 reportMonth.addEventListener('change', renderReport);
 
-                // 【修复bug1】遮罩点击关闭：重置样式
+                // 遮罩点击关闭
                 reportModal.addEventListener('click', (e) => {
                     if (e.target === reportModal) {
-                        reportModal.classList.remove('show');
-                        reportModal.style.display = 'none';
-                        reportModal.style.opacity = '0';
+                        closeReportModal();
                     }
                 });
 
