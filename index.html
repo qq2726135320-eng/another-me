@@ -351,23 +351,34 @@
             opacity: 0.5;
         }
 
-        /* 删除滑出样式 (功能保留，简化视觉) */
-        .delete-action {
+        /* 滑出操作栏 (编辑/删除) */
+        .slide-actions {
             position: absolute;
             right: 0;
             top: 0;
             bottom: 0;
-            width: 80px;
-            background: var(--color-danger);
-            color: white;
             display: flex;
-            align-items: center;
-            justify-content: center;
             transform: translateX(100%);
             transition: transform 0.3s ease;
+        }
+        .slide-actions button {
+            width: 80px;
+            border: none;
             font-weight: 600;
             font-size: 14px;
-            border-radius: 0 var(--radius-md) var(--radius-md) 0;
+            cursor: pointer;
+            transition: opacity 0.2s;
+        }
+        .slide-actions button:active {
+            opacity: 0.8;
+        }
+        .slide-edit {
+            background: #007AFF;
+            color: white;
+        }
+        .slide-delete {
+            background: #FF3B30;
+            color: white;
         }
 
         /* ---------- 底部模态框 (终极修复：通过z-index控制) ---------- */
@@ -454,9 +465,10 @@
             border-radius: 20px;
             background: rgba(255,255,255,0.8);
             font-size: 14px;
+            transition: box-shadow 0.2s;
         }
 
-        /* 底部悬浮添加按钮 (FAB) — 已删除 font-weight:300 修复居中 */
+        /* 底部悬浮添加按钮 (FAB) */
         .add-btn {
             position: fixed;
             bottom: calc(20px + env(safe-area-inset-bottom));
@@ -468,7 +480,6 @@
             color: white;
             border: none;
             font-size: 28px;
-            /* font-weight: 300;  已删除，解决+号垂直偏移 */
             box-shadow: var(--shadow-hover);
             transition: all 0.2s ease;
             z-index: 99;
@@ -501,7 +512,7 @@
         .hidden { display: none; }
         .hidden-file-input { display: none; }
 
-        /* ========== 报表模块专属样式 (新增环形图容器) ========== */
+        /* ========== 报表模块专属样式 ========== */
         .report-content {
             max-height: 80vh;
             overflow-y: auto;
@@ -770,7 +781,7 @@
                         <p class="value balance" id="reportBalance">0.00</p>
                     </div>
                 </div>
-                <!-- 环形图容器 (替换原条形图) -->
+                <!-- 环形图容器 -->
                 <div class="report-category">
                     <h3>支出分类占比</h3>
                     <div class="chart-wrapper">
@@ -825,43 +836,103 @@
                 bal.className=`value ${s.balance>=0?'positive':'negative'}`;
             }
 
+            // ========== 标记有账单的日期 (红圈) ==========
+            function markDateHasBill() {
+                const input = document.getElementById('dateFilter');
+                const bills = getBills();
+                const hasBillDays = new Set(bills.map(b => b.date));
+                input.style.boxShadow = hasBillDays.has(input.value) ? '0 0 0 2px #FF3B30' : 'none';
+            }
+
+            // ========== 新版渲染账单 (带右滑编辑/删除) ==========
             function renderBillsWithDate() {
-                let today=getTodayDate(), target=currentSelectedDate||today, bills=getBills(), cats=getCategories(), container=document.getElementById('billList');
-                let filtered=bills.filter(b=>b.date===target);
-                if(filtered.length===0){
-                    container.innerHTML=`<div class="empty-state"><i>📋</i><div>${target===today?'今日暂无账单':'该日期暂无账单'}</div></div>`;
+                let today = getTodayDate();
+                let target = currentSelectedDate || today;
+                let bills = getBills();
+                let cats = getCategories();
+                let container = document.getElementById('billList');
+                let filtered = bills.filter(b => b.date === target);
+                if (filtered.length === 0) {
+                    container.innerHTML = `<div class="empty-state"><i>📋</i><div>${target === today ? '今日暂无账单' : '该日期暂无账单'}</div></div>`;
+                    markDateHasBill(); // 更新红点
                     return;
                 }
-                container.innerHTML='';
-                filtered.forEach(bill=>{
-                    let cat=cats.find(c=>c.id===bill.categoryId)||{name:'未知',id:'unknown'};
-                    let wrapper=document.createElement('div');
-                    wrapper.className='list-item-wrapper';
-                    let iconChar=cat.name.charAt(0)||'📦';
-                    wrapper.innerHTML=`
+                container.innerHTML = '';
+                filtered.forEach(bill => {
+                    let cat = cats.find(c => c.id === bill.categoryId) || { name: '未知', id: 'unknown' };
+                    let wrapper = document.createElement('div');
+                    wrapper.className = 'list-item-wrapper';
+                    let iconChar = cat.name.charAt(0) || '📦';
+                    wrapper.innerHTML = `
                         <div class="list-item">
                             <div class="item-info">
                                 <span class="category-icon">${iconChar}</span>
                                 <div class="item-text">
-                                    <div class="item-name">${cat.name} ${bill.type==='income'?'(收入)':'(支出)'}</div>
-                                    <div class="item-desc">${bill.note?bill.note:bill.date}</div>
+                                    <div class="item-name">${cat.name} ${bill.type === 'income' ? '(收入)' : '(支出)'}</div>
+                                    <div class="item-desc">${bill.note ? bill.note : bill.date}</div>
                                 </div>
                             </div>
-                            <div class="item-amount ${bill.type==='income'?'income-amount':'expense-amount'}">${bill.type==='income'?'+':'-'}¥${bill.amount.toFixed(2)}</div>
+                            <div class="item-amount ${bill.type === 'income' ? 'income-amount' : 'expense-amount'}">${bill.type === 'income' ? '+' : '-'}¥${bill.amount.toFixed(2)}</div>
                         </div>
-                        <div class="delete-action" data-id="${bill.id}">删除</div>
+                        <div class="slide-actions">
+                            <button class="slide-edit" data-id="${bill.id}">编辑</button>
+                            <button class="slide-delete" data-id="${bill.id}">删除</button>
+                        </div>
                     `;
                     container.appendChild(wrapper);
-                });
-                document.querySelectorAll('.delete-action').forEach(btn=>{
-                    btn.addEventListener('click', function(e){
-                        e.stopPropagation(); let id=this.dataset.id;
-                        if(!confirm('确定删除该账单？')) return;
-                        let bills=getBills(), updated=bills.filter(b=>b.id!==id);
-                        localStorage.setItem(STORAGE.BILLS,JSON.stringify(updated));
-                        renderBillsWithDate(); renderStats(); showToast('删除成功');
+
+                    // 单击条目收起所有滑栏
+                    wrapper.querySelector('.list-item').onclick = () => {
+                        document.querySelectorAll('.slide-actions').forEach(el => el.style.transform = 'translateX(100%)');
+                    };
+
+                    // 左右滑动
+                    let startX = 0;
+                    wrapper.addEventListener('touchstart', e => { startX = e.changedTouches[0].clientX; });
+                    wrapper.addEventListener('touchend', e => {
+                        let endX = e.changedTouches[0].clientX;
+                        let slideActions = wrapper.querySelector('.slide-actions');
+                        if (startX - endX > 50) { // 左滑
+                            document.querySelectorAll('.slide-actions').forEach(el => el.style.transform = 'translateX(100%)');
+                            slideActions.style.transform = 'translateX(0)';
+                        } else if (endX - startX > 50) { // 右滑
+                            slideActions.style.transform = 'translateX(100%)';
+                        }
                     });
                 });
+
+                // 编辑账单
+                document.querySelectorAll('.slide-edit').forEach(btn => {
+                    btn.onclick = function () {
+                        let id = this.dataset.id;
+                        let bill = getBills().find(b => b.id == id);
+                        if (!bill) return;
+                        document.getElementById('editBillId').value = bill.id;
+                        document.getElementById('editBillType').value = bill.type;
+                        document.getElementById('editBillAmount').value = bill.amount;
+                        document.getElementById('editBillDate').value = bill.date;
+                        document.getElementById('editBillNote').value = bill.note;
+                        renderCategories(); // 刷新分类下拉框
+                        setTimeout(() => document.getElementById('editBillCategory').value = bill.categoryId, 10);
+                        const modal = document.getElementById('editBillModal');
+                        modal.classList.add('show');
+                        modal.style.zIndex = '1000';
+                    };
+                });
+
+                // 删除账单
+                document.querySelectorAll('.slide-delete').forEach(btn => {
+                    btn.onclick = function () {
+                        let id = this.dataset.id;
+                        if (!confirm('确定删除该账单？')) return;
+                        let bills = getBills().filter(b => b.id != id);
+                        localStorage.setItem(STORAGE.BILLS, JSON.stringify(bills));
+                        renderBillsWithDate();
+                        renderStats();
+                        showToast('删除成功');
+                    };
+                });
+                markDateHasBill(); // 更新红点
             }
 
             function renderCategoryBudgets() {
@@ -910,20 +981,28 @@
                         renderCategories(); renderCategoryBudgets(); showToast('修改成功');
                     });
                 });
+                // === 修复问题二-1：分类删除强制刷新 ===
                 document.querySelectorAll('.delete-category').forEach(btn=>{
-                    btn.addEventListener('click',function(e){
-                        e.stopPropagation(); let catId=this.dataset.id;
-                        if(!confirm('删除分类同时会删除该分类的预算，确定？')) return;
-                        let cats=getCategories().filter(c=>c.id!==catId);
-                        localStorage.setItem(STORAGE.CATEGORIES,JSON.stringify(cats));
-                        let budgets=getCategoryBudgets(); delete budgets[catId];
-                        localStorage.setItem(STORAGE.CATEGORY_BUDGETS,JSON.stringify(budgets));
-                        renderCategories(); renderCategoryBudgets(); showToast('分类已删除');
+                    btn.addEventListener('click', function(e){
+                        e.stopPropagation();
+                        let catId = this.dataset.id;
+                        if (!confirm('删除分类同时会删除该分类的预算，确定？')) return;
+                        // 1. 删除分类
+                        let cats = getCategories().filter(c => c.id !== catId);
+                        localStorage.setItem(STORAGE.CATEGORIES, JSON.stringify(cats));
+                        // 2. 删除对应预算
+                        let budgets = getCategoryBudgets();
+                        delete budgets[catId];
+                        localStorage.setItem(STORAGE.CATEGORY_BUDGETS, JSON.stringify(budgets));
+                        // 3. 强制刷新
+                        renderCategories();
+                        renderCategoryBudgets();
+                        showToast('分类已删除');
                     });
                 });
             }
 
-            // ========== 报表功能 (环形图版本 + 终极修复) ==========
+            // ========== 报表功能 ==========
             function initReportYearSelect() {
                 const yearSelect = document.getElementById('reportYear');
                 const currentYear = new Date().getFullYear();
@@ -944,10 +1023,11 @@
                 const categories = getCategories();
 
                 if (bills.length === 0) {
-                    document.getElementById('categoryChart').innerHTML = '<p style="text-align:center;color:var(--text-secondary);padding:20px 0;">暂无任何账单数据</p>';
                     document.getElementById('reportIncome').textContent = '0.00';
                     document.getElementById('reportExpense').textContent = '0.00';
                     document.getElementById('reportBalance').textContent = '0.00';
+                    const chartWrapper = document.querySelector('.chart-wrapper');
+                    chartWrapper.innerHTML = '<p style="text-align:center;color:var(--text-secondary);padding:20px 0;">暂无任何账单数据</p>';
                     return;
                 }
 
@@ -1002,6 +1082,7 @@
                 if (totalExpense === 0) {
                     chartWrapper.innerHTML = '<p style="text-align:center;color:var(--text-secondary);">暂无支出数据</p>';
                 } else {
+                    // 确保canvas存在
                     if (chartWrapper.querySelector('canvas') === null) {
                         chartWrapper.innerHTML = '<canvas id="categoryPieChart"></canvas>';
                     }
@@ -1050,13 +1131,10 @@
                 }
             }
 
-            // 统一关闭报表函数 (终极修复：清理图表、重置z-index)
             function closeReportModal() {
                 const reportModal = document.getElementById('reportModal');
                 reportModal.classList.remove('show');
                 reportModal.style.zIndex = '-1';
-                
-                // 销毁图表实例并清空画布
                 if (categoryChart) {
                     categoryChart.destroy();
                     categoryChart = null;
@@ -1068,7 +1146,7 @@
                 }
             }
 
-            // 初始化与事件绑定
+            // ========== DOM 加载完成 ==========
             document.addEventListener('DOMContentLoaded', function(){
                 if(!localStorage.getItem(STORAGE.BILLS)) localStorage.setItem(STORAGE.BILLS,'[]');
                 if(!localStorage.getItem(STORAGE.CATEGORIES)) localStorage.setItem(STORAGE.CATEGORIES,'[]');
@@ -1080,27 +1158,33 @@
 
                 renderCategories(); renderCategoryBudgets(); renderBillsWithDate(); renderStats();
 
-                // 分类按钮切换
                 document.getElementById('categoryBtn').onclick = function() {
                     let card = document.getElementById('categoryCard');
                     card.style.display = (card.style.display === 'none' || getComputedStyle(card).display === 'none') ? 'block' : 'none';
                 };
 
-                document.getElementById('addBillBtn').onclick=()=>{ if(getCategories().length===0) return showToast('请先添加类别'); document.getElementById('addBillModal').classList.add('show'); };
-                document.getElementById('cancelAddBill').onclick=()=>document.getElementById('addBillModal').classList.remove('show');
+                document.getElementById('addBillBtn').onclick=()=>{ if(getCategories().length===0) return showToast('请先添加类别'); document.getElementById('addBillModal').classList.add('show'); document.getElementById('addBillModal').style.zIndex='1000'; };
+                // 取消添加账单 (修复)
+                document.getElementById('cancelAddBill').onclick=()=>{
+                    const modal = document.getElementById('addBillModal');
+                    modal.classList.remove('show');
+                    modal.style.zIndex = '-1';
+                };
                 document.getElementById('saveBillBtn').onclick=function(){
                     let type=document.getElementById('billType').value, catId=document.getElementById('billCategory').value, amt=parseFloat(document.getElementById('billAmount').value), date=document.getElementById('billDate').value, note=document.getElementById('billNote').value.trim();
                     if(!catId||isNaN(amt)||amt<0.01||!date||date>getTodayDate()) return showToast('请正确填写');
                     let bills=getBills(); let newBill={id:Date.now()+Math.random(), type, categoryId:catId, amount:amt, date, note:note||''};
                     bills.push(newBill); localStorage.setItem(STORAGE.BILLS,JSON.stringify(bills));
-                    document.getElementById('addBillModal').classList.remove('show');
+                    const modal = document.getElementById('addBillModal');
+                    modal.classList.remove('show');
+                    modal.style.zIndex = '-1';
                     renderBillsWithDate(); renderStats(); showToast('添加成功');
                 };
                 document.getElementById('toggleBillListBtn').onclick=function(e){
                     let l=document.getElementById('billList'); l.classList.toggle('hidden'); this.textContent=l.classList.contains('hidden')?'展开':'折叠';
                 };
                 document.getElementById('dateFilter').addEventListener('change',function(e){
-                    currentSelectedDate=e.target.value; isUserSelected=true; updateDateLabel(); renderBillsWithDate();
+                    currentSelectedDate=e.target.value; isUserSelected=true; updateDateLabel(); markDateHasBill(); renderBillsWithDate();
                 });
 
                 document.getElementById('exportBtn').onclick=()=>{ 
@@ -1125,7 +1209,7 @@
                     reader.readAsText(file);
                 });
 
-                // 统一处理非报表模态框的关闭（确保它们也使用z-index控制）
+                // 统一处理非报表模态框的关闭（点击遮罩）
                 document.querySelectorAll('.modal').forEach(modal => {
                     if (modal.id !== 'reportModal') {
                         modal.addEventListener('click', function(e) {
@@ -1137,60 +1221,113 @@
                     }
                 });
 
-                // ===== 报表事件绑定 (终极修复) =====
+                // ===== 报表事件 =====
                 const reportModal = document.getElementById('reportModal');
                 const reportBtn = document.getElementById('reportBtn');
                 const closeReportBtn = document.getElementById('closeReportBtn');
                 const reportYear = document.getElementById('reportYear');
                 const reportMonth = document.getElementById('reportMonth');
 
-                // 打开报表
                 reportBtn.addEventListener('click', () => {
                     initReportYearSelect();
                     renderReport();
-                    // 通过z-index+opacity显示，不修改display
                     reportModal.classList.add('show');
                     reportModal.style.zIndex = '1000';
                 });
-
-                // 关闭按钮
                 closeReportBtn.addEventListener('click', (e) => {
                     e.stopPropagation();
                     closeReportModal();
                 });
-
                 reportYear.addEventListener('change', renderReport);
                 reportMonth.addEventListener('change', renderReport);
-
-                // 遮罩点击关闭
                 reportModal.addEventListener('click', (e) => {
-                    if (e.target === reportModal) {
-                        closeReportModal();
-                    }
+                    if (e.target === reportModal) closeReportModal();
                 });
 
                 // 新增分类相关
-                document.getElementById('addCategoryBtn').onclick=()=>document.getElementById('addCategoryModal').classList.add('show');
-                document.getElementById('cancelAddCategory').onclick=()=>document.getElementById('addCategoryModal').classList.remove('show');
+                document.getElementById('addCategoryBtn').onclick=()=>{
+                    document.getElementById('addCategoryModal').classList.add('show');
+                    document.getElementById('addCategoryModal').style.zIndex='1000';
+                };
+                // 取消新增分类 (修复)
+                document.getElementById('cancelAddCategory').onclick=()=>{
+                    const modal = document.getElementById('addCategoryModal');
+                    modal.classList.remove('show');
+                    modal.style.zIndex = '-1';
+                };
                 document.getElementById('saveCategoryBtn').onclick=function(){
                     let name=document.getElementById('newCategoryName').value.trim();
                     if(!name||name.length>10) return showToast('请输入1-10字');
                     let cats=getCategories(); if(cats.some(c=>c.name===name)) return showToast('名称已存在');
                     let newCat={id:Date.now()+Math.random(), name}; cats.push(newCat);
                     localStorage.setItem(STORAGE.CATEGORIES,JSON.stringify(cats));
-                    renderCategories(); document.getElementById('addCategoryModal').classList.remove('show');
+                    renderCategories(); 
+                    const modal = document.getElementById('addCategoryModal');
+                    modal.classList.remove('show');
+                    modal.style.zIndex = '-1';
                     document.getElementById('newCategoryName').value=''; showToast('分类添加成功');
                 };
 
-                document.getElementById('editBudgetBtn').onclick=()=>{ if(getCategories().length===0) return showToast('请先添加分类'); document.getElementById('setBudgetModal').classList.add('show'); };
-                document.getElementById('cancelSetBudget').onclick=()=>document.getElementById('setBudgetModal').classList.remove('show');
+                document.getElementById('editBudgetBtn').onclick=()=>{ if(getCategories().length===0) return showToast('请先添加分类'); document.getElementById('setBudgetModal').classList.add('show'); document.getElementById('setBudgetModal').style.zIndex='1000'; };
+                // 取消设置预算 (修复)
+                document.getElementById('cancelSetBudget').onclick=()=>{
+                    const modal = document.getElementById('setBudgetModal');
+                    modal.classList.remove('show');
+                    modal.style.zIndex = '-1';
+                };
                 document.getElementById('saveBudgetBtn').onclick=function(){
                     let catId=document.getElementById('budgetCategorySelect').value, amt=parseFloat(document.getElementById('budgetAmountInput').value);
                     if(!catId||isNaN(amt)||amt<0.01) return showToast('输入有效预算');
                     let budgets=getCategoryBudgets(); budgets[catId]={amount:amt};
                     localStorage.setItem(STORAGE.CATEGORY_BUDGETS,JSON.stringify(budgets));
-                    renderCategoryBudgets(); document.getElementById('setBudgetModal').classList.remove('show');
+                    renderCategoryBudgets(); 
+                    const modal = document.getElementById('setBudgetModal');
+                    modal.classList.remove('show');
+                    modal.style.zIndex = '-1';
                     document.getElementById('budgetAmountInput').value=''; showToast('预算已设置');
+                };
+
+                // 取消编辑账单 (修复)
+                document.getElementById('cancelEditBill').onclick=()=>{
+                    const modal = document.getElementById('editBillModal');
+                    modal.classList.remove('show');
+                    modal.style.zIndex = '-1';
+                };
+                // 更新账单保存按钮 (补全功能)
+                document.getElementById('updateBillBtn').onclick = function () {
+                    const id = document.getElementById('editBillId').value;
+                    const type = document.getElementById('editBillType').value;
+                    const catId = document.getElementById('editBillCategory').value;
+                    const amt = parseFloat(document.getElementById('editBillAmount').value);
+                    const date = document.getElementById('editBillDate').value;
+                    const note = document.getElementById('editBillNote').value.trim();
+                    if (!catId || isNaN(amt) || amt < 0.01 || !date || date > getTodayDate()) {
+                        return showToast('请正确填写');
+                    }
+                    let bills = getBills();
+                    let index = bills.findIndex(b => b.id == id);
+                    if (index === -1) return;
+                    bills[index] = { id, type, categoryId: catId, amount: amt, date, note: note || '' };
+                    localStorage.setItem(STORAGE.BILLS, JSON.stringify(bills));
+                    const modal = document.getElementById('editBillModal');
+                    modal.classList.remove('show');
+                    modal.style.zIndex = '-1';
+                    renderBillsWithDate();
+                    renderStats();
+                    showToast('修改成功');
+                };
+                // 编辑页面的删除按钮
+                document.getElementById('deleteBillBtn').onclick = function() {
+                    const id = document.getElementById('editBillId').value;
+                    if (!id || !confirm('确定删除该账单？')) return;
+                    let bills = getBills().filter(b => b.id != id);
+                    localStorage.setItem(STORAGE.BILLS, JSON.stringify(bills));
+                    const modal = document.getElementById('editBillModal');
+                    modal.classList.remove('show');
+                    modal.style.zIndex = '-1';
+                    renderBillsWithDate();
+                    renderStats();
+                    showToast('删除成功');
                 };
             });
         })();
