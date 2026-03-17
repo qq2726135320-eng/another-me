@@ -668,7 +668,7 @@
         <div class="card">
             <div class="card-header">
                 <div class="date-indicator">
-                    <span id="displayDateLabel">今日账单</span>
+                    <span id="displayDateLabel">账单</span>   <!-- 标题固定为“账单”，不随日期变化 -->
                 </div>
                 <div class="filter-section">
                     <input type="date" id="dateFilter">
@@ -813,10 +813,15 @@
 
             function getTodayDate() { const d=new Date(); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; }
             function formatDateLabel(s) { if(!s)return ''; let [y,m,d]=s.split('-'); return `${y}年${m}月${d}日`; }
+            
+            // 【修复1】标题永远显示“账单”
             function updateDateLabel() {
                 let span=document.getElementById('displayDateLabel'), filter=document.getElementById('dateFilter'), today=getTodayDate(), display=currentSelectedDate||today;
-                filter.value=display; span.textContent=formatDateLabel(display)+(display===today?' (今日)':'');
+                filter.value=display; 
+                // 固定为“账单”，不再显示日期
+                span.textContent = '账单';
             }
+            
             function showToast(m) { let t=document.getElementById('toast'); t.textContent=m; t.style.display='block'; t.style.transform='translateX(-50%) translateY(0)'; setTimeout(()=>{ t.style.transform='translateX(-50%) translateY(100%)'; setTimeout(()=>t.style.display='none',300); },2000); }
 
             function getCategories(){ return JSON.parse(localStorage.getItem(STORAGE.CATEGORIES)||'[]'); }
@@ -854,7 +859,7 @@
                 let filtered = bills.filter(b => b.date === target);
                 if (filtered.length === 0) {
                     container.innerHTML = `<div class="empty-state"><i>📋</i><div>${target === today ? '今日暂无账单' : '该日期暂无账单'}</div></div>`;
-                    markDateHasBill(); // 更新红点
+                    markDateHasBill(); // 【修复3】刷新红点
                     return;
                 }
                 container.innerHTML = '';
@@ -920,7 +925,7 @@
                     };
                 });
 
-                // 删除账单
+                // 删除账单 (滑动删除按钮)
                 document.querySelectorAll('.slide-delete').forEach(btn => {
                     btn.onclick = function () {
                         let id = this.dataset.id;
@@ -929,10 +934,11 @@
                         localStorage.setItem(STORAGE.BILLS, JSON.stringify(bills));
                         renderBillsWithDate();
                         renderStats();
+                        markDateHasBill(); // 【修复3】刷新红点
                         showToast('删除成功');
                     };
                 });
-                markDateHasBill(); // 更新红点
+                markDateHasBill(); // 【修复3】刷新红点 (末尾)
             }
 
             function renderCategoryBudgets() {
@@ -972,33 +978,46 @@
                     let sel=document.getElementById(id); if(!sel) return;
                     sel.innerHTML=''; cats.forEach(c=>{ let opt=document.createElement('option'); opt.value=c.id; opt.textContent=c.name; sel.appendChild(opt); });
                 });
+                
+                // 编辑分类
                 document.querySelectorAll('.edit-category').forEach(btn=>{
-                    btn.addEventListener('click',function(e){
+                    btn.onclick = function(e){   // 改用 onclick 避免重复绑定
                         e.stopPropagation(); let catId=this.dataset.id; let newName=prompt('输入新分类名称');
                         if(!newName||newName.length>10) return showToast('名称需1-10个字');
                         let cats=getCategories(); let idx=cats.findIndex(c=>c.id===catId); if(idx===-1)return;
                         cats[idx].name=newName; localStorage.setItem(STORAGE.CATEGORIES,JSON.stringify(cats));
                         renderCategories(); renderCategoryBudgets(); showToast('修改成功');
-                    });
+                    };
                 });
-                // === 修复问题二-1：分类删除强制刷新 ===
+                
+                // 【修复2】分类删除功能（彻底可用）- 使用 onclick 并清理关联账单
                 document.querySelectorAll('.delete-category').forEach(btn=>{
-                    btn.addEventListener('click', function(e){
+                    btn.onclick = function(e) {
                         e.stopPropagation();
+                        if (!confirm('删除分类会清空该分类下所有账单，确定？')) return;
                         let catId = this.dataset.id;
-                        if (!confirm('删除分类同时会删除该分类的预算，确定？')) return;
+                        
                         // 1. 删除分类
                         let cats = getCategories().filter(c => c.id !== catId);
                         localStorage.setItem(STORAGE.CATEGORIES, JSON.stringify(cats));
+                        
                         // 2. 删除对应预算
                         let budgets = getCategoryBudgets();
                         delete budgets[catId];
                         localStorage.setItem(STORAGE.CATEGORY_BUDGETS, JSON.stringify(budgets));
-                        // 3. 强制刷新
+                        
+                        // 3. 删除该分类下所有账单
+                        let bills = getBills().filter(b => b.categoryId !== catId);
+                        localStorage.setItem(STORAGE.BILLS, JSON.stringify(bills));
+                        
+                        // 4. 全局刷新
                         renderCategories();
                         renderCategoryBudgets();
+                        renderBillsWithDate();
+                        renderStats();
+                        markDateHasBill();  // 【修复3】刷新红点
                         showToast('分类已删除');
-                    });
+                    };
                 });
             }
 
@@ -1178,7 +1197,8 @@
                     const modal = document.getElementById('addBillModal');
                     modal.classList.remove('show');
                     modal.style.zIndex = '-1';
-                    renderBillsWithDate(); renderStats(); showToast('添加成功');
+                    renderBillsWithDate(); renderStats(); markDateHasBill(); // 【修复3】保存账单后刷新红点
+                    showToast('添加成功');
                 };
                 document.getElementById('toggleBillListBtn').onclick=function(e){
                     let l=document.getElementById('billList'); l.classList.toggle('hidden'); this.textContent=l.classList.contains('hidden')?'展开':'折叠';
@@ -1203,7 +1223,8 @@
                             if(data.bills) localStorage.setItem(STORAGE.BILLS,JSON.stringify(data.bills));
                             if(data.categories) localStorage.setItem(STORAGE.CATEGORIES,JSON.stringify(data.categories));
                             if(data.categoryBudgets) localStorage.setItem(STORAGE.CATEGORY_BUDGETS,JSON.stringify(data.categoryBudgets));
-                            renderCategories(); renderCategoryBudgets(); renderBillsWithDate(); renderStats(); showToast('导入成功');
+                            renderCategories(); renderCategoryBudgets(); renderBillsWithDate(); renderStats(); markDateHasBill(); // 【修复3】导入后刷新红点
+                            showToast('导入成功');
                         }catch(ex){ showToast('文件错误'); }
                     };
                     reader.readAsText(file);
@@ -1314,6 +1335,7 @@
                     modal.style.zIndex = '-1';
                     renderBillsWithDate();
                     renderStats();
+                    markDateHasBill(); // 【修复3】编辑账单后刷新红点
                     showToast('修改成功');
                 };
                 // 编辑页面的删除按钮
@@ -1327,6 +1349,7 @@
                     modal.style.zIndex = '-1';
                     renderBillsWithDate();
                     renderStats();
+                    markDateHasBill(); // 【修复3】删除账单后刷新红点
                     showToast('删除成功');
                 };
             });
