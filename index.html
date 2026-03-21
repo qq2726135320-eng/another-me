@@ -83,15 +83,16 @@
         .navbar-actions button:active { transform: scale(0.96); opacity: 0.8; }
         #reportBtn { background: #8E8E93 !important; color: white !important; }
         
-        /* 第四步修正：保持足够的 margin-top 避免 fixed 导航栏遮挡内容 */
-        /* 原导航栏高度约 70px + 安全区，此值保证内容从导航栏下方开始 */
+        /* 修正：主体内容 margin-top 确保不被固定导航栏遮挡 */
         .main-content { margin-top: calc(70px + env(safe-area-inset-top)); }
         
-        /* 第二步：统计卡片样式 - 无缝衔接导航栏，无圆角无阴影，顶部 margin 为 0 */
+        /* 统计卡片 - 恢复经典圆角阴影样式（用户要求改回） */
         .stats-container {
             background: var(--bg-card);
-            margin: 0 0 var(--spacing-lg) 0;
-            padding: 0 var(--spacing-xl) var(--spacing-xl) var(--spacing-xl);
+            border-radius: var(--radius-lg);
+            margin: var(--spacing-lg) 0;
+            padding: var(--spacing-xl);
+            box-shadow: var(--shadow-soft);
         }
         .stats-scroll { display: flex; justify-content: space-around; text-align: center; }
         .stat-card {
@@ -107,7 +108,7 @@
         .value.positive { color: var(--color-success); }
         .value.negative { color: var(--color-danger); }
         
-        /* 普通卡片样式（账单卡片、分类卡片保留圆角阴影） */
+        /* 卡片通用样式 - 所有卡片都使用此样式，保证圆角阴影 */
         .card {
             background: var(--bg-card);
             border-radius: var(--radius-lg);
@@ -116,16 +117,7 @@
             box-shadow: var(--shadow-soft);
         }
         
-        /* 第三步操作1：预算卡片专属样式 - 与顶部白色区块完全融合，底部加分割线 */
-        .budget-card {
-            background: var(--bg-card);
-            border-radius: 0;
-            margin: 0;
-            padding: 0 var(--spacing-xl) var(--spacing-xl) var(--spacing-xl);
-            box-shadow: none;
-            border-bottom: 1px solid var(--bg-divider);
-        }
-        
+        /* 预算卡片也使用通用 .card 样式（不再使用特殊方形样式） */
         .card-header {
             display: flex;
             align-items: center;
@@ -383,7 +375,7 @@
     </div>
     <div class="main-content">
         <input type="file" id="importFileInput" class="hidden-file-input" accept=".json">
-        <!-- 统计卡片（无圆角、无阴影、无顶部外边距） -->
+        <!-- 统计卡片（恢复圆角阴影） -->
         <div class="stats-container">
             <div class="stats-scroll">
                 <div class="stat-card"><div class="label">总收入</div><div class="value positive" id="totalIncome">0.00</div></div>
@@ -391,8 +383,8 @@
                 <div class="stat-card"><div class="label">结余</div><div class="value" id="totalBalance">0.00</div></div>
             </div>
         </div>
-        <!-- 预算卡片（专属 class，与统计卡片无缝衔接，底部加分割线） -->
-        <div class="budget-card">
+        <!-- 预算卡片（恢复普通卡片样式，圆角阴影） -->
+        <div class="card">
             <div class="card-header">
                 <span>预算管理</span>
                 <button id="editBudgetBtn" class="icon-btn setting-btn" title="设置预算">
@@ -404,7 +396,7 @@
             </div>
             <div id="budgetList" class="budget-progress-container"><div class="empty-state">暂无分类预算数据</div></div>
         </div>
-        <!-- 账单卡片（常规 card 样式） -->
+        <!-- 账单卡片（普通卡片样式） -->
         <div class="card">
             <div class="card-header">
                 <div class="date-indicator"><span>账单</span></div>
