@@ -220,7 +220,14 @@
         }
         .modal-actions { display: flex; gap: var(--spacing-md); margin-top: var(--spacing-xl); }
         .filter-section { display: flex; gap: var(--spacing-sm); align-items: center; }
-        .filter-section input[type="date"] { padding: 8px 12px; border-radius: 20px; border: 0.5px solid var(--bg-divider); font-size: 14px; }
+        /* 体验优化: 防止日期框被压缩 */
+        .filter-section input[type="date"] {
+            padding: 8px 12px;
+            border-radius: 20px;
+            border: 0.5px solid var(--bg-divider);
+            font-size: 14px;
+            min-width: 120px;  /* 新增：确保日期框有足够宽度 */
+        }
         .add-btn {
             position: fixed;
             bottom: calc(20px + env(safe-area-inset-bottom));
@@ -803,6 +810,8 @@
             initDefaultData();
             bindEvents();
             currentSelectedDate = getTodayDate();
+            // 核心修复: 将计算出的“今天”赋值给日期选择器，使其可见
+            document.getElementById('dateFilter').value = currentSelectedDate;
             renderBillsWithDate();
             markDateHasBill();
         })();
