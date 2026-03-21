@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>口袋账单 · 质感重构 + 右滑操作 (完整增强版)</title>
+    <title>口袋账单 · 质感重构 + 右滑小胶囊操作</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         /* ---------- 设计令牌 ---------- */
@@ -144,7 +144,7 @@
         .budget-fill.warning { background: var(--color-warning); }
         .budget-fill.over { background: var(--color-danger); }
         
-        /* ========= 新增：右滑账单操作样式 ========= */
+        /* ========= 右滑账单操作样式（统一小胶囊风格） ========= */
         .list-item-wrapper {
             position: relative;
             overflow: hidden;
@@ -163,36 +163,46 @@
             z-index: 2;
             cursor: pointer;
         }
-        /* 右滑操作按钮容器 */
+        /* 右滑操作按钮容器（垂直居中，和分类管理按钮对齐） */
         .swipe-actions {
             position: absolute;
             top: 0;
             right: 0;
             height: 100%;
             display: flex;
+            align-items: center;
+            gap: var(--spacing-sm);
+            padding-right: var(--spacing-md);
             z-index: 1;
         }
-        /* 操作按钮通用样式 */
+        /* 操作按钮通用样式（和分类管理按钮完全统一） */
         .swipe-btn {
-            width: 70px;
-            height: 100%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: white;
-            font-size: 14px;
+            padding: 6px 12px;
+            background: white;
+            border: 1px solid var(--bg-divider);
+            border-radius: var(--radius-md);
+            font-size: 12px;
             font-weight: 500;
-            border: none;
             cursor: pointer;
-            background: transparent;
+            transition: all 0.2s;
         }
+        /* 编辑按钮样式（主色风格） */
         .swipe-btn.edit {
-            background: var(--color-primary);
+            border-color: var(--color-primary);
+            color: var(--color-primary);
         }
+        /* 删除按钮样式（危险色风格） */
         .swipe-btn.delete {
-            background: var(--color-danger);
+            border-color: var(--color-danger);
+            color: var(--color-danger);
         }
-        /* 原有账单内部样式适配滑动结构 */
+        /* 按钮点击反馈 */
+        .swipe-btn:active {
+            transform: scale(0.95);
+            opacity: 0.8;
+        }
+
+        /* 原有账单列表内部样式 */
         .list-item {
             display: flex;
             align-items: center;
@@ -411,12 +421,12 @@
             let isBillListCollapsed = false;
             let categoryChart = null;
             
-            // ========== 新增：右滑相关全局变量 ==========
+            // ========== 右滑相关全局变量 (阈值已适配小胶囊按钮) ==========
             let startX = 0;
             let currentX = 0;
             let isSwiping = false;
             let activeSwipeElement = null;
-            const SWIPE_THRESHOLD = 140; // 按钮总宽度 (两个按钮 70px+70px)
+            const SWIPE_THRESHOLD = 110; // 适配小胶囊按钮的总宽度 (原140改为110)
 
             // 工具函数
             const getTodayDate = () => { let d=new Date(); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; };
@@ -431,7 +441,7 @@
             function saveBills(bills){ localStorage.setItem(STORAGE.BILLS, JSON.stringify(bills)); }
             function saveBudgets(budgets){ localStorage.setItem(STORAGE.CATEGORY_BUDGETS, JSON.stringify(budgets)); }
 
-            // ========== 数据迁移 ==========
+            // 数据迁移 (保持原逻辑)
             function migrateOldData() {
                 let needSave = false;
                 let categories = getCategories();
@@ -469,7 +479,7 @@
                 if (budgetsChanged) saveBudgets(newBudgets);
             }
 
-            // 月度统计 & 预算更新函数 (原有逻辑)
+            // 月度统计 & 预算更新函数
             function updateMonthlyStats(){
                 const bills = getBills();
                 const currentMonthKey = getCurrentMonthKey();
@@ -534,7 +544,7 @@
                 });
             }
 
-            // ========== 右滑核心函数 ==========
+            // 右滑核心函数
             function closeAllSwipe(){
                 document.querySelectorAll('.swipe-content').forEach(el => {
                     el.style.transform = 'translateX(0px)';
@@ -600,7 +610,7 @@
                 if(hasBill) input.classList.add('has-bill');
                 else input.classList.remove('has-bill');
             }
-            // 账单渲染（带右滑结构）
+            // 账单渲染（带右滑小胶囊结构）
             function renderBillsWithDate(){
                 let target = currentSelectedDate || getTodayDate();
                 let bills = getBills();
@@ -617,7 +627,6 @@
                     let wrapper = document.createElement('div');
                     wrapper.className = 'list-item-wrapper';
                     let amountClass = bill.type==='income' ? 'income-amount' : 'expense-amount';
-                    // 新DOM结构：swipe-content + swipe-actions
                     wrapper.innerHTML = `
                         <div class="swipe-content" data-id="${bill.id}">
                             <div class="list-item">
@@ -637,7 +646,6 @@
                         </div>
                     `;
                     const swipeContent = wrapper.querySelector('.swipe-content');
-                    // 点击账单主体打开编辑弹窗（带右滑收起判断）
                     swipeContent.addEventListener('click', (e) => {
                         e.stopPropagation();
                         if(swipeContent.style.transform !== 'translateX(0px)' && swipeContent.style.transform !== ''){
@@ -651,7 +659,6 @@
                 bindSwipeEvents();
                 markDateHasBill();
             }
-            // 编辑弹窗（复用原有逻辑）
             function openEditBillModal(billId){
                 const bill = getBills().find(b=>b.id===billId);
                 if(!bill) return;
@@ -711,7 +718,7 @@
                     container.appendChild(div);
                 });
             }
-            function editCategoryById(catId){ /* 保持原逻辑 */ 
+            function editCategoryById(catId){ 
                 const cats = getCategories();
                 const cat = cats.find(c=>c.id===catId);
                 if(!cat){ showToast('分类不存在'); return; }
@@ -735,7 +742,7 @@
                 refreshAll();
                 showToast('删除成功');
             }
-            function saveNewBill(){ /* 原逻辑不变 */ 
+            function saveNewBill(){
                 const type = document.getElementById('billType').value;
                 const categoryId = document.getElementById('billCategory').value;
                 const amount = parseFloat(document.getElementById('billAmount').value);
@@ -751,7 +758,7 @@
                 closeModal('addBillModal');
                 showToast('添加成功');
             }
-            function updateBill(){ /* 原逻辑不变 */ 
+            function updateBill(){
                 const id = document.getElementById('editBillId').value;
                 let bills = getBills();
                 const index = bills.findIndex(b=>b.id===id);
@@ -790,7 +797,7 @@
                 const modal = document.getElementById(modalId);
                 modal.classList.remove('show');
             }
-            function initReportModal(){ /* 保持原样 */ 
+            function initReportModal(){
                 const yearSelect = document.getElementById('reportYear');
                 const curYear = new Date().getFullYear();
                 for(let y=curYear-3; y<=curYear+1; y++){ let opt=document.createElement('option'); opt.value=y; opt.textContent=y+'年'; yearSelect.appendChild(opt); }
@@ -800,7 +807,7 @@
                 document.getElementById('reportMonth').addEventListener('change',()=>updateReport());
                 updateReport();
             }
-            function updateReport(){ /* 保持原样 */ 
+            function updateReport(){
                 const year = parseInt(document.getElementById('reportYear').value);
                 const month = document.getElementById('reportMonth').value;
                 const bills = getBills();
@@ -852,7 +859,6 @@
                 refreshAll();
             }
             function bindEvents(){
-                // 原有所有事件绑定
                 document.getElementById('addBillBtn').onclick = ()=>{ updateAllCategorySelects(); document.getElementById('billDate').value=getTodayDate(); document.getElementById('addBillModal').classList.add('show'); };
                 document.getElementById('cancelAddBill').onclick = ()=> closeModal('addBillModal');
                 document.getElementById('saveBillBtn').onclick = saveNewBill;
@@ -881,13 +887,11 @@
                     if(btn.classList.contains('edit-cat')) editCategoryById(btn.dataset.id);
                     else if(btn.classList.contains('del-cat')) deleteCategoryById(btn.dataset.id);
                 });
-                // 新增全局右滑关闭
                 document.addEventListener('click', (e) => {
                     if(!e.target.closest('.swipe-content') && !e.target.closest('.swipe-actions')){
                         closeAllSwipe();
                     }
                 });
-                // 右滑按钮委托点击（编辑/删除）
                 const billListContainer = document.getElementById('billList');
                 billListContainer.addEventListener('click', (e) => {
                     const btn = e.target;
