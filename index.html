@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>口袋账单 · 质感重构 + 右滑小胶囊操作（含预算右滑）</title>
+    <title>口袋账单 · 质感重构 + 右滑小胶囊操作</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         /* ---------- 设计令牌 ---------- */
@@ -134,11 +134,9 @@
         }
         .card-header button:active, .modal-actions button:active { transform: scale(0.96); opacity: 0.8; }
         #toggleBillListBtn { background: transparent; }
-        /* 预算进度条（用于滑动内部） */
-        .budget-item {
-            width: 100%;
-            padding: var(--spacing-sm) 0;
-        }
+        /* 预算进度条 */
+        .budget-progress-container { display: flex; flex-direction: column; gap: var(--spacing-md); }
+        .budget-item { margin-bottom: var(--spacing-sm); }
         .budget-header { display: flex; justify-content: space-between; font-size: 14px; margin-bottom: var(--spacing-xs); }
         .budget-bar { height: 6px; background: #E5E5EA; border-radius: var(--radius-full); overflow: hidden; width: 100%; }
         .budget-fill { height: 100%; border-radius: var(--radius-full); transition: width 0.3s ease; }
@@ -339,6 +337,26 @@
         .value.expense { color: var(--color-danger); }
         .chart-wrapper { height: 220px; margin: 10px auto; display: flex; justify-content: center; align-items: center; }
         #categoryPieChart { max-width: 280px; max-height: 220px; }
+
+        /* ---------- 新增：图标按钮通用样式 ---------- */
+        .icon-btn {
+            padding: 8px !important;
+            width: 36px;
+            height: 36px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: var(--radius-md) !important;
+        }
+        .setting-btn {
+            color: var(--color-primary);
+            background: rgba(0, 102, 204, 0.1) !important;
+            transition: all 0.2s ease;
+        }
+        .setting-btn:active {
+            transform: scale(0.96);
+            opacity: 0.8;
+        }
     </style>
 </head>
 <body>
@@ -363,7 +381,15 @@
         </div>
         <!-- 预算卡片 -->
         <div class="card">
-            <div class="card-header"><span>预算管理</span><button id="editBudgetBtn">设置预算</button></div>
+            <div class="card-header">
+                <span>预算管理</span>
+                <button id="editBudgetBtn" class="icon-btn setting-btn" title="设置预算">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="3"></circle>
+                        <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+                    </svg>
+                </button>
+            </div>
             <div id="budgetList" class="budget-progress-container"><div class="empty-state">暂无分类预算数据</div></div>
         </div>
         <!-- 账单卡片 -->
@@ -428,7 +454,7 @@
             let currentX = 0;
             let isSwiping = false;
             let activeSwipeElement = null;
-            const SWIPE_THRESHOLD = 110; // 适配小胶囊按钮的总宽度
+            const SWIPE_THRESHOLD = 110; // 适配小胶囊按钮的总宽度 (原140改为110)
 
             // 工具函数
             const getTodayDate = () => { let d=new Date(); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; };
@@ -443,7 +469,7 @@
             function saveBills(bills){ localStorage.setItem(STORAGE.BILLS, JSON.stringify(bills)); }
             function saveBudgets(budgets){ localStorage.setItem(STORAGE.CATEGORY_BUDGETS, JSON.stringify(budgets)); }
 
-            // 数据迁移
+            // 数据迁移 (保持原逻辑)
             function migrateOldData() {
                 let needSave = false;
                 let categories = getCategories();
@@ -521,7 +547,6 @@
                 localStorage.setItem(STORAGE.MONTHLY_BUDGET_USED+currentMonthKey, JSON.stringify(formattedUsed));
                 return formattedUsed;
             }
-            // 预算渲染（带右滑结构）
             function renderCategoryBudgets(){
                 const allBudgets = getCategoryBudgets();
                 const monthlyUsed = updateMonthlyBudgetUsed();
@@ -538,24 +563,13 @@
                     if(used/budget > 0.9) progressClass = 'warning';
                     if(used > budget) progressClass = 'over';
                     const remain = budget - used;
-                    const wrapper = document.createElement('div');
-                    wrapper.className = 'list-item-wrapper';
-                    wrapper.innerHTML = `
-                        <div class="swipe-content" data-cid="${cat.id}">
-                            <div class="budget-item" style="width:100%; padding: var(--spacing-sm) 0;">
-                                <div class="budget-header"><span>${cat.name}</span><span>${used.toFixed(2)} / ${budget.toFixed(2)}</span></div>
-                                <div class="budget-bar"><div class="budget-fill ${progressClass}" style="width:${percent}%;"></div></div>
-                                <div style="font-size:13px; color:${remain<0?'var(--color-danger)':'var(--text-secondary)'}">${remain<0 ? '超支 '+Math.abs(remain).toFixed(2) : '剩余 '+remain.toFixed(2)}</div>
-                            </div>
-                        </div>
-                        <div class="swipe-actions">
-                            <button class="swipe-btn edit" data-cid="${cat.id}">编辑</button>
-                            <button class="swipe-btn delete" data-cid="${cat.id}">删除</button>
-                        </div>
-                    `;
-                    container.appendChild(wrapper);
+                    const div = document.createElement('div');
+                    div.className='budget-item';
+                    div.innerHTML = `<div class="budget-header"><span>${cat.name}</span><span>${used.toFixed(2)} / ${budget.toFixed(2)}</span></div>
+                                    <div class="budget-bar"><div class="budget-fill ${progressClass}" style="width:${percent}%;"></div></div>
+                                    <div style="font-size:13px; color:${remain<0?'var(--color-danger)':'var(--text-secondary)'}">${remain<0 ? '超支 '+Math.abs(remain).toFixed(2) : '剩余 '+remain.toFixed(2)}</div>`;
+                    container.appendChild(div);
                 });
-                bindSwipeEvents(); // 绑定新生成的滑动元素
             }
 
             // 右滑核心函数
@@ -796,31 +810,6 @@
                 closeAllSwipe();
                 showToast('删除成功');
             }
-
-            // ========== 新增：预算编辑/删除核心函数 ==========
-            function editBudgetById(catId){
-                const allBudgets = getCategoryBudgets();
-                const allCategories = getCategories();
-                const cat = allCategories.find(c=>c.id===catId);
-                if(!cat || !allBudgets[catId]){
-                    showToast('预算数据不存在');
-                    return;
-                }
-                updateAllCategorySelects();
-                document.getElementById('budgetCategorySelect').value = catId;
-                document.getElementById('budgetAmountInput').value = allBudgets[catId].amount;
-                document.getElementById('setBudgetModal').classList.add('show');
-                closeAllSwipe();
-            }
-            function deleteBudgetById(catId){
-                const budgets = getCategoryBudgets();
-                delete budgets[catId];
-                saveBudgets(budgets);
-                refreshAll();
-                closeAllSwipe();
-                showToast('预算已删除');
-            }
-
             function saveBudget(){
                 const catId = document.getElementById('budgetCategorySelect').value;
                 const amount = parseFloat(document.getElementById('budgetAmountInput').value);
@@ -942,20 +931,6 @@
                     } else if(btn.classList.contains('delete')){
                         if(confirm('确定要删除这条账单吗？')){
                             deleteBillLogic(billId);
-                        }
-                    }
-                });
-                // 预算模块右滑按钮事件委托
-                const budgetContainer = document.getElementById('budgetList');
-                budgetContainer.addEventListener('click', (e) => {
-                    const btn = e.target;
-                    const catId = btn.dataset.cid;
-                    if(!catId) return;
-                    if(btn.classList.contains('edit')){
-                        editBudgetById(catId);
-                    } else if(btn.classList.contains('delete')){
-                        if(confirm('确定要删除这个分类的预算吗？')){
-                            deleteBudgetById(catId);
                         }
                     }
                 });
