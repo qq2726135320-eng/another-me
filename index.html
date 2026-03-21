@@ -220,13 +220,22 @@
         }
         .modal-actions { display: flex; gap: var(--spacing-md); margin-top: var(--spacing-xl); }
         .filter-section { display: flex; gap: var(--spacing-sm); align-items: center; }
-        /* 体验优化: 防止日期框被压缩 */
+        /* 体验优化: 防止日期框被压缩，并增加过渡效果 */
         .filter-section input[type="date"] {
             padding: 8px 12px;
             border-radius: 20px;
             border: 0.5px solid var(--bg-divider);
             font-size: 14px;
-            min-width: 120px;  /* 新增：确保日期框有足够宽度 */
+            min-width: 120px;
+            background-color: white;
+            transition: all 0.2s;
+        }
+        /* 【新增】有账单时的高亮样式 */
+        .filter-section input[type="date"].has-bill {
+            background-color: rgba(255, 59, 48, 0.1);
+            border-color: var(--color-danger);
+            color: var(--color-danger);
+            font-weight: 600;
         }
         .add-btn {
             position: fixed;
@@ -495,12 +504,16 @@
                 markDateHasBill();
                 renderCategories();
             }
-            // 日期红点
+            // 日期红点逻辑优化版（使用CSS类名）
             function markDateHasBill(){
                 const input = document.getElementById('dateFilter');
                 const bills = getBills();
                 const hasBill = bills.some(b => b.date === input.value);
-                input.style.boxShadow = hasBill ? '0 0 0 2px #FF3B30' : 'none';
+                if(hasBill) {
+                    input.classList.add('has-bill');
+                } else {
+                    input.classList.remove('has-bill');
+                }
             }
             // 账单列表渲染
             function renderBillsWithDate(){
@@ -810,7 +823,7 @@
             initDefaultData();
             bindEvents();
             currentSelectedDate = getTodayDate();
-            // 核心修复: 将计算出的“今天”赋值给日期选择器，使其可见
+            // 将今天日期同步到日期选择器，确保界面显示正确
             document.getElementById('dateFilter').value = currentSelectedDate;
             renderBillsWithDate();
             markDateHasBill();
