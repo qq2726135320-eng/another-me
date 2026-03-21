@@ -43,7 +43,6 @@
             background-color: var(--bg-page);
             color: var(--text-primary);
             line-height: 1.4;
-            /* 第五步：移除 padding-top，顶部安全区由 navbar 处理，白色区块贴顶 */
             padding-bottom: env(safe-area-inset-bottom);
             min-height: 100vh;
             padding-left: 16px;
@@ -53,7 +52,7 @@
         }
         .amount { font-variant-numeric: tabular-nums; font-family: 'SF Mono', monospace; }
         
-        /* 第一步：顶部导航栏 - 纯白色背景，无毛玻璃无分割线，保留安全区 */
+        /* 顶部导航栏 */
         .navbar {
             display: flex;
             align-items: center;
@@ -81,12 +80,10 @@
             transition: all 0.2s ease;
         }
         .navbar-actions button:active { transform: scale(0.96); opacity: 0.8; }
-        #reportBtn { background: #8E8E93 !important; color: white !important; }
         
-        /* 修正：主体内容 margin-top 确保不被固定导航栏遮挡 */
         .main-content { margin-top: calc(70px + env(safe-area-inset-top)); }
         
-        /* 统计卡片 - 恢复经典圆角阴影样式（用户要求改回） */
+        /* 统计卡片 */
         .stats-container {
             background: var(--bg-card);
             border-radius: var(--radius-lg);
@@ -108,7 +105,7 @@
         .value.positive { color: var(--color-success); }
         .value.negative { color: var(--color-danger); }
         
-        /* 卡片通用样式 - 所有卡片都使用此样式，保证圆角阴影 */
+        /* 卡片通用样式 */
         .card {
             background: var(--bg-card);
             border-radius: var(--radius-lg);
@@ -117,7 +114,6 @@
             box-shadow: var(--shadow-soft);
         }
         
-        /* 预算卡片也使用通用 .card 样式 */
         .card-header {
             display: flex;
             align-items: center;
@@ -139,7 +135,7 @@
         .card-header button:active, .modal-actions button:active { transform: scale(0.96); opacity: 0.8; }
         #toggleBillListBtn { background: transparent; }
         
-        /* 预算进度条（用于滑动内部） */
+        /* 预算进度条 */
         .budget-item {
             width: 100%;
             padding: var(--spacing-sm) 0;
@@ -151,7 +147,7 @@
         .budget-fill.warning { background: var(--color-warning); }
         .budget-fill.over { background: var(--color-danger); }
         
-        /* ========= 右滑账单操作样式（统一小胶囊风格） ========= */
+        /* 右滑操作样式 */
         .list-item-wrapper {
             position: relative;
             overflow: hidden;
@@ -203,7 +199,6 @@
             opacity: 0.8;
         }
 
-        /* 账单列表项样式 */
         .list-item {
             display: flex;
             align-items: center;
@@ -361,21 +356,109 @@
             transform: scale(0.96);
             opacity: 0.8;
         }
+
+        /* ---------- 侧边栏样式 ---------- */
+        .sidebar-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.3);
+            backdrop-filter: blur(2px);
+            z-index: 999;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.3s ease, visibility 0.3s ease;
+        }
+        .sidebar-overlay.show {
+            opacity: 1;
+            visibility: visible;
+        }
+        .sidebar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 280px;
+            height: 100%;
+            background-color: var(--bg-card);
+            z-index: 1000;
+            transform: translateX(-100%);
+            transition: transform 0.3s cubic-bezier(0.2, 0.9, 0.1, 1);
+            box-shadow: 4px 0 20px rgba(0,0,0,0.1);
+            padding-top: env(safe-area-inset-top);
+        }
+        .sidebar.show {
+            transform: translateX(0);
+        }
+        .sidebar-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: var(--spacing-xl);
+            border-bottom: 0.5px solid var(--bg-divider);
+        }
+        .sidebar-header h3 {
+            font-size: 20px;
+            font-weight: 700;
+        }
+        .sidebar-menu {
+            padding: var(--spacing-md) var(--spacing-xl);
+            display: flex;
+            flex-direction: column;
+            gap: var(--spacing-md);
+        }
+        /* 菜单项胶囊样式 */
+        .menu-item {
+            padding: 12px 20px;
+            font-size: 16px;
+            font-weight: 500;
+            color: var(--color-primary);
+            background: rgba(0, 102, 204, 0.08);
+            border-radius: var(--radius-full);
+            cursor: pointer;
+            transition: all 0.2s ease;
+            text-align: center;
+            border: 0.5px solid rgba(0, 102, 204, 0.2);
+        }
+        .menu-item:active {
+            background: rgba(0, 102, 204, 0.2);
+            transform: scale(0.96);
+        }
     </style>
 </head>
 <body>
     <div class="navbar">
         <h1>口袋账单</h1>
         <div class="navbar-actions">
-            <button id="importBtn">导入</button>
-            <button id="exportBtn">导出</button>
+            <button id="menuBtn" class="icon-btn setting-btn" title="菜单">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="3" y1="6" x2="21" y2="6"></line>
+                    <line x1="3" y1="12" x2="21" y2="12"></line>
+                    <line x1="3" y1="18" x2="21" y2="18"></line>
+                </svg>
+            </button>
             <button id="categoryBtn">分类</button>
-            <button id="reportBtn">报表</button>
         </div>
     </div>
+
+    <!-- 侧边栏 -->
+    <div class="sidebar-overlay" id="sidebarOverlay"></div>
+    <div class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+            <h3>菜单</h3>
+            <button id="closeSidebarBtn" class="close-btn">×</button>
+        </div>
+        <div class="sidebar-menu">
+            <div class="menu-item" id="sidebarImportBtn">导入数据</div>
+            <div class="menu-item" id="sidebarExportBtn">导出数据</div>
+            <div class="menu-item" id="sidebarReportBtn">财务报表</div>
+        </div>
+    </div>
+
     <div class="main-content">
         <input type="file" id="importFileInput" class="hidden-file-input" accept=".json">
-        <!-- 统计卡片（恢复圆角阴影） -->
+        <!-- 统计卡片 -->
         <div class="stats-container">
             <div class="stats-scroll">
                 <div class="stat-card"><div class="label">总收入</div><div class="value positive" id="totalIncome">0.00</div></div>
@@ -383,7 +466,7 @@
                 <div class="stat-card"><div class="label">结余</div><div class="value" id="totalBalance">0.00</div></div>
             </div>
         </div>
-        <!-- 预算卡片（恢复普通卡片样式，圆角阴影） -->
+        <!-- 预算卡片 -->
         <div class="card">
             <div class="card-header">
                 <span>预算管理</span>
@@ -396,7 +479,7 @@
             </div>
             <div id="budgetList" class="budget-progress-container"><div class="empty-state">暂无分类预算数据</div></div>
         </div>
-        <!-- 账单卡片（普通卡片样式） -->
+        <!-- 账单卡片 -->
         <div class="card">
             <div class="card-header">
                 <div class="date-indicator"><span>账单</span></div>
@@ -413,7 +496,7 @@
             <div id="categoryList" class="list"><div class="empty-state">暂无分类数据</div></div>
         </div>
 
-        <!-- 模态框 -->
+        <!-- 模态框（保持不变） -->
         <div class="modal" id="addBillModal"><div class="modal-content"><h3>添加账单</h3>
             <div class="form-group"><label>类型</label><select id="billType"><option value="expense">支出</option><option value="income">收入</option></select></div>
             <div class="form-group"><label>分类</label><select id="billCategory"></select></div>
@@ -473,7 +556,7 @@
             function saveBills(bills){ localStorage.setItem(STORAGE.BILLS, JSON.stringify(bills)); }
             function saveBudgets(budgets){ localStorage.setItem(STORAGE.CATEGORY_BUDGETS, JSON.stringify(budgets)); }
 
-            function migrateOldData() { /* 数据迁移逻辑（同原版） */ 
+            function migrateOldData() { 
                 let needSave = false;
                 let categories = getCategories();
                 let idMap = new Map();
@@ -648,6 +731,12 @@
             function initReportModal(){ const yearSelect = document.getElementById('reportYear'); const curYear = new Date().getFullYear(); for(let y=curYear-3; y<=curYear+1; y++){ let opt=document.createElement('option'); opt.value=y; opt.textContent=y+'年'; yearSelect.appendChild(opt); } yearSelect.value = curYear; document.getElementById('reportMonth').value = 'all'; document.getElementById('reportYear').addEventListener('change',()=>updateReport()); document.getElementById('reportMonth').addEventListener('change',()=>updateReport()); updateReport(); }
             function updateReport(){ const year = parseInt(document.getElementById('reportYear').value); const month = document.getElementById('reportMonth').value; const bills = getBills(); const filtered = bills.filter(b=>{ const d = new Date(b.date); if(d.getFullYear() !== year) return false; if(month !== 'all' && String(d.getMonth()+1).padStart(2,'0') !== month) return false; return true; }); let totalIncome=0, totalExpense=0; const expenseMap = new Map(); filtered.forEach(b=>{ if(b.type==='income') totalIncome+=b.amount; else { totalExpense+=b.amount; expenseMap.set(b.categoryId, (expenseMap.get(b.categoryId)||0)+b.amount); } }); document.getElementById('reportIncome').textContent=totalIncome.toFixed(2); document.getElementById('reportExpense').textContent=totalExpense.toFixed(2); const balance = totalIncome-totalExpense; const balSpan = document.getElementById('reportBalance'); balSpan.textContent=balance.toFixed(2); balSpan.className = `value balance ${balance>=0?'positive':'negative'}`; const chartWrapper = document.querySelector('#reportModal .chart-wrapper'); if(totalExpense===0){ if(categoryChart){ categoryChart.destroy(); categoryChart=null; } chartWrapper.innerHTML = '<p style="text-align:center;color:var(--text-secondary)">暂无支出数据</p>'; return; } if(categoryChart){ categoryChart.destroy(); categoryChart=null; } chartWrapper.innerHTML = '<canvas id="categoryPieChart"></canvas>'; const canvas = document.getElementById('categoryPieChart'); if(!canvas) return; const cats = getCategories(); const labels=[], data=[]; for(let [cid, amt] of expenseMap.entries()){ const cat = cats.find(c=>c.id===cid); labels.push(cat?cat.name:'未知'); data.push(amt); } const ctx = canvas.getContext('2d'); categoryChart = new Chart(ctx, { type: 'pie', data: { labels, datasets: [{ data, backgroundColor: ['#0066CC','#34C759','#FF9500','#FF3B30','#5856D6','#FF2D55'] }] }, options: { responsive: true, maintainAspectRatio: true } }); }
             function initDefaultData(){ migrateOldData(); if(!localStorage.getItem(STORAGE.CATEGORIES)){ const defaultCats = [{ id: generateId(), name:'餐饮'},{ id: generateId(), name:'交通'},{ id: generateId(), name:'购物'},{ id: generateId(), name:'娱乐'},{ id: generateId(), name:'工资'}]; saveCategories(defaultCats); } if(!localStorage.getItem(STORAGE.BILLS)) saveBills([]); refreshAll(); }
+
+            function closeSidebar() {
+                document.getElementById('sidebar').classList.remove('show');
+                document.getElementById('sidebarOverlay').classList.remove('show');
+            }
+
             function bindEvents(){
                 document.getElementById('addBillBtn').onclick = ()=>{ updateAllCategorySelects(); document.getElementById('billDate').value=getTodayDate(); document.getElementById('addBillModal').classList.add('show'); };
                 document.getElementById('cancelAddBill').onclick = ()=> closeModal('addBillModal');
@@ -662,10 +751,7 @@
                 document.getElementById('cancelAddCategory').onclick = ()=> closeModal('addCategoryModal');
                 document.getElementById('saveCategoryBtn').onclick = addCategoryLogic;
                 document.getElementById('categoryBtn').onclick = ()=>{ let card=document.getElementById('categoryCard'); card.style.display = card.style.display==='none'?'block':'none'; renderCategories(); };
-                document.getElementById('reportBtn').onclick = ()=>{ initReportModal(); document.getElementById('reportModal').classList.add('show'); };
                 document.getElementById('closeReportBtn').onclick = ()=> closeModal('reportModal');
-                document.getElementById('importBtn').onclick = ()=> document.getElementById('importFileInput').click();
-                document.getElementById('exportBtn').onclick = ()=>{ const data = { bills: getBills(), categories: getCategories(), budgets: getCategoryBudgets() }; const blob = new Blob([JSON.stringify(data,null,2)], {type:'application/json'}); const a = document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='pocket_bill.json'; a.click(); URL.revokeObjectURL(a.href); };
                 document.getElementById('importFileInput').onchange = (e)=>{ if(e.target.files[0]){ const reader = new FileReader(); reader.onload = ev => { try{ const json = JSON.parse(ev.target.result); if(json.bills) localStorage.setItem(STORAGE.BILLS, JSON.stringify(json.bills)); if(json.categories) localStorage.setItem(STORAGE.CATEGORIES, JSON.stringify(json.categories)); if(json.budgets) localStorage.setItem(STORAGE.CATEGORY_BUDGETS, JSON.stringify(json.budgets)); migrateOldData(); refreshAll(); showToast('导入成功'); }catch(err){ showToast('文件格式错误'); } }; reader.readAsText(e.target.files[0]); } e.target.value=''; };
                 document.getElementById('dateFilter').addEventListener('change', (e)=>{ currentSelectedDate = e.target.value; renderBillsWithDate(); markDateHasBill(); });
                 let toggleBtn = document.getElementById('toggleBillListBtn');
@@ -678,6 +764,33 @@
                 billListContainer.addEventListener('click', (e) => { const btn = e.target; const billId = btn.dataset.id; if(!billId) return; if(btn.classList.contains('edit')){ openEditBillModal(billId); closeAllSwipe(); } else if(btn.classList.contains('delete')){ if(confirm('确定要删除这条账单吗？')){ deleteBillLogic(billId); } } });
                 const budgetContainer = document.getElementById('budgetList');
                 budgetContainer.addEventListener('click', (e) => { const btn = e.target; const catId = btn.dataset.cid; if(!catId) return; if(btn.classList.contains('edit')){ editBudgetById(catId); } else if(btn.classList.contains('delete')){ if(confirm('确定要删除这个分类的预算吗？')){ deleteBudgetById(catId); } } });
+
+                // 侧边栏事件
+                document.getElementById('menuBtn').onclick = () => {
+                    document.getElementById('sidebar').classList.add('show');
+                    document.getElementById('sidebarOverlay').classList.add('show');
+                };
+                document.getElementById('closeSidebarBtn').onclick = closeSidebar;
+                document.getElementById('sidebarOverlay').onclick = closeSidebar;
+                document.getElementById('sidebarImportBtn').onclick = () => {
+                    closeSidebar();
+                    document.getElementById('importFileInput').click();
+                };
+                document.getElementById('sidebarExportBtn').onclick = () => {
+                    closeSidebar();
+                    const data = { bills: getBills(), categories: getCategories(), budgets: getCategoryBudgets() };
+                    const blob = new Blob([JSON.stringify(data,null,2)], {type:'application/json'});
+                    const a = document.createElement('a');
+                    a.href = URL.createObjectURL(blob);
+                    a.download = 'pocket_bill.json';
+                    a.click();
+                    URL.revokeObjectURL(a.href);
+                };
+                document.getElementById('sidebarReportBtn').onclick = () => {
+                    closeSidebar();
+                    initReportModal();
+                    document.getElementById('reportModal').classList.add('show');
+                };
             }
             initDefaultData();
             bindEvents();
