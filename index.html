@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>口袋账单 · 质感重构 + 环形报表 (终极修复版)</title>
+    <title>口袋账单 · 质感重构 + 右滑操作 (完整增强版)</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         /* ---------- 设计令牌 ---------- */
@@ -143,18 +143,64 @@
         .budget-fill.normal { background: var(--color-primary); }
         .budget-fill.warning { background: var(--color-warning); }
         .budget-fill.over { background: var(--color-danger); }
-        /* 账单列表 */
-        .list-item-wrapper { border-bottom: 0.5px solid var(--bg-divider); }
-        .list-item-wrapper:last-child { border-bottom: none; }
+        
+        /* ========= 新增：右滑账单操作样式 ========= */
+        .list-item-wrapper {
+            position: relative;
+            overflow: hidden;
+            border-bottom: 0.5px solid var(--bg-divider);
+        }
+        .list-item-wrapper:last-child {
+            border-bottom: none;
+        }
+        /* 滑动内容容器 */
+        .swipe-content {
+            display: flex;
+            width: 100%;
+            transition: transform 0.2s ease;
+            background: var(--bg-card);
+            position: relative;
+            z-index: 2;
+            cursor: pointer;
+        }
+        /* 右滑操作按钮容器 */
+        .swipe-actions {
+            position: absolute;
+            top: 0;
+            right: 0;
+            height: 100%;
+            display: flex;
+            z-index: 1;
+        }
+        /* 操作按钮通用样式 */
+        .swipe-btn {
+            width: 70px;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 14px;
+            font-weight: 500;
+            border: none;
+            cursor: pointer;
+            background: transparent;
+        }
+        .swipe-btn.edit {
+            background: var(--color-primary);
+        }
+        .swipe-btn.delete {
+            background: var(--color-danger);
+        }
+        /* 原有账单内部样式适配滑动结构 */
         .list-item {
             display: flex;
             align-items: center;
             justify-content: space-between;
             padding: var(--spacing-md) 0;
-            cursor: pointer;
-            transition: background 0.2s;
+            width: 100%;
+            background: transparent;
         }
-        .list-item:active { background: rgba(0,0,0,0.02); }
         .item-info { display: flex; align-items: center; gap: var(--spacing-md); flex: 1; }
         .category-icon {
             width: 36px; height: 36px;
@@ -220,7 +266,6 @@
         }
         .modal-actions { display: flex; gap: var(--spacing-md); margin-top: var(--spacing-xl); }
         .filter-section { display: flex; gap: var(--spacing-sm); align-items: center; }
-        /* 体验优化: 防止日期框被压缩，并增加过渡效果 */
         .filter-section input[type="date"] {
             padding: 8px 12px;
             border-radius: 20px;
@@ -230,7 +275,6 @@
             background-color: white;
             transition: all 0.2s;
         }
-        /* 【新增】有账单时的高亮样式 */
         .filter-section input[type="date"].has-bill {
             background-color: rgba(255, 59, 48, 0.1);
             border-color: var(--color-danger);
@@ -366,6 +410,13 @@
             let currentSelectedDate = null;
             let isBillListCollapsed = false;
             let categoryChart = null;
+            
+            // ========== 新增：右滑相关全局变量 ==========
+            let startX = 0;
+            let currentX = 0;
+            let isSwiping = false;
+            let activeSwipeElement = null;
+            const SWIPE_THRESHOLD = 140; // 按钮总宽度 (两个按钮 70px+70px)
 
             // 工具函数
             const getTodayDate = () => { let d=new Date(); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; };
@@ -380,26 +431,22 @@
             function saveBills(bills){ localStorage.setItem(STORAGE.BILLS, JSON.stringify(bills)); }
             function saveBudgets(budgets){ localStorage.setItem(STORAGE.CATEGORY_BUDGETS, JSON.stringify(budgets)); }
 
-            // ========== 数据迁移：将旧分类ID（数字/混合）统一转为字符串 ==========
+            // ========== 数据迁移 ==========
             function migrateOldData() {
                 let needSave = false;
-                
-                // 1. 迁移分类ID
                 let categories = getCategories();
-                let idMap = new Map(); // 旧ID -> 新ID(字符串)
+                let idMap = new Map();
                 let migratedCats = categories.map(cat => {
                     let oldId = cat.id;
                     if (typeof oldId !== 'string') {
                         needSave = true;
-                        let newId = oldId.toString(); // 转为字符串
+                        let newId = oldId.toString();
                         idMap.set(oldId, newId);
                         return { ...cat, id: newId };
                     }
                     return cat;
                 });
                 if (needSave) saveCategories(migratedCats);
-                
-                // 2. 迁移账单中的 categoryId
                 let bills = getBills();
                 let billsChanged = false;
                 let migratedBills = bills.map(bill => {
@@ -411,8 +458,6 @@
                     return bill;
                 });
                 if (billsChanged) saveBills(migratedBills);
-                
-                // 3. 迁移预算对象中的键
                 let budgets = getCategoryBudgets();
                 let budgetsChanged = false;
                 let newBudgets = {};
@@ -422,14 +467,10 @@
                     newBudgets[newKey] = value;
                 }
                 if (budgetsChanged) saveBudgets(newBudgets);
-                
-                if (needSave || billsChanged || budgetsChanged) {
-                    console.log("数据迁移完成：已将旧分类ID统一转为字符串");
-                }
             }
 
-            // ========== 模块2: 月度统计更新 ==========
-            function updateMonthlyStats() {
+            // 月度统计 & 预算更新函数 (原有逻辑)
+            function updateMonthlyStats(){
                 const bills = getBills();
                 const currentMonthKey = getCurrentMonthKey();
                 const [targetYear, targetMonth] = currentMonthKey.split('-');
@@ -454,8 +495,6 @@
                 balEl.textContent = stats.balance.toFixed(2);
                 balEl.className = `value ${stats.balance >=0 ? 'positive' : 'negative'}`;
             }
-
-            // ========== 模块3: 预算使用更新 ==========
             function updateMonthlyBudgetUsed(){
                 const bills = getBills();
                 const currentMonthKey = getCurrentMonthKey();
@@ -495,7 +534,57 @@
                 });
             }
 
-            // 全局刷新
+            // ========== 右滑核心函数 ==========
+            function closeAllSwipe(){
+                document.querySelectorAll('.swipe-content').forEach(el => {
+                    el.style.transform = 'translateX(0px)';
+                });
+                activeSwipeElement = null;
+            }
+            function handleSwipeStart(e){
+                if(activeSwipeElement && activeSwipeElement !== e.currentTarget){
+                    closeAllSwipe();
+                }
+                startX = e.touches[0].clientX;
+                currentX = 0;
+                isSwiping = false;
+                e.currentTarget.style.transition = 'none';
+            }
+            function handleSwipeMove(e){
+                const moveX = e.touches[0].clientX;
+                const diffX = moveX - startX;
+                if(diffX > 0) return;
+                const limitX = Math.max(diffX, -SWIPE_THRESHOLD);
+                currentX = limitX;
+                e.currentTarget.style.transform = `translateX(${currentX}px)`;
+                if(Math.abs(diffX) > 10){
+                    isSwiping = true;
+                    e.preventDefault();
+                }
+            }
+            function handleSwipeEnd(e){
+                e.currentTarget.style.transition = 'transform 0.2s ease';
+                if(currentX <= -SWIPE_THRESHOLD/2){
+                    e.currentTarget.style.transform = `translateX(-${SWIPE_THRESHOLD}px)`;
+                    activeSwipeElement = e.currentTarget;
+                } else {
+                    e.currentTarget.style.transform = 'translateX(0px)';
+                    activeSwipeElement = null;
+                }
+                isSwiping = false;
+            }
+            function bindSwipeEvents(){
+                document.querySelectorAll('.swipe-content').forEach(el => {
+                    el.removeEventListener('touchstart', handleSwipeStart);
+                    el.removeEventListener('touchmove', handleSwipeMove);
+                    el.removeEventListener('touchend', handleSwipeEnd);
+                    el.addEventListener('touchstart', handleSwipeStart);
+                    el.addEventListener('touchmove', handleSwipeMove);
+                    el.addEventListener('touchend', handleSwipeEnd);
+                });
+            }
+
+            // 刷新所有UI
             function refreshAll(){
                 renderStats();
                 renderCategoryBudgets();
@@ -504,18 +593,14 @@
                 markDateHasBill();
                 renderCategories();
             }
-            // 日期红点逻辑优化版（使用CSS类名）
             function markDateHasBill(){
                 const input = document.getElementById('dateFilter');
                 const bills = getBills();
                 const hasBill = bills.some(b => b.date === input.value);
-                if(hasBill) {
-                    input.classList.add('has-bill');
-                } else {
-                    input.classList.remove('has-bill');
-                }
+                if(hasBill) input.classList.add('has-bill');
+                else input.classList.remove('has-bill');
             }
-            // 账单列表渲染
+            // 账单渲染（带右滑结构）
             function renderBillsWithDate(){
                 let target = currentSelectedDate || getTodayDate();
                 let bills = getBills();
@@ -532,17 +617,41 @@
                     let wrapper = document.createElement('div');
                     wrapper.className = 'list-item-wrapper';
                     let amountClass = bill.type==='income' ? 'income-amount' : 'expense-amount';
-                    wrapper.innerHTML = `<div class="list-item" data-id="${bill.id}">
-                        <div class="item-info"><span class="category-icon">${cat.name.charAt(0)}</span>
-                        <div><div class="item-name">${cat.name}</div><div class="item-desc">${bill.note||'无备注'}</div></div></div>
-                        <div class="item-amount ${amountClass}">${bill.type==='income'?'+':'-'}${bill.amount.toFixed(2)}</div>
-                    </div>`;
-                    const listDiv = wrapper.querySelector('.list-item');
-                    listDiv.addEventListener('click', (e) => { e.stopPropagation(); openEditBillModal(bill.id); });
+                    // 新DOM结构：swipe-content + swipe-actions
+                    wrapper.innerHTML = `
+                        <div class="swipe-content" data-id="${bill.id}">
+                            <div class="list-item">
+                                <div class="item-info">
+                                    <span class="category-icon">${cat.name.charAt(0)}</span>
+                                    <div>
+                                        <div class="item-name">${cat.name}</div>
+                                        <div class="item-desc">${bill.note||'无备注'}</div>
+                                    </div>
+                                </div>
+                                <div class="item-amount ${amountClass}">${bill.type==='income'?'+':'-'}${bill.amount.toFixed(2)}</div>
+                            </div>
+                        </div>
+                        <div class="swipe-actions">
+                            <button class="swipe-btn edit" data-id="${bill.id}">编辑</button>
+                            <button class="swipe-btn delete" data-id="${bill.id}">删除</button>
+                        </div>
+                    `;
+                    const swipeContent = wrapper.querySelector('.swipe-content');
+                    // 点击账单主体打开编辑弹窗（带右滑收起判断）
+                    swipeContent.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        if(swipeContent.style.transform !== 'translateX(0px)' && swipeContent.style.transform !== ''){
+                            closeAllSwipe();
+                            return;
+                        }
+                        openEditBillModal(bill.id);
+                    });
                     container.appendChild(wrapper);
                 });
+                bindSwipeEvents();
                 markDateHasBill();
             }
+            // 编辑弹窗（复用原有逻辑）
             function openEditBillModal(billId){
                 const bill = getBills().find(b=>b.id===billId);
                 if(!bill) return;
@@ -576,9 +685,7 @@
                 if(selectedId && cats.some(c=>c.id===selectedId)) sel.value = selectedId;
                 else if(cats.length) sel.selectedIndex=0;
             }
-
             function generateId(){ return Date.now().toString() + Math.random().toString(36).slice(2, 8); }
-
             function addCategoryLogic(){
                 let name = document.getElementById('newCategoryName').value.trim();
                 if(!name || name.length>10) return showToast('名称需1-10个字');
@@ -604,7 +711,7 @@
                     container.appendChild(div);
                 });
             }
-            function editCategoryById(catId){
+            function editCategoryById(catId){ /* 保持原逻辑 */ 
                 const cats = getCategories();
                 const cat = cats.find(c=>c.id===catId);
                 if(!cat){ showToast('分类不存在'); return; }
@@ -628,8 +735,7 @@
                 refreshAll();
                 showToast('删除成功');
             }
-
-            function saveNewBill(){
+            function saveNewBill(){ /* 原逻辑不变 */ 
                 const type = document.getElementById('billType').value;
                 const categoryId = document.getElementById('billCategory').value;
                 const amount = parseFloat(document.getElementById('billAmount').value);
@@ -645,7 +751,7 @@
                 closeModal('addBillModal');
                 showToast('添加成功');
             }
-            function updateBill(){
+            function updateBill(){ /* 原逻辑不变 */ 
                 const id = document.getElementById('editBillId').value;
                 let bills = getBills();
                 const index = bills.findIndex(b=>b.id===id);
@@ -662,12 +768,11 @@
                 closeModal('editBillModal');
                 showToast('修改成功');
             }
-            function deleteBill(){
-                const id = document.getElementById('editBillId').value;
-                let bills = getBills().filter(b=>b.id!==id);
+            function deleteBillLogic(billId){
+                let bills = getBills().filter(b=>b.id!==billId);
                 saveBills(bills);
                 refreshAll();
-                closeModal('editBillModal');
+                closeAllSwipe();
                 showToast('删除成功');
             }
             function saveBudget(){
@@ -684,43 +789,8 @@
             function closeModal(modalId){
                 const modal = document.getElementById(modalId);
                 modal.classList.remove('show');
-                resetAllModalForms();
             }
-            function resetAllModalForms(){
-                document.getElementById('billType').value='expense';
-                document.getElementById('billAmount').value='';
-                document.getElementById('billDate').value=getTodayDate();
-                document.getElementById('billNote').value='';
-                document.getElementById('editBillId').value='';
-                document.getElementById('editBillType').value='expense';
-                document.getElementById('editBillAmount').value='';
-                document.getElementById('editBillDate').value=getTodayDate();
-                document.getElementById('editBillNote').value='';
-                document.getElementById('newCategoryName').value='';
-                document.getElementById('budgetAmountInput').value='';
-                updateAllCategorySelects();
-            }
-            function exportData(){
-                const data = { bills: getBills(), categories: getCategories(), budgets: getCategoryBudgets() };
-                const blob = new Blob([JSON.stringify(data,null,2)], {type:'application/json'});
-                const a = document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='pocket_bill.json'; a.click(); URL.revokeObjectURL(a.href);
-            }
-            function importData(file){
-                const reader = new FileReader();
-                reader.onload = e => {
-                    try{
-                        const json = JSON.parse(e.target.result);
-                        if(json.bills) localStorage.setItem(STORAGE.BILLS, JSON.stringify(json.bills));
-                        if(json.categories) localStorage.setItem(STORAGE.CATEGORIES, JSON.stringify(json.categories));
-                        if(json.budgets) localStorage.setItem(STORAGE.CATEGORY_BUDGETS, JSON.stringify(json.budgets));
-                        migrateOldData();  // 导入后再次迁移，确保ID统一
-                        refreshAll();
-                        showToast('导入成功');
-                    }catch(err){ showToast('文件格式错误'); }
-                };
-                reader.readAsText(file);
-            }
-            function initReportModal(){
+            function initReportModal(){ /* 保持原样 */ 
                 const yearSelect = document.getElementById('reportYear');
                 const curYear = new Date().getFullYear();
                 for(let y=curYear-3; y<=curYear+1; y++){ let opt=document.createElement('option'); opt.value=y; opt.textContent=y+'年'; yearSelect.appendChild(opt); }
@@ -730,7 +800,7 @@
                 document.getElementById('reportMonth').addEventListener('change',()=>updateReport());
                 updateReport();
             }
-            function updateReport(){
+            function updateReport(){ /* 保持原样 */ 
                 const year = parseInt(document.getElementById('reportYear').value);
                 const month = document.getElementById('reportMonth').value;
                 const bills = getBills();
@@ -773,24 +843,22 @@
                 categoryChart = new Chart(ctx, { type: 'pie', data: { labels, datasets: [{ data, backgroundColor: ['#0066CC','#34C759','#FF9500','#FF3B30','#5856D6','#FF2D55'] }] }, options: { responsive: true, maintainAspectRatio: true } });
             }
             function initDefaultData(){
-                // 先迁移旧数据
                 migrateOldData();
                 if(!localStorage.getItem(STORAGE.CATEGORIES)){
                     const defaultCats = [{ id: generateId(), name:'餐饮'},{ id: generateId(), name:'交通'},{ id: generateId(), name:'购物'},{ id: generateId(), name:'娱乐'},{ id: generateId(), name:'工资'}];
                     saveCategories(defaultCats);
                 }
-                if(!localStorage.getItem(STORAGE.BILLS)){
-                    saveBills([]);
-                }
+                if(!localStorage.getItem(STORAGE.BILLS)) saveBills([]);
                 refreshAll();
             }
             function bindEvents(){
+                // 原有所有事件绑定
                 document.getElementById('addBillBtn').onclick = ()=>{ updateAllCategorySelects(); document.getElementById('billDate').value=getTodayDate(); document.getElementById('addBillModal').classList.add('show'); };
                 document.getElementById('cancelAddBill').onclick = ()=> closeModal('addBillModal');
                 document.getElementById('saveBillBtn').onclick = saveNewBill;
                 document.getElementById('cancelEditBill').onclick = ()=> closeModal('editBillModal');
                 document.getElementById('updateBillBtn').onclick = updateBill;
-                document.getElementById('deleteBillBtn').onclick = deleteBill;
+                document.getElementById('deleteBillBtn').onclick = ()=>{ let id=document.getElementById('editBillId').value; if(id){ deleteBillLogic(id); closeModal('editBillModal'); } };
                 document.getElementById('editBudgetBtn').onclick = ()=>{ updateAllCategorySelects(); document.getElementById('setBudgetModal').classList.add('show'); };
                 document.getElementById('cancelSetBudget').onclick = ()=> closeModal('setBudgetModal');
                 document.getElementById('saveBudgetBtn').onclick = saveBudget;
@@ -801,29 +869,43 @@
                 document.getElementById('reportBtn').onclick = ()=>{ initReportModal(); document.getElementById('reportModal').classList.add('show'); };
                 document.getElementById('closeReportBtn').onclick = ()=> closeModal('reportModal');
                 document.getElementById('importBtn').onclick = ()=> document.getElementById('importFileInput').click();
-                document.getElementById('exportBtn').onclick = exportData;
-                document.getElementById('importFileInput').onchange = (e)=>{ if(e.target.files[0]) importData(e.target.files[0]); e.target.value=''; };
+                document.getElementById('exportBtn').onclick = ()=>{ const data = { bills: getBills(), categories: getCategories(), budgets: getCategoryBudgets() }; const blob = new Blob([JSON.stringify(data,null,2)], {type:'application/json'}); const a = document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='pocket_bill.json'; a.click(); URL.revokeObjectURL(a.href); };
+                document.getElementById('importFileInput').onchange = (e)=>{ if(e.target.files[0]){ const reader = new FileReader(); reader.onload = ev => { try{ const json = JSON.parse(ev.target.result); if(json.bills) localStorage.setItem(STORAGE.BILLS, JSON.stringify(json.bills)); if(json.categories) localStorage.setItem(STORAGE.CATEGORIES, JSON.stringify(json.categories)); if(json.budgets) localStorage.setItem(STORAGE.CATEGORY_BUDGETS, JSON.stringify(json.budgets)); migrateOldData(); refreshAll(); showToast('导入成功'); }catch(err){ showToast('文件格式错误'); } }; reader.readAsText(e.target.files[0]); } e.target.value=''; };
                 document.getElementById('dateFilter').addEventListener('change', (e)=>{ currentSelectedDate = e.target.value; renderBillsWithDate(); markDateHasBill(); });
                 let toggleBtn = document.getElementById('toggleBillListBtn');
                 toggleBtn.onclick = ()=>{ let billListDiv = document.getElementById('billList'); isBillListCollapsed = !isBillListCollapsed; billListDiv.style.display = isBillListCollapsed ? 'none' : 'block'; toggleBtn.textContent = isBillListCollapsed ? '展开' : '折叠'; };
                 document.querySelectorAll('.modal').forEach(modal=>{ modal.addEventListener('click',(e)=>{ if(e.target===modal) closeModal(modal.id); }); });
-                
                 const categoryContainer = document.getElementById('categoryList');
                 categoryContainer.addEventListener('click', (e) => {
                     const btn = e.target;
-                    if(btn.classList.contains('edit-cat')){
-                        const id = btn.dataset.id;
-                        if(id) editCategoryById(id);
-                    } else if(btn.classList.contains('del-cat')){
-                        const id = btn.dataset.id;
-                        if(id) deleteCategoryById(id);
+                    if(btn.classList.contains('edit-cat')) editCategoryById(btn.dataset.id);
+                    else if(btn.classList.contains('del-cat')) deleteCategoryById(btn.dataset.id);
+                });
+                // 新增全局右滑关闭
+                document.addEventListener('click', (e) => {
+                    if(!e.target.closest('.swipe-content') && !e.target.closest('.swipe-actions')){
+                        closeAllSwipe();
+                    }
+                });
+                // 右滑按钮委托点击（编辑/删除）
+                const billListContainer = document.getElementById('billList');
+                billListContainer.addEventListener('click', (e) => {
+                    const btn = e.target;
+                    const billId = btn.dataset.id;
+                    if(!billId) return;
+                    if(btn.classList.contains('edit')){
+                        openEditBillModal(billId);
+                        closeAllSwipe();
+                    } else if(btn.classList.contains('delete')){
+                        if(confirm('确定要删除这条账单吗？')){
+                            deleteBillLogic(billId);
+                        }
                     }
                 });
             }
             initDefaultData();
             bindEvents();
             currentSelectedDate = getTodayDate();
-            // 将今天日期同步到日期选择器，确保界面显示正确
             document.getElementById('dateFilter').value = currentSelectedDate;
             renderBillsWithDate();
             markDateHasBill();
