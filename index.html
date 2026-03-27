@@ -231,7 +231,7 @@
         .income-amount { color: var(--color-success); }
         .expense-amount { color: var(--color-danger); }
         
-        /* 分类管理 */
+        /* 分类 */
         .category-actions { display: flex; gap: var(--spacing-sm); }
         .category-actions button {
             padding: 6px 12px;
@@ -497,11 +497,11 @@
                     <button id="toggleBillListBtn">折叠</button>
                 </div>
             </div>
-            <div id="billList" class="list"><div class="empty-state">📋 暂无账单</div></div>
+            <div id="billList" class="list"><div class="empty-state">📋 暂无账财务单</div></div>
         </div>
         <!-- 分类卡片（初始隐藏）-->
         <div class="card" id="categoryCard" style="display: none;">
-            <div class="card-header"><span>分类管理</span><button id="addCategoryBtn">新增分类</button></div>
+            <div class="card-header"><span>分类</span><button id="addCategoryBtn">新增</button></div>
             <div id="categoryList" class="list"><div class="empty-state">暂无分类数据</div></div>
         </div>
 
@@ -514,7 +514,7 @@
             <div class="form-group"><label>备注</label><input type="text" id="billNote" maxlength="50" placeholder="最多50字"></div>
             <div class="modal-actions"><button id="cancelAddBill">取消</button><button id="saveBillBtn">保存</button></div>
         </div></div>
-        <div class="modal" id="editBillModal"><div class="modal-content"><h3>编辑账单</h3><input type="hidden" id="editBillId">
+        <div class="modal" id="editBillModal"><div class="modal-content"><h3>编辑</h3><input type="hidden" id="editBillId">
             <div class="form-group"><label>类型</label><select id="editBillType"><option value="expense">支出</option><option value="income">收入</option></select></div>
             <div class="form-group"><label>分类</label><select id="editBillCategory"></select></div>
             <div class="form-group"><label>金额</label><input type="number" id="editBillAmount" step="0.01" min="0.01"></div>
@@ -522,12 +522,12 @@
             <div class="form-group"><label>备注</label><input type="text" id="editBillNote" maxlength="50"></div>
             <div class="modal-actions"><button id="deleteBillBtn" style="background:#FF3B30;color:white;">删除</button><button id="cancelEditBill">取消</button><button id="updateBillBtn">保存</button></div>
         </div></div>
-        <div class="modal" id="addCategoryModal"><div class="modal-content"><h3>新增分类</h3><div class="form-group"><label>分类名称</label><input type="text" id="newCategoryName" maxlength="10"></div><div class="modal-actions"><button id="cancelAddCategory">取消</button><button id="saveCategoryBtn">保存</button></div></div></div>
-        <div class="modal" id="setBudgetModal"><div class="modal-content"><h3>设置分类预算</h3><div class="form-group"><label>选择分类</label><select id="budgetCategorySelect"></select></div><div class="form-group"><label>预算金额（元）</label><input type="number" id="budgetAmountInput" step="0.01" min="0.01"></div><div class="modal-actions"><button id="cancelSetBudget">取消</button><button id="saveBudgetBtn">保存</button></div></div></div>
-        <div class="modal" id="reportModal"><div class="modal-content report-content"><div class="report-header"><h2>财务报表</h2><button id="closeReportBtn" class="close-btn">×</button></div>
+        <div class="modal" id="addCategoryModal"><div class="modal-content"><h3>新增</h3><div class="form-group"><label>分类名称</label><input type="text" id="newCategoryName" maxlength="10"></div><div class="modal-actions"><button id="cancelAddCategory">取消</button><button id="saveCategoryBtn">保存</button></div></div></div>
+        <div class="modal" id="setBudgetModal"><div class="modal-content"><h3>设置预算</h3><div class="form-group"><label>选择分类</label><select id="budgetCategorySelect"></select></div><div class="form-group"><label>预算金额（元）</label><input type="number" id="budgetAmountInput" step="0.01" min="0.01"></div><div class="modal-actions"><button id="cancelSetBudget">取消</button><button id="saveBudgetBtn">保存</button></div></div></div>
+        <div class="modal" id="reportModal"><div class="modal-content report-content"><div class="report-header"><h2>报表</h2><button id="closeReportBtn" class="close-btn">×</button></div>
             <div class="report-filter"><select id="reportYear"></select><select id="reportMonth"><option value="all">全年</option><option value="01">01月</option><option value="02">02月</option><option value="03">03月</option><option value="04">04月</option><option value="05">05月</option><option value="06">06月</option><option value="07">07月</option><option value="08">08月</option><option value="09">09月</option><option value="10">10月</option><option value="11">11月</option><option value="12">12月</option></select></div>
             <div class="report-summary"><div class="summary-item"><p class="label">总收入</p><p class="value income" id="reportIncome">0.00</p></div><div class="summary-item"><p class="label">总支出</p><p class="value expense" id="reportExpense">0.00</p></div><div class="summary-item"><p class="label">结余</p><p class="value balance" id="reportBalance">0.00</p></div></div>
-            <div class="report-category"><h3>支出分类占比</h3><div class="chart-wrapper"><canvas id="categoryPieChart"></canvas></div></div>
+            <div class="report-category"><h3>支出占比</h3><div class="chart-wrapper"><canvas id="categoryPieChart"></canvas></div></div>
         </div></div>
         <button class="add-btn" id="addBillBtn">+</button>
         <div class="toast" id="toast"></div>
@@ -690,7 +690,7 @@
                 let cats = getCategories();
                 let filtered = bills.filter(b => b.date === target);
                 let container = document.getElementById('billList');
-                if(filtered.length === 0){ container.innerHTML = `<div class="empty-state">📋 ${target===getTodayDate()?'今日暂无账单':'该日期暂无账单'}</div>`; markDateHasBill(); return; }
+                if(filtered.length === 0){ container.innerHTML = `<div class="empty-state">📋 ${target===getTodayDate()?'今日无账单':'该日期无账单'}</div>`; markDateHasBill(); return; }
                 container.innerHTML = '';
                 filtered.forEach(bill => {
                     let cat = cats.find(c=>c.id===bill.categoryId) || {name:'未知', id:'unknown'};
@@ -728,7 +728,7 @@
             function generateId(){ return Date.now().toString() + Math.random().toString(36).slice(2, 8); }
             function addCategoryLogic(){ let name = document.getElementById('newCategoryName').value.trim(); if(!name || name.length>10) return showToast('名称需1-10个字'); const cats = getCategories(); if(cats.some(c=>c.name===name)) return showToast('分类名称已存在'); const newCat = { id: generateId(), name }; cats.push(newCat); saveCategories(cats); refreshAll(); closeModal('addCategoryModal'); showToast('分类添加成功'); }
             function renderCategories(){ const cats = getCategories(); const container = document.getElementById('categoryList'); if(cats.length===0){ container.innerHTML='<div class="empty-state">暂无分类数据</div>'; return; } container.innerHTML=''; cats.forEach(cat=>{ const div = document.createElement('div'); div.className='list-item-wrapper'; div.innerHTML = `<div class="list-item"><div class="item-info"><span class="category-icon">${cat.name.charAt(0)}</span><span class="item-name">${cat.name}</span></div><div class="category-actions"><button class="edit-cat" data-id="${cat.id}">编辑</button><button class="del-cat" data-id="${cat.id}">删除</button></div></div>`; container.appendChild(div); }); }
-            function editCategoryById(catId){ const cats = getCategories(); const cat = cats.find(c=>c.id===catId); if(!cat){ showToast('分类不存在'); return; } let newName = prompt('输入新分类名称', cat.name)?.trim(); if(newName === undefined) return; if(!newName || newName.length>10) return showToast('名称需1-10个字'); if(cats.some(c=>c.name===newName && c.id!==catId)) return showToast('分类名称已存在'); cat.name = newName; saveCategories(cats); refreshAll(); showToast('修改成功'); }
+            function editCategoryById(catId){ const cats = getCategories(); const cat = cats.find(c=>c.id===catId); if(!cat){ showToast('分类不存在'); return; } let newName = prompt('编辑', cat.name)?.trim(); if(newName === undefined) return; if(!newName || newName.length>10) return showToast('名称需1-10个字'); if(cats.some(c=>c.name===newName && c.id!==catId)) return showToast('分类名称已存在'); cat.name = newName; saveCategories(cats); refreshAll(); showToast('修改成功'); }
             function deleteCategoryById(catId){ const bills = getBills(); if(bills.some(b=>b.categoryId===catId)) return showToast('该分类下存在账单，无法删除'); let cats = getCategories().filter(c=>c.id!==catId); saveCategories(cats); const budgets = getCategoryBudgets(); delete budgets[catId]; saveBudgets(budgets); refreshAll(); showToast('删除成功'); }
             function saveNewBill(){ const type = document.getElementById('billType').value; const categoryId = document.getElementById('billCategory').value; const amount = parseFloat(document.getElementById('billAmount').value); const date = document.getElementById('billDate').value; const note = document.getElementById('billNote').value; if(!categoryId || isNaN(amount)|| amount<=0) return showToast('请填写完整且金额>0'); if(!date) return showToast('请选择日期'); const newBill = { id: generateId(), type, categoryId, amount, date, note: note||'' }; const bills = getBills(); bills.push(newBill); saveBills(bills); refreshAll(); closeModal('addBillModal'); showToast('添加成功'); }
             function updateBill(){ const id = document.getElementById('editBillId').value; let bills = getBills(); const index = bills.findIndex(b=>b.id===id); if(index===-1) return showToast('账单不存在'); const type = document.getElementById('editBillType').value; const categoryId = document.getElementById('editBillCategory').value; const amount = parseFloat(document.getElementById('editBillAmount').value); const date = document.getElementById('editBillDate').value; const note = document.getElementById('editBillNote').value; if(!categoryId || isNaN(amount)|| amount<=0) return showToast('请填写完整金额>0'); bills[index] = { ...bills[index], type, categoryId, amount, date, note: note||'' }; saveBills(bills); refreshAll(); closeModal('editBillModal'); showToast('修改成功'); }
