@@ -34,6 +34,7 @@
             --radius-full: 9999px;
             --shadow-soft: 0 4px 20px rgba(0, 0, 0, 0.05);
             --shadow-hover: 0 8px 30px rgba(0, 0, 0, 0.08);
+            --shadow-md: 0 2px 8px rgba(0,0,0,0.1);
             --spacing-xs: 4px;
             --spacing-sm: 8px;
             --spacing-md: 12px;
@@ -396,6 +397,8 @@
             transition: transform 0.3s cubic-bezier(0.2, 0.9, 0.1, 1);
             box-shadow: 4px 0 20px rgba(0,0,0,0.1);
             padding-top: env(safe-area-inset-top);
+            display: flex;
+            flex-direction: column;
         }
         .sidebar.show {
             transform: translateX(0);
@@ -416,6 +419,7 @@
             display: flex;
             flex-direction: column;
             gap: var(--spacing-md);
+            flex: 1;
         }
         /* 菜单项胶囊样式 */
         .menu-item {
@@ -433,6 +437,98 @@
         .menu-item:active {
             background: rgba(0, 102, 204, 0.2);
             transform: scale(0.96);
+        }
+
+        /* 侧边栏底部固定区 - 搜索探针 */
+        .sidebar-bottom-actions {
+            position: absolute;
+            bottom: 20px;
+            left: 20px;
+            display: flex;
+            gap: 12px;
+        }
+        .sidebar .icon-btn {
+            width: 44px;
+            height: 44px;
+            border-radius: var(--radius-full);
+            background: var(--color-primary);
+            color: white;
+            border: none;
+            font-size: 20px;
+            cursor: pointer;
+            box-shadow: var(--shadow-md);
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .sidebar .icon-btn:active {
+            transform: scale(0.92);
+            opacity: 0.8;
+        }
+
+        /* 搜索模态框专用样式 */
+        .search-container {
+            padding: 4px 0;
+        }
+        .search-box {
+            background: var(--bg-page);
+            border-radius: var(--radius-md);
+            padding: 8px 16px;
+            margin-bottom: var(--spacing-lg);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            border: 0.5px solid var(--bg-divider);
+        }
+        .search-box input {
+            flex: 1;
+            border: none;
+            background: transparent;
+            font-size: 16px;
+            outline: none;
+            padding: 12px 0;
+        }
+        .search-box span {
+            font-size: 20px;
+        }
+        .search-summary {
+            font-size: 13px;
+            color: var(--text-secondary);
+            padding: 8px 0;
+            margin-bottom: 8px;
+            border-bottom: 0.5px solid var(--bg-divider);
+        }
+        .search-result-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 0;
+            border-bottom: 0.5px solid var(--bg-divider);
+        }
+        .search-result-item:last-child {
+            border-bottom: none;
+        }
+        .search-result-info {
+            flex: 1;
+        }
+        .search-result-cat {
+            font-weight: 600;
+            font-size: 15px;
+        }
+        .search-result-date {
+            font-size: 12px;
+            color: var(--text-secondary);
+            margin-top: 4px;
+        }
+        .search-result-note {
+            font-size: 12px;
+            color: var(--text-tertiary);
+            margin-top: 2px;
+        }
+        .search-result-amount {
+            font-weight: 700;
+            font-size: 16px;
         }
     </style>
 </head>
@@ -462,6 +558,10 @@
             <div class="menu-item" id="sidebarImportBtn">导入数据</div>
             <div class="menu-item" id="sidebarExportBtn">导出数据</div>
             <div class="menu-item" id="sidebarReportBtn">财务报表</div>
+        </div>
+        <!-- 侧边栏底部功能区（固定定位） 搜索探针按钮 -->
+        <div class="sidebar-bottom-actions">
+            <button class="icon-btn" id="sidebarSearchIconBtn" title="搜索">🔍</button>
         </div>
     </div>
 
@@ -505,7 +605,7 @@
             <div id="categoryList" class="list"><div class="empty-state">暂无分类数据</div></div>
         </div>
 
-        <!-- 模态框（保持不变） -->
+        <!-- 添加账单模态框 -->
         <div class="modal" id="addBillModal"><div class="modal-content"><h3>添加账单</h3>
             <div class="form-group"><label>类型</label><select id="billType"><option value="expense">支出</option><option value="income">收入</option></select></div>
             <div class="form-group"><label>分类</label><select id="billCategory"></select></div>
@@ -514,6 +614,7 @@
             <div class="form-group"><label>备注</label><input type="text" id="billNote" maxlength="50" placeholder="最多50字"></div>
             <div class="modal-actions"><button id="cancelAddBill">取消</button><button id="saveBillBtn">保存</button></div>
         </div></div>
+        <!-- 编辑账单模态框 -->
         <div class="modal" id="editBillModal"><div class="modal-content"><h3>编辑</h3><input type="hidden" id="editBillId">
             <div class="form-group"><label>类型</label><select id="editBillType"><option value="expense">支出</option><option value="income">收入</option></select></div>
             <div class="form-group"><label>分类</label><select id="editBillCategory"></select></div>
@@ -522,13 +623,31 @@
             <div class="form-group"><label>备注</label><input type="text" id="editBillNote" maxlength="50"></div>
             <div class="modal-actions"><button id="deleteBillBtn" style="background:#FF3B30;color:white;">删除</button><button id="cancelEditBill">取消</button><button id="updateBillBtn">保存</button></div>
         </div></div>
+        <!-- 新增分类模态框 -->
         <div class="modal" id="addCategoryModal"><div class="modal-content"><h3>新增</h3><div class="form-group"><label>分类名称</label><input type="text" id="newCategoryName" maxlength="10"></div><div class="modal-actions"><button id="cancelAddCategory">取消</button><button id="saveCategoryBtn">保存</button></div></div></div>
+        <!-- 设置预算模态框 -->
         <div class="modal" id="setBudgetModal"><div class="modal-content"><h3>设置预算</h3><div class="form-group"><label>选择分类</label><select id="budgetCategorySelect"></select></div><div class="form-group"><label>预算金额（元）</label><input type="number" id="budgetAmountInput" step="0.01" min="0.01"></div><div class="modal-actions"><button id="cancelSetBudget">取消</button><button id="saveBudgetBtn">保存</button></div></div></div>
+        <!-- 财务报表模态框 -->
         <div class="modal" id="reportModal"><div class="modal-content report-content"><div class="report-header"><h2>报表</h2><button id="closeReportBtn" class="close-btn">×</button></div>
             <div class="report-filter"><select id="reportYear"></select><select id="reportMonth"><option value="all">全年</option><option value="01">01月</option><option value="02">02月</option><option value="03">03月</option><option value="04">04月</option><option value="05">05月</option><option value="06">06月</option><option value="07">07月</option><option value="08">08月</option><option value="09">09月</option><option value="10">10月</option><option value="11">11月</option><option value="12">12月</option></select></div>
             <div class="report-summary"><div class="summary-item"><p class="label">总收入</p><p class="value income" id="reportIncome">0.00</p></div><div class="summary-item"><p class="label">总支出</p><p class="value expense" id="reportExpense">0.00</p></div><div class="summary-item"><p class="label">结余</p><p class="value balance" id="reportBalance">0.00</p></div></div>
             <div class="report-category"><h3>支出占比</h3><div class="chart-wrapper"><canvas id="categoryPieChart"></canvas></div></div>
         </div></div>
+        
+        <!-- 新增搜索模态框（通用流水搜索） -->
+        <div class="modal" id="searchModal">
+            <div class="modal-content search-container">
+                <h3>🔍 搜索</h3>
+                <div class="search-box">
+                    <span>🔎</span>
+                    <input type="text" id="searchInput" placeholder="-" autocomplete="off">
+                </div>
+                <div id="searchSummary" class="search-summary" style="display: none;"></div>
+                <div id="searchResultList" class="search-results"><div class="empty-state">输入关键词开始搜索</div></div>
+                <div class="modal-actions" style="margin-top: 16px;"><button id="closeSearchModalBtn" style="background:transparent;border:1px solid var(--bg-divider);">关闭</button></div>
+            </div>
+        </div>
+
         <button class="add-btn" id="addBillBtn">+</button>
         <div class="toast" id="toast"></div>
     </div>
@@ -739,6 +858,54 @@
             function closeModal(modalId){ document.getElementById(modalId).classList.remove('show'); }
             function initReportModal(){ const yearSelect = document.getElementById('reportYear'); const curYear = new Date().getFullYear(); for(let y=curYear-3; y<=curYear+1; y++){ let opt=document.createElement('option'); opt.value=y; opt.textContent=y+'年'; yearSelect.appendChild(opt); } yearSelect.value = curYear; document.getElementById('reportMonth').value = 'all'; document.getElementById('reportYear').addEventListener('change',()=>updateReport()); document.getElementById('reportMonth').addEventListener('change',()=>updateReport()); updateReport(); }
             function updateReport(){ const year = parseInt(document.getElementById('reportYear').value); const month = document.getElementById('reportMonth').value; const bills = getBills(); const filtered = bills.filter(b=>{ const d = new Date(b.date); if(d.getFullYear() !== year) return false; if(month !== 'all' && String(d.getMonth()+1).padStart(2,'0') !== month) return false; return true; }); let totalIncome=0, totalExpense=0; const expenseMap = new Map(); filtered.forEach(b=>{ if(b.type==='income') totalIncome+=b.amount; else { totalExpense+=b.amount; expenseMap.set(b.categoryId, (expenseMap.get(b.categoryId)||0)+b.amount); } }); document.getElementById('reportIncome').textContent=totalIncome.toFixed(2); document.getElementById('reportExpense').textContent=totalExpense.toFixed(2); const balance = totalIncome-totalExpense; const balSpan = document.getElementById('reportBalance'); balSpan.textContent=balance.toFixed(2); balSpan.className = `value balance ${balance>=0?'positive':'negative'}`; const chartWrapper = document.querySelector('#reportModal .chart-wrapper'); if(totalExpense===0){ if(categoryChart){ categoryChart.destroy(); categoryChart=null; } chartWrapper.innerHTML = '<p style="text-align:center;color:var(--text-secondary)">暂无支出数据</p>'; return; } if(categoryChart){ categoryChart.destroy(); categoryChart=null; } chartWrapper.innerHTML = '<canvas id="categoryPieChart"></canvas>'; const canvas = document.getElementById('categoryPieChart'); if(!canvas) return; const cats = getCategories(); const labels=[], data=[]; for(let [cid, amt] of expenseMap.entries()){ const cat = cats.find(c=>c.id===cid); labels.push(cat?cat.name:'未知'); data.push(amt); } const ctx = canvas.getContext('2d'); categoryChart = new Chart(ctx, { type: 'pie', data: { labels, datasets: [{ data, backgroundColor: ['#0066CC','#34C759','#FF9500','#FF3B30','#5856D6','#FF2D55'] }] }, options: { responsive: true, maintainAspectRatio: true } }); }
+            
+            // ========== 搜索逻辑 ==========
+            function handleSearch() {
+                const keyword = document.getElementById('searchInput').value.trim().toLowerCase();
+                const summaryDiv = document.getElementById('searchSummary');
+                const resultDiv = document.getElementById('searchResultList');
+                if (!keyword) {
+                    summaryDiv.style.display = 'none';
+                    resultDiv.innerHTML = '<div class="empty-state">输入关键词开始搜索</div>';
+                    return;
+                }
+                const bills = getBills();
+                const categories = getCategories();
+                const matched = bills.filter(bill => {
+                    const cat = categories.find(c => c.id === bill.categoryId);
+                    const catName = cat ? cat.name.toLowerCase() : '';
+                    const note = (bill.note || '').toLowerCase();
+                    const amountStr = bill.amount.toString();
+                    return catName.includes(keyword) || note.includes(keyword) || amountStr.includes(keyword);
+                });
+                if (matched.length === 0) {
+                    summaryDiv.style.display = 'block';
+                    summaryDiv.innerHTML = `找到 0 条记录`;
+                    resultDiv.innerHTML = '<div class="empty-state">未找到相关流水</div>';
+                    return;
+                }
+                summaryDiv.style.display = 'block';
+                summaryDiv.innerHTML = `找到 ${matched.length} 条记录`;
+                let html = '';
+                matched.forEach(bill => {
+                    const cat = categories.find(c => c.id === bill.categoryId);
+                    const catName = cat ? cat.name : '未知';
+                    const amountClass = bill.type === 'income' ? 'income-amount' : 'expense-amount';
+                    const sign = bill.type === 'income' ? '+' : '-';
+                    html += `
+                        <div class="search-result-item">
+                            <div class="search-result-info">
+                                <div class="search-result-cat">${catName}</div>
+                                <div class="search-result-date">${bill.date}</div>
+                                <div class="search-result-note">${bill.note || '无备注'}</div>
+                            </div>
+                            <div class="search-result-amount ${amountClass}">${sign}${bill.amount.toFixed(2)}</div>
+                        </div>
+                    `;
+                });
+                resultDiv.innerHTML = html;
+            }
+            
             function initDefaultData(){ migrateOldData(); if(!localStorage.getItem(STORAGE.CATEGORIES)){ const defaultCats = [{ id: generateId(), name:'餐饮'},{ id: generateId(), name:'交通'},{ id: generateId(), name:'购物'},{ id: generateId(), name:'娱乐'},{ id: generateId(), name:'工资'}]; saveCategories(defaultCats); } if(!localStorage.getItem(STORAGE.BILLS)) saveBills([]); refreshAll(); }
 
             function closeSidebar() {
@@ -800,6 +967,39 @@
                     initReportModal();
                     document.getElementById('reportModal').classList.add('show');
                 };
+
+                // 新增搜索图标按钮绑定（探针）
+                const searchIcon = document.getElementById('sidebarSearchIconBtn');
+                if(searchIcon) {
+                    searchIcon.onclick = () => {
+                        closeSidebar();
+                        const searchModal = document.getElementById('searchModal');
+                        if(searchModal) {
+                            searchModal.classList.add('show');
+                            const searchInput = document.getElementById('searchInput');
+                            if(searchInput) {
+                                searchInput.value = '';
+                                document.getElementById('searchSummary').style.display = 'none';
+                                document.getElementById('searchResultList').innerHTML = '<div class="empty-state">输入关键词开始搜索</div>';
+                                setTimeout(() => searchInput.focus(), 300);
+                            }
+                        }
+                    };
+                }
+                // 搜索输入监听
+                const searchInputDom = document.getElementById('searchInput');
+                if(searchInputDom) {
+                    searchInputDom.addEventListener('input', handleSearch);
+                }
+                const closeSearchBtn = document.getElementById('closeSearchModalBtn');
+                if(closeSearchBtn) {
+                    closeSearchBtn.onclick = () => closeModal('searchModal');
+                }
+                // 点击遮罩关闭搜索框
+                const searchModalOverlay = document.getElementById('searchModal');
+                if(searchModalOverlay) {
+                    searchModalOverlay.addEventListener('click', (e) => { if(e.target === searchModalOverlay) closeModal('searchModal'); });
+                }
             }
             initDefaultData();
             bindEvents();
